@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Projekte – Übersicht</title>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--text:#1b2433;--muted:#5d6b80;--line:#dde3ec;--accent:#1f6feb;--accent-soft:#e7f0ff}
+@media (prefers-color-scheme:dark){:root{--bg:#10151d;--card:#18202b;--text:#e6edf5;--muted:#9aa8ba;--line:#2a3544;--accent:#58a6ff;--accent-soft:#1a2b42}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.45}
+header{padding:28px 16px 14px;max-width:1100px;margin:0 auto}
+h1{margin:0 0 4px;font-size:1.9rem}
+.sub{color:var(--muted);margin:0}
+.bar{max-width:1100px;margin:0 auto;padding:0 16px 10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input[type=search]{flex:1;min-width:200px;font-size:1rem;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+select{font-size:1rem;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+main{max-width:1100px;margin:0 auto;padding:6px 16px 40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 6px 18px #0000001a}
+.top{display:flex;gap:12px;align-items:center}
+.icon{font-size:2rem;width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);border-radius:14px;flex:0 0 auto}
+.card h2{font-size:1.1rem;margin:0}
+.folder{font-size:.8rem;color:var(--muted);font-family:ui-monospace,monospace}
+.desc{color:var(--muted);font-size:.95rem;margin:0}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:.75rem;background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:20px}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+a.btn{text-decoration:none;font-weight:600;font-size:.9rem;padding:8px 12px;border-radius:10px;border:1px solid var(--line);color:var(--text)}
+a.btn.main{background:var(--accent);border-color:var(--accent);color:#fff}
+.date{font-size:.75rem;color:var(--muted)}
+.msg{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px 0}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:0 16px 24px}
+</style>
+</head>
+<body>
+<header>
+ <h1>📂 Projekte</h1>
+ <p class="sub">Alle Projekte in diesem Repository – die Liste aktualisiert sich automatisch, sobald ein neuer Ordner hochgeladen wird.</p>
+</header>
+<div class="bar">
+ <input type="search" id="q" placeholder="Suchen …" aria-label="Projekte durchsuchen">
+ <select id="sort" aria-label="Sortierung"><option value="new">Neueste zuerst</option><option value="az">A – Z</option></select>
+</div>
+<main id="list"><div class="msg">Lade Projekte …</div></main>
+<footer id="foot"></footer>
+
+<script>
+const OWNER = location.hostname.endsWith('.github.io') ? location.hostname.split('.')[0] : 'semmikgs';
+const REPO = location.hostname.endsWith('.github.io') ? (location.pathname.split('/')[1] || 'private') : 'private';
+const SKIP = new Set(['scripts','assets','node_modules']);
+let projects = [];
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fileIcon = f => /\.pdf$/i.test(f) ? '📄' : /\.html?$/i.test(f) ? '🌐' : /\.(png|jpe?g|svg)$/i.test(f) ? '🖼️' : '📎';
+
+async function loadJson(){
+  const r = await fetch('projects.json?t=' + Date.now(), {cache:'no-store'});
+  if(!r.ok) throw new Error('keine projects.json');
+  const d = await r.json();
+  return {list: d.projects || [], source: 'Stand: ' + new Date(d.generated).toLocaleString('de-DE')};
+}
+
+// Ergänzt Ordner, die schon im Repo sind, aber noch nicht in projects.json stehen
+async function loadApi(){
+  const r = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/`);
+  if(!r.ok) throw new Error('API');
+  const items = await r.json();
+  return items.filter(i => i.type === 'dir' && !i.name.startsWith('.') && !i.name.startsWith('_') && !SKIP.has(i.name))
+    .map(i => ({folder:i.name, title:i.name.replace(/[-_]/g,' '), description:'', icon:'📁', tags:[], hasIndex:true, files:[], updated:null}));
+}
+
+function render(){
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const sort = document.getElementById('sort').value;
+  let list = projects.filter(p => !q || [p.title,p.description,p.folder,...(p.tags||[])].join(' ').toLowerCase().includes(q));
+  list.sort(sort === 'az' ? (a,b) => a.title.localeCompare(b.title,'de') : (a,b) => (b.updated||'').localeCompare(a.updated||''));
+  const el = document.getElementById('list');
+  if(!list.length){ el.innerHTML = `<div class="msg">${projects.length ? 'Keine Treffer.' : 'Noch keine Projekte vorhanden.'}</div>`; return; }
+  el.innerHTML = list.map(p => {
+    const base = encodeURIComponent(p.folder) + '/';
+    const files = (p.files||[]).map(f => `<a class="btn" href="${base}${encodeURIComponent(f)}" target="_blank" rel="noopener">${fileIcon(f)} ${esc(f.replace(/\.[^.]+$/,'').replace(/[_-]/g,' '))}</a>`).join('');
+    return `<article class="card">
+      <div class="top"><div class="icon">${esc(p.icon)}</div><div><h2>${esc(p.title)}</h2><div class="folder">/${esc(p.folder)}</div></div></div>
+      ${p.description ? `<p class="desc">${esc(p.description)}</p>` : ''}
+      ${(p.tags||[]).length ? `<div class="tags">${p.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+      ${p.updated ? `<div class="date">Aktualisiert: ${new Date(p.updated).toLocaleDateString('de-DE')}</div>` : ''}
+      <div class="links">${p.hasIndex ? `<a class="btn main" href="${base}">▶ Öffnen</a>` : ''}${files}</div>
+    </article>`;
+  }).join('');
+}
+
+(async () => {
+  let source = '';
+  try { const j = await loadJson(); projects = j.list; source = j.source; } catch(e) {}
+  try {
+    const api = await loadApi();
+    const known = new Set(projects.map(p => p.folder));
+    api.forEach(p => { if(!known.has(p.folder)) projects.push(p); });
+  } catch(e) {}
+  document.getElementById('foot').textContent = `${projects.length} Projekt(e) · ${source}`;
+  render();
+})();
+document.getElementById('q').addEventListener('input', render);
+document.getElementById('sort').addEventListener('change', render);
+</script>
+</body>
+</html>

@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wasser – Sachunterricht Klasse 3</title>
+<style>
+:root{--blau:#1e88e5;--hell:#e3f2fd;--dunkel:#0d47a1;--gruen:#43a047;--rot:#e53935;--braun:#8d6e63;--gelb:#fdd835;--bg:#f2f9ff;--text:#1a2a3a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:"Trebuchet MS","Comic Sans MS",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:19px;line-height:1.45}
+header{position:sticky;top:0;z-index:10;background:linear-gradient(90deg,#1565c0,#29b6f6);color:#fff;padding:8px 14px;display:flex;align-items:center;gap:10px;height:52px}
+header h1{font-size:1.15em;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stars{background:#ffffff33;border-radius:20px;padding:4px 12px;font-weight:bold;white-space:nowrap}
+nav{display:flex;gap:6px;overflow-x:auto;padding:8px;background:#fff;border-bottom:2px solid var(--hell);position:sticky;top:52px;z-index:9}
+nav button{flex:0 0 auto;border:2px solid var(--blau);background:#fff;color:var(--dunkel);border-radius:14px;padding:6px 12px;font-size:16px;font-weight:bold;font-family:inherit}
+nav button.act{background:var(--blau);color:#fff}
+main{max-width:980px;margin:0 auto;padding:10px 12px 60px}
+section{display:none}section.show{display:block;animation:fade .4s}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card{background:#fff;border-radius:18px;padding:14px 16px;margin:14px 0;box-shadow:0 2px 8px #0001;overflow:hidden}
+h2{color:var(--dunkel);margin:8px 0 4px;font-size:1.5em}
+h3{margin:2px 0 8px;color:var(--blau)}
+.info{background:var(--hell);border-left:6px solid var(--blau)}
+.merk{background:#fff8e1;border-left:6px solid #ffb300}
+.merk h3{color:#e65100}
+.read{float:right;border:none;background:#fff;border-radius:50%;width:42px;height:42px;font-size:20px;box-shadow:0 1px 4px #0003;margin-left:8px}
+.task{border:3px solid #c8e6c9}
+.task h3:before{content:"✏️ "}
+.task.solved{border-color:var(--gruen)}
+.task.solved h3:after{content:" ⭐"}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+button.check,button.reset,button.big{border:none;border-radius:14px;padding:10px 18px;font-size:18px;font-weight:bold;font-family:inherit}
+button.check{background:var(--gruen);color:#fff}
+button.reset{background:#eceff1;color:#455a64}
+button.big{background:var(--blau);color:#fff}
+.fb{margin-top:8px;font-weight:bold;min-height:1.4em}
+.fb.ok{color:var(--gruen)}.fb.no{color:var(--rot)}
+.chip{display:inline-block;background:#fff8e1;border:2px solid #ffb300;border-radius:12px;padding:5px 10px;margin:3px;font-weight:bold;cursor:pointer;user-select:none;-webkit-user-select:none;transition:transform .15s}
+.chip.sel{background:var(--gelb);transform:scale(1.1);box-shadow:0 0 0 3px #ff9800}
+.chip.r{border-color:var(--gruen);background:#c8e6c9}.chip.f{border-color:var(--rot);background:#ffcdd2}
+.bank{min-height:52px;border:2px dashed #90caf9;border-radius:14px;padding:4px;margin:8px 0;background:#fafdff}
+.bank:before{content:"Tippe ein Kärtchen an, dann tippe auf das passende Feld.";display:block;font-size:13px;color:#78909c;padding:0 6px}
+.slot{display:inline-flex;align-items:center;justify-content:center;min-width:130px;min-height:44px;border:2px dashed var(--blau);border-radius:12px;background:#fff;vertical-align:middle;padding:2px}
+.slot.empty{border-color:var(--rot);background:#ffebee}
+.slot.multi{display:block;min-height:120px;padding:30px 4px 4px;position:relative;width:100%}
+.slot.multi:before{content:attr(data-t);position:absolute;top:4px;left:10px;font-weight:bold;color:var(--dunkel)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choice{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.choice button,.tog{border:2px solid #90caf9;background:#fff;border-radius:12px;padding:8px 12px;font-size:17px;font-family:inherit;color:var(--text);text-align:left}
+.choice button.on,.tog.on{background:#bbdefb;border-color:var(--blau);font-weight:bold}
+.choice button.r,.tog.r{background:#c8e6c9;border-color:var(--gruen)}
+.choice button.f,.tog.f{background:#ffcdd2;border-color:var(--rot)}
+.q{margin:14px 0 4px;font-weight:bold}
+.ex{font-size:16px;min-height:1.2em;color:#37474f}
+select,input[type=number]{font-size:18px;font-family:inherit;border:2px solid #90caf9;border-radius:10px;padding:6px;background:#fff}
+input[type=number]{width:80px;text-align:center}
+select.r,input.r{border-color:var(--gruen);background:#e8f5e9}
+select.f,input.f{border-color:var(--rot);background:#ffebee}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.pic{background:#f5fbff;border-radius:14px;padding:10px;text-align:center;border:2px solid var(--hell)}
+.pic .em{font-size:44px;line-height:1.2}
+.pic p{margin:4px 0 8px;font-size:16px}
+.buckets{font-size:20px;min-height:58px;line-height:1.15;word-break:break-all}
+.stack{display:flex;height:34px;border-radius:10px;overflow:hidden;background:#eceff1;margin-top:8px}
+.stack div{transition:width .4s;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap}
+/* Säulendiagramm */
+.chart{display:flex;gap:6px;align-items:flex-end;padding-left:38px;position:relative;margin-top:10px}
+.col{flex:1;text-align:center}
+.barwrap{height:220px;position:relative;background:repeating-linear-gradient(to top,#fff 0,#fff 26.5px,#cfd8dc 26.5px,#cfd8dc 27.5px);border:1px solid #b0bec5;touch-action:none;cursor:pointer}
+.bar{position:absolute;bottom:0;left:15%;width:70%;background:linear-gradient(#ef5350,#c62828);border-radius:6px 6px 0 0;height:0;transition:height .15s}
+.bar.r{background:linear-gradient(#66bb6a,#2e7d32)}.bar.f{outline:3px solid var(--rot)}
+.bv{font-weight:bold;font-size:15px;height:22px}
+.yax{position:absolute;left:0;top:22px;height:220px;width:34px;font-size:12px;color:#546e7a}
+.yax span{position:absolute;right:2px;transform:translateY(50%)}
+/* Overlay */
+.ov{position:relative}
+.ov svg{width:100%;height:auto;display:block}
+.ov .slot{position:absolute;min-width:0;width:19%;min-height:32px;font-size:clamp(11px,1.9vw,17px)}
+.ov .slot .chip{margin:0;padding:2px 5px}
+.order li{list-style:none;background:#fff8e1;border:2px solid #ffcc80;border-radius:12px;margin:6px 0;padding:8px;display:flex;gap:8px;align-items:center}
+.order{padding:0;margin:6px 0}
+.order li.r{background:#c8e6c9;border-color:var(--gruen)}.order li.f{background:#ffcdd2;border-color:var(--rot)}
+.order li span{flex:1}
+.order li button{border:none;background:#ffe0b2;border-radius:8px;font-size:18px;width:40px;height:36px}
+.arrows{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:6px;align-items:center;text-align:center}
+.state{background:var(--hell);border-radius:14px;padding:8px}
+.state .em{font-size:46px}
+.arr{display:flex;flex-direction:column;gap:6px;font-size:15px}
+.arr .slot{min-width:118px}
+.pal button{border:3px solid #fff;border-radius:12px;padding:8px 14px;font-size:17px;font-weight:bold;color:#fff;font-family:inherit}
+.pal button.on{border-color:#000;transform:scale(1.07)}
+.pipe{fill:none;stroke:#bdbdbd;stroke-width:14;stroke-linecap:round;cursor:pointer;transition:stroke .2s}
+.pipe.f{stroke-dasharray:6 6}
+svg text{font-family:"Trebuchet MS",system-ui,sans-serif}
+.flip{perspective:600px;height:150px;cursor:pointer}
+.flip .in{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.flip.open .in{transform:rotateY(180deg)}
+.flip .fr,.flip .bk{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;text-align:center}
+.flip .fr{background:#e3f2fd;border:2px solid #90caf9}
+.flip .fr .em{font-size:48px}
+.flip .bk{background:#fff8e1;border:2px solid #ffcc80;transform:rotateY(180deg);font-size:15px}
+.home{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.home button{border:none;border-radius:18px;padding:18px 10px;font-size:19px;font-weight:bold;color:#fff;font-family:inherit;box-shadow:0 3px 8px #0002;min-height:110px}
+.home button .em{font-size:40px;display:block}
+.flow{stroke-dasharray:10 8;animation:flow 1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-18}}
+/* Wasserkreislauf */
+.cloudmove{animation:cm 14s ease-in-out infinite}
+@keyframes cm{0%,10%{transform:translateX(0)}55%,100%{transform:translateX(-360px)}}
+.rain line{stroke:#1e88e5;stroke-width:3;stroke-linecap:round;animation:rain .7s linear infinite}
+@keyframes rain{from{transform:translateY(-20px);opacity:0}30%{opacity:1}to{transform:translateY(60px);opacity:0}}
+.evap circle{fill:#4fc3f7;animation:evap 3s ease-in infinite}
+@keyframes evap{from{transform:translateY(0);opacity:.9}to{transform:translateY(-150px);opacity:0}}
+.seep path{animation:seep 2s linear infinite}
+@keyframes seep{from{transform:translateY(-10px);opacity:0}50%{opacity:1}to{transform:translateY(25px);opacity:0}}
+.hl{filter:drop-shadow(0 0 6px #ff6f00) drop-shadow(0 0 10px #ffca28)}
+.stepbtns{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.stepbtns button{border:2px solid var(--blau);background:#fff;border-radius:50%;width:44px;height:44px;font-size:19px;font-weight:bold;color:var(--dunkel)}
+.stepbtns button.on{background:var(--blau);color:#fff}
+.steptext{background:#fffde7;border-radius:12px;padding:8px 12px;min-height:3em;font-weight:bold}
+/* Kläranlage */
+.st{cursor:pointer}
+.st.on rect,.st.on ellipse,.st.on path.bas{stroke:#ff6f00;stroke-width:4}
+.bub{animation:bub 1.6s linear infinite}
+@keyframes bub{from{transform:translateY(0);opacity:1}to{transform:translateY(-55px);opacity:0}}
+/* Filter */
+#filt .stream{opacity:0;transition:opacity .4s}
+#filt.run .stream{opacity:1}
+#filt .drip{opacity:0}
+#filt.run .drip{animation:drip .5s linear infinite}
+@keyframes drip{from{transform:translateY(0);opacity:1}to{transform:translateY(38px);opacity:.6}}
+#filt .gw{transform-box:fill-box;transform-origin:50% 100%;transform:scaleY(0);transition:transform 5s linear}
+#filt.run .gw{transform:scaleY(1)}
+#filt .cup{transform-box:fill-box;transform-origin:0% 100%;transition:transform .6s}
+#filt.run .cup{transform:rotate(-55deg)}
+.tap-flow{stroke:#42a5f5;stroke-width:6;stroke-linecap:round}
+.challenge{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0}
+.challenge button{border:none;background:var(--blau);color:#fff;border-radius:10px;padding:6px 12px;font-size:16px;font-family:inherit}
+input[type=range]{width:100%;height:36px}
+canvas{width:100%;height:auto;border-radius:14px;display:block}
+.confetti{position:fixed;font-size:28px;pointer-events:none;z-index:99;animation:conf 1.4s ease-out forwards}
+@keyframes conf{to{transform:translateY(-220px) rotate(360deg);opacity:0}}
+.quizscore{font-size:22px;font-weight:bold;text-align:center;padding:10px}
+.slot,.chip,.choice button,.tog,.pipe,.st,.flip,.barwrap,button,select{cursor:pointer;touch-action:manipulation}
+@media(max-width:620px){.cols{grid-template-columns:1fr}.arrows{grid-template-columns:1fr;}.arr{flex-direction:row;justify-content:center}}
+</style>
+</head>
+<body>
+<header><h1>💧 Wasser – Sachunterricht Klasse 3</h1><div class="stars" id="stars">⭐ 0</div></header>
+<nav>
+ <button data-go="start" class="act">🏠 Start</button>
+ <button data-go="haushalt">🚿 Haushalt</button>
+ <button data-go="frueher">🕰️ Früher & heute</button>
+ <button data-go="zustand">🧊 Aggregatzustände</button>
+ <button data-go="kreislauf">🌧️ Kreislauf</button>
+ <button data-go="gewinnung">🏭 Wassergewinnung</button>
+ <button data-go="abwasser">♻️ Abwasser & Kläranlage</button>
+ <button data-go="hoch">🗼 Hochbehälter</button>
+ <button data-go="quiz">🏆 Quiz</button>
+</nav>
+<main>
+
+<!-- ================= START ================= -->
+<section id="start" class="show">
+ <h2>Willkommen bei der Wasser-Werkstatt! 💧</h2>
+ <div class="card info"><button class="read">🔊</button>
+  <p>Wasser ist überall: im Meer, in den Wolken, im Wasserhahn und sogar in dir. Hier lernst du, wie viel Wasser wir brauchen, wie sich Wasser verwandeln kann, wie der Wasserkreislauf funktioniert und wie Wasser zu uns nach Hause kommt – und wieder sauber wird.</p>
+  <p>Für jede gelöste Aufgabe bekommst du einen ⭐. Arbeite die Kapitel der Reihe nach durch.</p>
+ </div>
+ <div class="home">
+  <button data-go="haushalt" style="background:#29b6f6"><span class="em">🚿</span>1. Wasser im Haushalt</button>
+  <button data-go="frueher" style="background:#8d6e63"><span class="em">🕰️</span>2. Früher und heute</button>
+  <button data-go="zustand" style="background:#26a69a"><span class="em">🧊</span>3. Fest – flüssig – gasförmig</button>
+  <button data-go="kreislauf" style="background:#5c6bc0"><span class="em">🌧️</span>4. Der Wasserkreislauf</button>
+  <button data-go="gewinnung" style="background:#43a047"><span class="em">🏭</span>5. Wassergewinnung</button>
+  <button data-go="abwasser" style="background:#6d4c41"><span class="em">♻️</span>6. Abwasser & Kläranlage</button>
+  <button data-go="hoch" style="background:#1e88e5"><span class="em">🗼</span>7. Der Hochbehälter</button>
+  <button data-go="quiz" style="background:#f9a825"><span class="em">🏆</span>8. Abschluss-Quiz</button>
+ </div>
+</section>
+
+<!-- ================= HAUSHALT ================= -->
+<section id="haushalt">
+ <h2>🚿 Wasser im Haushalt</h2>
+ <div class="card info"><button class="read">🔊</button>
+  <p>Ein Mensch in Deutschland braucht ungefähr <b>125 Liter</b> Wasser am Tag. Das sind 25 Eimer!</p>
+  <p>Ohne Wasser gibt es kein Leben. Darum sollten wir sorgsam mit Trinkwasser umgehen. So schonen wir die Umwelt und sparen Geld.</p>
+ </div>
+
+ <div class="card task" id="t_eimer">
+  <h3>Wie viel Wasser wird verbraucht?</h3>
+  <p>Ein Eimer 🪣 = <b>5 Liter</b>. Zähle die Eimer und trage die Liter ein.</p>
+  <div class="grid" id="eimerGrid"></div>
+  <p style="margin-top:12px"><b>Zusammen:</b> <input type="number" inputmode="numeric" data-a="125" id="eimerSum"> Liter</p>
+  <div class="stack" id="stack"></div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+
+ <div class="card info"><button class="read">🔊</button>
+  <p>Viele neue Geräte verbrauchen weniger Wasser. Die meisten Toiletten haben eine <b>Spartaste</b>. Bei manchen neuen Häusern wird <b>Regenwasser</b> in einem Tank unter der Erde gesammelt. Damit spült man die Toilette, wäscht Wäsche, putzt oder gießt den Garten.</p>
+ </div>
+
+ <div class="card task" id="t_sparen">
+  <h3>Spart das Wasser?</h3>
+  <p>Entscheide bei jedem Satz.</p>
+  <div id="sparList"></div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+</section>
+
+<!-- ================= FRÜHER ================= -->
+<section id="frueher">
+ <h2>🕰️ Wassergebrauch früher und heute</h2>
+ <div class="card info"><button class="read">🔊</button>
+  <p>So viel Wasser brauchte ein Mensch jeden Tag:</p>
+  <p><b>1850:</b> 20 Liter · <b>1950:</b> 85 Liter · <b>1960:</b> 99 Liter · <b>1970:</b> 124 Liter · <b>1980:</b> 145 Liter · <b>1990:</b> 150 Liter · <b>heute:</b> 130 Liter</p>
+ </div>
+ <div class="card task" id="t_saeulen">
+  <h3>Zeichne das Säulendiagramm</h3>
+  <p>Tippe oder ziehe in jeder Spalte so hoch, wie viele Liter es waren. Eine Linie = 20 Liter.</p>
+  <div class="chart" id="chart"><div class="yax" id="yax"></div></div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+ <div class="card task" id="t_gruende">
+  <h3>Warum war das so?</h3>
+  <div class="q">1. Warum brauchten die Menschen zuerst immer mehr Wasser?</div>
+  <div class="choice" data-a="b">
+   <button data-v="a">Die Menschen hatten mehr Durst.</button>
+   <button data-v="b">Es wurden Maschinen und Badezimmer erfunden, die viel Wasser brauchen (Waschmaschine, Spülmaschine, Badewanne).</button>
+   <button data-v="c">Es regnete mehr.</button>
+  </div>
+  <div class="q">2. Warum wird heute wieder weniger Wasser gebraucht?</div>
+  <div class="choice" data-a="a">
+   <button data-v="a">Es gibt Geräte, die Wasser sparen, z. B. Spartasten und sparsame Waschmaschinen.</button>
+   <button data-v="b">Die Menschen waschen sich nicht mehr.</button>
+   <button data-v="c">Wasser ist verboten.</button>
+  </div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+
+ <div class="card info"><button class="read">🔊</button>
+  <h3>Wasserversorgung früher</h3>
+  <p>Vor mehr als hundert Jahren gab es in der Stadt noch kein Wasserwerk. Das Frischwasser holte man mit einem Eimer aus dem <b>Brunnen</b> oder pumpte es mit einer <b>Pumpe</b> hoch. Es wurde nicht gereinigt. Schmutziges Wasser kippte man einfach in die <b>Gosse</b>, eine Rinne zwischen Straße und Fußweg. Dort landete auch der Mist der Tiere. So konnten Krankheiten entstehen.</p>
+  <h3>Wasserversorgung heute</h3>
+  <p>Heute kommt sauberes Trinkwasser aus dem <b>Wasserwerk</b> durch Wasserleitungen in jeden Haushalt. Es wird dort gereinigt und überwacht. Das Schmutzwasser fließt durch Abwasserrohre und Kanäle zur <b>Kläranlage</b>. Mit dem Abwasser kommen wir kaum noch in Berührung.</p>
+ </div>
+ <div class="card task" id="t_frueherheute">
+  <h3>Früher oder heute?</h3>
+  <div class="bank">
+   <span class="chip" data-v="f">🪣 Wasser aus dem Brunnen holen</span>
+   <span class="chip" data-v="f">Wasser mit der Hofpumpe hochpumpen</span>
+   <span class="chip" data-v="f">Schmutzwasser in die Gosse kippen</span>
+   <span class="chip" data-v="f">Tiere laufen über die Straße 🐖</span>
+   <span class="chip" data-v="f">Wasser wird nicht gereinigt</span>
+   <span class="chip" data-v="h">🚰 Wasserhahn in der Wohnung</span>
+   <span class="chip" data-v="h">🏭 Wasserwerk</span>
+   <span class="chip" data-v="h">Abwasserkanal unter der Straße</span>
+   <span class="chip" data-v="h">♻️ Kläranlage</span>
+  </div>
+  <div class="cols">
+   <div class="slot multi" data-a="f" data-t="🕰️ Früher"></div>
+   <div class="slot multi" data-a="h" data-t="🏙️ Heute"></div>
+  </div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+ <div class="card task" id="t_verbot">
+  <h3>Wer verschmutzt verbotenerweise das Wasser?</h3>
+  <p>Auf einer Straße heute siehst du vier Personen. Wer macht etwas Verbotenes?</p>
+  <div class="choice" data-a="c">
+   <button data-v="a">🧽 Ein Mann putzt sein Fenster.</button>
+   <button data-v="b">🍽️ Eine Frau räumt die Spülmaschine ein.</button>
+   <button data-v="c">🚗 Ein Mann wäscht sein Auto auf der Straße und kippt das Schmutzwasser in den Gully.</button>
+   <button data-v="d">⚽ Kinder spielen mit dem Ball.</button>
+  </div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb" data-ok="Richtig! Der Straßengully führt das Regenwasser oft direkt in den Bach – ohne Kläranlage. Öl und Seife verschmutzen dann den Bach."></div>
+ </div>
+</section>
+
+<!-- ================= ZUSTAND ================= -->
+<section id="zustand">
+ <h2>🧊 Fest – flüssig – gasförmig</h2>
+ <div class="card info"><button class="read">🔊</button>
+  <p>Wasser kann sich verwandeln! Es gibt Wasser in drei Formen:</p>
+  <p>❄️ <b>fest</b> als Eis oder Schnee · 💧 <b>flüssig</b> als Wasser · ♨️ <b>gasförmig</b> als Wasserdampf</p>
+  <p>Bei 0 °C gefriert Wasser zu Eis. Bei 100 °C kocht Wasser und verdampft. Aber auch ohne Kochen <b>verdunstet</b> Wasser langsam, zum Beispiel aus einer Pfütze in der Sonne.</p>
+ </div>
+ <div class="card">
+  <h3>🔬 Versuch: Schiebe den Regler!</h3>
+  <canvas id="cvZ" width="600" height="340"></canvas>
+  <p><b>Temperatur: <span id="tVal"></span></b></p>
+  <input type="range" id="tempR" min="-20" max="120" value="20">
+  <p><label><input type="checkbox" id="lidC" style="width:24px;height:24px;vertical-align:middle"> Kalten Deckel auflegen</label></p>
+  <div class="steptext" id="zLab"></div>
+ </div>
+ <div class="card task" id="t_pfeile">
+  <h3>Trage die Wörter richtig ein</h3>
+  <div class="bank">
+   <span class="chip" data-v="schmelzen">schmelzen</span>
+   <span class="chip" data-v="gefrieren">gefrieren</span>
+   <span class="chip" data-v="verdampfen">verdampfen</span>
+   <span class="chip" data-v="kondensieren">kondensieren</span>
+   <span class="chip" data-v="fest">fest</span>
+   <span class="chip" data-v="flüssig">flüssig</span>
+   <span class="chip" data-v="gasförmig">gasförmig</span>
+  </div>
+  <div class="arrows">
+   <div class="state"><div class="em">🧊</div><b>Eis</b><br><span class="slot" data-a="fest"></span></div>
+   <div class="arr"><div>➡️ <span class="slot" data-a="schmelzen"></span></div><div>⬅️ <span class="slot" data-a="gefrieren"></span></div></div>
+   <div class="state"><div class="em">💧</div><b>Wasser</b><br><span class="slot" data-a="flüssig"></span></div>
+   <div class="arr"><div>➡️ <span class="slot" data-a="verdampfen"></span></div><div>⬅️ <span class="slot" data-a="kondensieren"></span></div></div>
+   <div class="state"><div class="em">♨️</div><b>Wasserdampf</b><br><span class="slot" data-a="gasförmig"></span></div>
+  </div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+ <div class="card task" id="t_verwandeln">
+  <h3>Wasser kann sich verwandeln</h3>
+  <p>Schau dir die Bilder genau an. Was passiert mit dem Wasser?</p>
+  <div class="grid" id="verwGrid"></div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+</section>
+
+<!-- ================= KREISLAUF ================= -->
+<section id="kreislauf">
+ <h2>🌧️ Der Kreislauf des Wassers</h2>
+ <div class="card info"><button class="read">🔊</button>
+  <p>Wasser geht nicht verloren! Es wandert immer im Kreis: vom Meer in die Wolken, als Regen auf die Erde und über Flüsse und Grundwasser zurück ins Meer. Das nennt man den <b>Wasserkreislauf</b>.</p>
+ </div>
+ <div class="card task" id="t_kreisbild">
+  <h3>Schritt für Schritt – und dann beschriften</h3>
+  <p>Tippe auf die Zahlen und lies, was passiert. Danach setze die Wörter an die richtige Stelle im Bild.</p>
+  <div class="stepbtns" id="stepBtns"></div>
+  <div class="steptext" id="stepText">Tippe auf 1.</div>
+  <div class="ov" id="kreisOv">
+  <svg viewBox="0 0 800 460" id="kreisSvg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+   <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bbdefb"/><stop offset="1" stop-color="#e3f2fd"/></linearGradient>
+    <g id="cloud"><ellipse cx="0" cy="0" rx="55" ry="26" fill="#fff" stroke="#90a4ae" stroke-width="2"/><circle cx="-22" cy="-16" r="22" fill="#fff"/><circle cx="18" cy="-20" r="26" fill="#fff"/></g>
+   </defs>
+   <rect width="800" height="460" fill="url(#sky)"/>
+   <g><circle cx="730" cy="60" r="36" fill="#fdd835"/><g stroke="#fbc02d" stroke-width="4"><line x1="730" y1="8" x2="730" y2="-4"/><line x1="680" y1="60" x2="668" y2="60"/><line x1="694" y1="24" x2="685" y2="15"/><line x1="694" y1="96" x2="685" y2="105"/><line x1="766" y1="96" x2="775" y2="105"/></g></g>
+   <!-- Boden -->
+   <rect x="0" y="330" width="800" height="130" fill="#a1887f"/>
+   <rect x="0" y="385" width="800" height="45" fill="#90caf9" opacity=".8"/>
+   <text x="20" y="413" font-size="16" fill="#0d47a1">Grundwasser</text>
+   <!-- Berge -->
+   <polygon points="0,335 110,140 200,250 290,165 420,335" fill="#8d9e7a"/>
+   <polygon points="110,140 92,172 128,172" fill="#fff"/><polygon points="290,165 274,193 306,193" fill="#fff"/>
+   <!-- Wiese -->
+   <path d="M380,335 Q470,300 560,320 L560,335 Z" fill="#9ccc65"/>
+   <!-- Meer -->
+   <path d="M540,330 Q560,300 600,300 L800,300 L800,460 L540,460 Z" fill="#1e88e5"/>
+   <path d="M600,315 q15,-8 30,0 t30,0 t30,0 t30,0 t30,0" stroke="#bbdefb" stroke-width="3" fill="none"/>
+   <!-- Fluss -->
+   <g id="g-fluss"><path d="M255,215 Q290,260 330,270 T430,300 T560,315" stroke="#42a5f5" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <path d="M255,215 Q290,260 330,270 T430,300 T560,315" stroke="#e3f2fd" stroke-width="3" fill="none" class="flow"/></g>
+   <!-- Versickern -->
+   <g id="g-sicker"><g class="seep" fill="none" stroke="#0d47a1" stroke-width="4"><path d="M330,345 v18 m-7,-7 l7,7 l7,-7"/><path d="M380,345 v18 m-7,-7 l7,7 l7,-7" style="animation-delay:.6s"/><path d="M200,345 v18 m-7,-7 l7,7 l7,-7" style="animation-delay:1.2s"/></g>
+    <path d="M60,408 H520" stroke="#0d47a1" stroke-width="3" class="flow" fill="none"/></g>
+   <!-- Verdunsten -->
+   <g id="g-verd"><g class="evap"><circle cx="620" cy="300" r="6"/><circle cx="660" cy="300" r="5" style="animation-delay:1s"/><circle cx="700" cy="300" r="6" style="animation-delay:2s"/><circle cx="740" cy="300" r="5" style="animation-delay:.5s"/><circle cx="460" cy="320" r="4" style="animation-delay:1.5s"/></g>
+    <g stroke="#ef6c00" stroke-width="4" fill="none"><path d="M640,290 v-80 m-8,10 l8,-10 l8,10"/><path d="M720,290 v-80 m-8,10 l8,-10 l8,10"/></g></g>
+   <!-- Wolkenbildung über dem Meer -->
+   <g id="g-wolke"><use href="#cloud" xlink:href="#cloud" x="660" y="140"/><use href="#cloud" xlink:href="#cloud" x="560" y="110" opacity=".8"/></g>
+   <!-- Wind / wandernde Wolke -->
+   <g id="g-wind"><g class="cloudmove"><use href="#cloud" xlink:href="#cloud" x="560" y="70"/></g>
+    <g stroke="#78909c" stroke-width="3" fill="none"><path d="M500,40 h-60 m10,-8 l-10,8 l10,8"/><path d="M470,58 h-40"/></g></g>
+   <!-- Regen -->
+   <g id="g-regen"><use href="#cloud" xlink:href="#cloud" x="180" y="90"/><use href="#cloud" xlink:href="#cloud" x="240" y="105"/>
+    <g class="rain"><line x1="150" y1="130" x2="144" y2="146"/><line x1="175" y1="135" x2="169" y2="151" style="animation-delay:.2s"/><line x1="200" y1="128" x2="194" y2="144" style="animation-delay:.4s"/><line x1="225" y1="138" x2="219" y2="154" style="animation-delay:.1s"/><line x1="250" y1="140" x2="244" y2="156" style="animation-delay:.5s"/><line x1="275" y1="132" x2="269" y2="148" style="animation-delay:.3s"/></g>
+    <text x="96" y="170" font-size="22">❄️</text></g>
+   <!-- Wald und See -->
+   <text x="420" y="300" font-size="30">🌳🌳</text>
+  </svg>
+  <span class="slot" data-a="Regnen" style="left:1%;top:43%"></span>
+  <span class="slot" data-a="Kondensieren" style="left:57%;top:4%"></span>
+  <span class="slot" data-a="Verdunsten" style="left:79%;top:52%"></span>
+  <span class="slot" data-a="Abfließen" style="left:38%;top:51%"></span>
+  <span class="slot" data-a="Versickern" style="left:24%;top:79%"></span>
+  </div>
+  <div class="bank">
+   <span class="chip" data-v="Verdunsten">verdunsten</span>
+   <span class="chip" data-v="Kondensieren">kondensieren</span>
+   <span class="chip" data-v="Regnen">regnen</span>
+   <span class="chip" data-v="Abfließen">abfließen</span>
+   <span class="chip" data-v="Versickern">versickern</span>
+  </div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+ <div class="card task" id="t_kreisorder">
+  <h3>Bringe die Sätze in die richtige Reihenfolge</h3>
+  <p>Verschiebe die Sätze mit ▲ und ▼.</p>
+  <ul class="order" id="kreisOrder"></ul>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+ <div class="card task" id="t_kreisfragen">
+  <h3>Kreuze richtig an</h3>
+  <div class="q">Geht beim Wasserkreislauf Wasser verloren?</div>
+  <div class="choice" data-a="b"><button data-v="a">Ja, das Wasser ist danach weg.</button><button data-v="b">Nein, das Wasser kommt immer wieder zurück.</button></div>
+  <div class="q">Woraus bestehen Wolken?</div>
+  <div class="choice" data-a="a"><button data-v="a">Aus winzigen Wassertröpfchen</button><button data-v="b">Aus Watte</button><button data-v="c">Aus Rauch</button></div>
+  <div class="q">Wer sorgt dafür, dass Wasser verdunstet?</div>
+  <div class="choice" data-a="c"><button data-v="a">Der Wind allein</button><button data-v="b">Der Mond</button><button data-v="c">Die Wärme der Sonne</button></div>
+  <div class="q">Wo verdunstet außer im Meer auch Wasser?</div>
+  <div class="choice" data-a="b"><button data-v="a">Nur im Meer</button><button data-v="b">Auch aus Seen, Pfützen und Wäldern</button></div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+</section>
+
+<!-- ================= GEWINNUNG ================= -->
+<section id="gewinnung">
+ <h2>🏭 Wassergewinnung</h2>
+ <div class="card info"><button class="read">🔊</button>
+  <p>Das Wasser, das ins Wasserwerk kommt, heißt <b>Rohwasser</b>. Es kommt zum Beispiel aus einer <b>Talsperre</b>, einem <b>Uferfiltratbrunnen</b>, einer <b>Quelle</b> oder einem <b>Grundwasserbrunnen</b>.</p>
+  <p>Im <b>Wasserwerk</b> wird das Rohwasser so lange gesäubert und von Keimen befreit, bis es <b>Trinkwasser</b> ist. Dann wird es im Vorratsbehälter gespeichert und fließt zu den Häusern.</p>
+ </div>
+ <div class="card">
+  <h3>🔄 Klappbilder: Tippe auf ein Bild!</h3>
+  <div class="grid">
+   <div class="flip"><div class="in"><div class="fr"><div class="em">🏞️</div><b>Talsperre</b></div><div class="bk">Eine Staumauer hält in einem großen See einen Wasservorrat fest. Das Wasser wird ins Wasserwerk geleitet.</div></div></div>
+   <div class="flip"><div class="in"><div class="fr"><div class="em">🌊</div><b>Uferfiltratbrunnen</b></div><div class="bk">Flusswasser sickert am Ufer durch den Boden und wird dabei gefiltert. Dann wird es abgepumpt.</div></div></div>
+   <div class="flip"><div class="in"><div class="fr"><div class="em">⛲</div><b>Quelle</b></div><div class="bk">Hier sprudelt Wasser von selbst aus der Erde. Es wird ins Wasserwerk geleitet.</div></div></div>
+   <div class="flip"><div class="in"><div class="fr"><div class="em">🕳️</div><b>Grundwasserbrunnen</b></div><div class="bk">Regenwasser ist durch die Erdschichten gesickert. Dieses Grundwasser wird aus der Tiefe hochgepumpt.</div></div></div>
+  </div>
+ </div>
+ <div class="card task" id="t_quellen">
+  <h3>Woher kommt das Rohwasser?</h3>
+  <div class="bank">
+   <span class="chip" data-v="tal">Talsperre</span>
+   <span class="chip" data-v="ufer">Uferfiltratbrunnen</span>
+   <span class="chip" data-v="quel">Quelle</span>
+   <span class="chip" data-v="grund">Grundwasserbrunnen</span>
+  </div>
+  <p>Wasser sprudelt von selbst aus der Erde. → <span class="slot" data-a="quel"></span></p>
+  <p>Ein großer Stausee speichert einen Wasservorrat. → <span class="slot" data-a="tal"></span></p>
+  <p>Wasser ist durch Erdschichten gesickert und wird hochgepumpt. → <span class="slot" data-a="grund"></span></p>
+  <p>Flusswasser sickert am Ufer durch den Boden. → <span class="slot" data-a="ufer"></span></p>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+ <div class="card task" id="t_rohleitung">
+  <h3>Male die Wasserleitungen aus</h3>
+  <p>Wähle eine Farbe und tippe auf die Leitung. <b>Rohwasser: grün</b> · <b>Trinkwasser: blau</b></p>
+  <div class="pal btns"><button data-c="#43a047" style="background:#43a047" class="on">Rohwasser</button><button data-c="#1e88e5" style="background:#1e88e5">Trinkwasser</button></div>
+  <svg viewBox="0 0 640 300" style="width:100%;height:auto">
+   <g font-size="15" fill="#0d47a1">
+    <rect x="5" y="10" width="140" height="52" rx="10" fill="#e3f2fd"/><text x="14" y="42">🏞️ Talsperre</text>
+    <rect x="5" y="80" width="140" height="52" rx="10" fill="#e3f2fd"/><text x="14" y="112">🌊 Uferfiltrat</text>
+    <rect x="5" y="150" width="140" height="52" rx="10" fill="#e3f2fd"/><text x="14" y="182">⛲ Quelle</text>
+    <rect x="5" y="220" width="140" height="52" rx="10" fill="#e3f2fd"/><text x="14" y="252">🕳️ Grundwasser</text>
+   </g>
+   <path class="pipe" data-a="#43a047" d="M150,36 H200 V128 H290"/>
+   <path class="pipe" data-a="#43a047" d="M150,106 H215 V142 H290"/>
+   <path class="pipe" data-a="#43a047" d="M150,176 H230 V156 H290"/>
+   <path class="pipe" data-a="#43a047" d="M150,246 H245 V170 H290"/>
+   <rect x="290" y="105" width="120" height="85" rx="10" fill="#fff" stroke="#546e7a" stroke-width="3"/>
+   <text x="350" y="140" font-size="28" text-anchor="middle">🏭</text><text x="350" y="170" font-size="15" text-anchor="middle">Wasserwerk</text>
+   <path class="pipe" data-a="#1e88e5" d="M412,148 H470"/>
+   <rect x="470" y="115" width="80" height="65" rx="10" fill="#fff" stroke="#546e7a" stroke-width="3"/>
+   <text x="510" y="145" font-size="13" text-anchor="middle">Vorrats-</text><text x="510" y="162" font-size="13" text-anchor="middle">behälter</text>
+   <path class="pipe" data-a="#1e88e5" d="M552,148 H600 V235"/>
+   <text x="565" y="285" font-size="40">🏘️</text>
+  </svg>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+ <div class="card task" id="t_werk">
+  <h3>Das Wasserwerk</h3>
+  <div class="q">Was passiert im Wasserwerk?</div>
+  <div class="choice" data-a="b"><button data-v="a">Das Abwasser aus den Toiletten wird gereinigt.</button><button data-v="b">Rohwasser wird gesäubert und von Keimen befreit, bis es Trinkwasser ist.</button><button data-v="c">Es wird Regen gemacht.</button></div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+ <div class="card merk"><h3>🔎 Forscherauftrag</h3><p>Frage zu Hause nach oder suche mit deinen Eltern: Woher bekommt <b>euer</b> Wasserwerk das Rohwasser?</p></div>
+</section>
+
+<!-- ================= ABWASSER ================= -->
+<section id="abwasser">
+ <h2>♻️ Wassernutzung und Abwasser</h2>
+ <div class="card info"><button class="read">🔊</button>
+  <p>Im Haushalt nutzen wir Wasser auf drei Arten: als <b>Reinigungsmittel</b> (zum Waschen und Putzen), als <b>Transportmittel</b> (es spült z. B. in der Toilette den Schmutz weg) und als <b>Lebensmittel</b> (zum Trinken und Kochen).</p>
+  <p>Dabei wird das Wasser schmutzig. Es enthält Schmutz, Krankheitserreger und manchmal Gifte. Darum fließt es durch Abwasserleitungen in die <b>Kläranlage</b> und wird dort gründlich gereinigt.</p>
+ </div>
+ <div class="card task" id="t_nutzung">
+  <h3>Wofür wird das Wasser genutzt?</h3>
+  <div class="bank">
+   <span class="chip" data-v="L">Lebensmittel</span>
+   <span class="chip" data-v="R">Reinigungsmittel</span>
+   <span class="chip" data-v="T">Transportmittel</span>
+  </div>
+  <div class="grid">
+   <div class="pic"><div class="em">🪥🧼</div><p>Zähne putzen und Gesicht waschen</p><span class="slot" data-a="R"></span></div>
+   <div class="pic"><div class="em">🚽</div><p>Die Toilette spülen</p><span class="slot" data-a="T"></span></div>
+   <div class="pic"><div class="em">🍲🥤</div><p>Kochen und trinken</p><span class="slot" data-a="L"></span></div>
+  </div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+ <div class="card task" id="t_hausleitung">
+  <h3>Male die Leitungen im Haus an</h3>
+  <p><b>Trinkwasserleitungen: blau</b> · <b>Abwasserleitungen: braun</b></p>
+  <div class="pal btns"><button data-c="#1e88e5" style="background:#1e88e5" class="on">Trinkwasser</button><button data-c="#795548" style="background:#795548">Abwasser</button></div>
+  <svg viewBox="0 0 600 360" style="width:100%;height:auto">
+   <rect x="0" y="285" width="600" height="75" fill="#d7ccc8"/>
+   <polygon points="140,60 300,0 460,60" fill="#ef9a9a"/>
+   <rect x="150" y="60" width="300" height="225" fill="#fffde7" stroke="#6d4c41" stroke-width="3"/>
+   <line x1="150" y1="172" x2="450" y2="172" stroke="#6d4c41" stroke-width="3"/>
+   <text x="185" y="110" font-size="36">🚿</text><text x="375" y="140" font-size="32">🪥</text>
+   <text x="185" y="260" font-size="34">🚽</text><text x="365" y="245" font-size="32">🍽️</text>
+   <path class="pipe" data-a="#1e88e5" d="M0,322 H300"/>
+   <path class="pipe" data-a="#1e88e5" d="M300,322 V100"/>
+   <path class="pipe" data-a="#1e88e5" d="M300,100 H220"/>
+   <path class="pipe" data-a="#1e88e5" d="M300,112 H385"/>
+   <path class="pipe" data-a="#1e88e5" d="M300,215 H380"/>
+   <path class="pipe" data-a="#795548" d="M410,152 H480"/>
+   <path class="pipe" data-a="#795548" d="M225,272 V300 H480"/>
+   <path class="pipe" data-a="#795548" d="M480,152 V342"/>
+   <path class="pipe" data-a="#795548" d="M480,342 H600"/>
+   <text x="5" y="352" font-size="14">vom Wasserwerk →</text>
+   <text x="490" y="330" font-size="14">→ zur Kläranlage</text>
+  </svg>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+
+ <h2>🏗️ Die Kläranlage</h2>
+ <div class="card">
+  <h3>Tippe auf die Stationen der Kläranlage</h3>
+  <svg viewBox="0 0 800 210" style="width:100%;height:auto" id="klSvg">
+   <g stroke-width="10" fill="none"><path d="M140,110 H180" stroke="#6d4c41" class="flow"/><path d="M300,110 H340" stroke="#8d6e63" class="flow"/><path d="M460,110 H500" stroke="#a1887f" class="flow"/><path d="M620,110 H660" stroke="#90a4ae" class="flow"/></g>
+   <g class="st" data-i="0"><rect x="20" y="70" width="120" height="80" rx="8" fill="#6d4c41" stroke="#3e2723" stroke-width="2"/><g stroke="#cfd8dc" stroke-width="4"><line x1="50" y1="50" x2="50" y2="150"/><line x1="65" y1="50" x2="65" y2="150"/><line x1="80" y1="50" x2="80" y2="150"/><line x1="95" y1="50" x2="95" y2="150"/><line x1="110" y1="50" x2="110" y2="150"/></g><text x="80" y="185" text-anchor="middle" font-size="17">1 Rechen</text></g>
+   <g class="st" data-i="1"><rect x="180" y="70" width="120" height="80" rx="8" fill="#8d6e63" stroke="#3e2723" stroke-width="2"/><g fill="#ffd54f"><circle cx="205" cy="76" r="5"/><circle cx="240" cy="77" r="4"/><circle cx="275" cy="76" r="5"/></g><g fill="#5d4037"><circle cx="200" cy="143" r="5"/><circle cx="220" cy="144" r="4"/><circle cx="255" cy="143" r="5"/><circle cx="285" cy="144" r="4"/></g><text x="240" y="185" text-anchor="middle" font-size="17">2 Vorklärbecken</text></g>
+   <g class="st" data-i="2"><rect x="340" y="70" width="120" height="80" rx="8" fill="#a1887f" stroke="#3e2723" stroke-width="2"/><g fill="#fff" opacity=".8"><circle class="bub" cx="370" cy="145" r="5"/><circle class="bub" cx="400" cy="145" r="4" style="animation-delay:.5s"/><circle class="bub" cx="430" cy="145" r="5" style="animation-delay:1s"/></g><text x="400" y="185" text-anchor="middle" font-size="17">3 Belebungsbecken</text></g>
+   <g class="st" data-i="3"><ellipse cx="560" cy="110" rx="60" ry="42" fill="#90a4ae" stroke="#37474f" stroke-width="2"/><g fill="#6d4c41"><circle cx="540" cy="135" r="4"/><circle cx="560" cy="140" r="5"/><circle cx="580" cy="135" r="4"/></g><text x="560" y="185" text-anchor="middle" font-size="17">4 Nachklärbecken</text></g>
+   <g class="st" data-i="4"><path class="bas" d="M660,80 Q700,70 720,95 T790,110 L790,150 L660,150 Z" fill="#4fc3f7" stroke="#0277bd" stroke-width="2"/><text x="705" y="135" font-size="24">🐟</text><text x="725" y="185" text-anchor="middle" font-size="17">5 Fluss</text></g>
+  </svg>
+  <div class="steptext" id="klText">Tippe auf eine Station.</div>
+ </div>
+ <div class="card task" id="t_rechen">
+  <h3>Was bleibt im Rechen hängen?</h3>
+  <p>Der Rechen hält grobe, große Teile zurück. Tippe alle Teile an, die im Rechen hängen bleiben.</p>
+  <div class="choice">
+   <button class="tog" data-ok="1">🪵 Stöcke</button><button class="tog" data-ok="0">🦷 Zahnpasta</button><button class="tog" data-ok="1">🛍️ Plastiktüten</button><button class="tog" data-ok="0">⏳ Sand</button><button class="tog" data-ok="1">🧷 Wattestäbchen</button><button class="tog" data-ok="1">👶 Windeln</button>
+  </div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb" data-ok="Richtig! Wattestäbchen, Windeln und Plastiktüten gehören übrigens nicht in die Toilette, sondern in den Müll!"></div>
+ </div>
+ <div class="card task" id="t_vorklaer">
+  <h3>Im Vorklärbecken: sinkt es oder schwimmt es?</h3>
+  <p>Hier fließt das Wasser ganz langsam. Schwere Teile setzen sich am Boden ab, leichte Teile schwimmen oben.</p>
+  <div class="bank">
+   <span class="chip" data-v="b">Sand</span><span class="chip" data-v="o">Holzstückchen</span><span class="chip" data-v="b">Steinchen</span><span class="chip" data-v="o">Styroporkügelchen</span><span class="chip" data-v="o">kleine Blätter</span><span class="chip" data-v="b">Metallteilchen</span><span class="chip" data-v="o">Fette und Öle</span>
+  </div>
+  <div class="cols">
+   <div class="slot multi" data-a="o" data-t="⬆️ schwimmt an der Oberfläche"></div>
+   <div class="slot multi" data-a="b" data-t="⬇️ setzt sich am Boden ab"></div>
+  </div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+ <div class="card task" id="t_klorder">
+  <h3>Welchen Weg nimmt das Abwasser?</h3>
+  <p>Bringe die Stationen in die richtige Reihenfolge.</p>
+  <ul class="order" id="klOrder"></ul>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+
+ <h2>🧪 Versuch: Kann man Abwasser filtern?</h2>
+ <div class="card">
+  <p><b>Frage:</b> Wie kann man Abwasser reinigen?<br><b>Vermutung:</b> Steine und Sand halten den Schmutz als Filter zurück.</p>
+  <svg viewBox="0 0 320 340" id="filt" style="width:100%;max-width:380px;height:auto;display:block;margin:auto">
+   <g class="cup"><rect x="185" y="18" width="50" height="62" rx="4" fill="#fff" stroke="#546e7a" stroke-width="3"/><rect x="188" y="35" width="44" height="43" fill="#795548"/></g>
+   <path class="stream" d="M185,78 Q165,85 155,105" stroke="#795548" stroke-width="7" fill="none"/>
+   <polygon points="80,100 220,100 213.3,135 86.7,135" fill="#4e342e"/>
+   <polygon points="86.7,135 213.3,135 207.5,165 92.5,165" fill="#e6d3a3"/>
+   <polygon points="92.5,165 207.5,165 201.7,195 98.3,195" fill="#9e9e9e"/>
+   <g fill="#757575"><circle cx="110" cy="180" r="6"/><circle cx="135" cy="176" r="7"/><circle cx="160" cy="182" r="6"/><circle cx="185" cy="177" r="7"/></g>
+   <polygon points="98.3,195 201.7,195 195,230 105,230" fill="#fafafa"/>
+   <path d="M76,96 L105,234 H195 L224,96" fill="none" stroke="#6d4c41" stroke-width="4"/>
+   <g font-size="14" fill="#263238"><text x="5" y="122">Erde</text><text x="5" y="155">Sand</text><text x="5" y="185">Kies</text><text x="5" y="218">Watte</text></g>
+   <g stroke="#90a4ae"><line x1="40" y1="118" x2="84" y2="118"/><line x1="40" y1="151" x2="90" y2="151"/><line x1="38" y1="181" x2="95" y2="181"/><line x1="48" y1="214" x2="101" y2="214"/></g>
+   <circle class="drip" cx="150" cy="242" r="5" fill="#d4c27a"/>
+   <rect class="gw" x="118" y="272" width="64" height="56" fill="#d4c27a" opacity=".85"/>
+   <path d="M115,260 V330 H185 V260" fill="none" stroke="#546e7a" stroke-width="3"/>
+  </svg>
+  <div class="btns" style="justify-content:center"><button class="big" id="pourBtn">🫗 Schmutzwasser eingießen</button><button class="reset" id="pourReset">↺</button></div>
+ </div>
+ <div class="card task" id="t_filter">
+  <h3>Was beobachtest du?</h3>
+  <div class="q">1. Was passiert mit dem Schmutzwasser?</div>
+  <div class="choice" data-a="b"><button data-v="a">Es ist danach ganz klar und sauber.</button><button data-v="b">Die groben Teile bleiben im Filter. Das Wasser ist aber immer noch etwas gelblich.</button><button data-v="c">Es kommt gar kein Wasser unten an.</button></div>
+  <div class="q">2. Darf man das gefilterte Wasser trinken?</div>
+  <div class="choice" data-a="a"><button data-v="a">Nein! Gelöste Stoffe und Keime bleiben im Wasser. Filtern allein reicht nicht.</button><button data-v="b">Ja, es ist jetzt Trinkwasser.</button></div>
+  <div class="q">3. Wer reinigt in der Kläranlage das Wasser von fein verteiltem Schmutz?</div>
+  <div class="choice" data-a="c"><button data-v="a">Der Rechen</button><button data-v="b">Fische</button><button data-v="c">Winzige Lebewesen (Bakterien) im Belebungsbecken</button></div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+</section>
+
+<!-- ================= HOCHBEHÄLTER ================= -->
+<section id="hoch">
+ <h2>🗼 Wie kommt das Trinkwasser ins Hochhaus?</h2>
+ <div class="card info"><button class="read">🔊</button>
+  <p>Für die Trinkwasserversorgung baut man <b>Hochbehälter</b> (Wassertürme) oder Wasserspeicher auf Bergen. Was sie bewirken, zeigen dir diese Versuche.</p>
+ </div>
+ <div class="card task" id="t_schlauch">
+  <h3>Versuch 1: Zwei Trichter und ein Schlauch</h3>
+  <p>Schiebe den Regler und hebe oder senke den rechten Trichter. Beobachte das Wasser!</p>
+  <svg viewBox="0 0 400 260" style="width:100%;max-width:520px;height:auto;display:block;margin:auto">
+   <defs><clipPath id="clipU"><rect id="clipURect" x="0" y="110" width="400" height="300"/></clipPath></defs>
+   <path id="uGrey" fill="none" stroke="#cfd8dc" stroke-width="22" stroke-linecap="round"/>
+   <polygon id="fL" points="50,60 110,60 88,90 72,90" fill="#eceff1" stroke="#90a4ae" stroke-width="2"/>
+   <polygon id="fR" fill="#eceff1" stroke="#90a4ae" stroke-width="2"/>
+   <g clip-path="url(#clipU)"><path id="uBlue" fill="none" stroke="#42a5f5" stroke-width="14" stroke-linecap="round"/>
+    <polygon points="52,61 108,61 87,89 73,89" fill="#42a5f5"/><polygon id="fRb" fill="#42a5f5"/></g>
+   <line id="lvl" x1="20" x2="380" stroke="#e53935" stroke-width="2" stroke-dasharray="6 5"/>
+   <text id="spill" x="330" y="30" font-size="14" fill="#e53935" text-anchor="middle"></text>
+  </svg>
+  <input type="range" id="uR" min="40" max="190" value="40">
+  <div class="q">Was fällt dir auf?</div>
+  <div class="choice" data-a="b"><button data-v="a">Das Wasser fließt immer ganz nach links.</button><button data-v="b">Das Wasser steht in beiden Trichtern gleich hoch. Liegt eine Öffnung tiefer, läuft es dort über.</button><button data-v="c">Das Wasser steht rechts immer höher.</button></div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+ <div class="card task" id="t_haehne">
+  <h3>Versuch 2: Der Wasserbehälter mit drei Hähnen</h3>
+  <p>Schiebe den Regler und fülle den Behälter. Löse die drei Aufträge!</p>
+  <svg viewBox="0 0 420 360" style="width:100%;max-width:480px;height:auto;display:block;margin:auto">
+   <defs><clipPath id="clipW"><rect id="clipWRect" x="0" y="200" width="420" height="400"/></clipPath></defs>
+   <path d="M110,300 V330 H300 V60" fill="none" stroke="#b0bec5" stroke-width="16"/>
+   <g clip-path="url(#clipW)"><path d="M110,300 V330 H300 V60" fill="none" stroke="#42a5f5" stroke-width="10"/></g>
+   <rect id="tankW" x="42" y="200" width="136" height="100" fill="#64b5f6"/>
+   <path d="M40,40 V302 H180 V40" fill="none" stroke="#455a64" stroke-width="4"/>
+   <g id="taps"></g>
+   <text x="110" y="355" text-anchor="middle" font-size="15">Behälter</text>
+  </svg>
+  <input type="range" id="wR" min="0" max="100" value="40">
+  <p style="text-align:center;font-weight:bold" id="tapInfo"></p>
+  <div class="challenge"><button data-n="3">Prüfen</button> Aus <b>allen drei</b> Hähnen fließt Wasser. <span></span></div>
+  <div class="challenge"><button data-n="0">Prüfen</button> Aus <b>keinem</b> Hahn fließt Wasser – aber im Behälter ist Wasser. <span></span></div>
+  <div class="challenge"><button data-n="2">Prüfen</button> Aus <b>genau zwei</b> Hähnen fließt Wasser. <span></span></div>
+ </div>
+ <div class="card task" id="t_hochwarum">
+  <h3>Erkläre!</h3>
+  <div class="q">Warum baut man Hochbehälter oder Wasserspeicher auf Bergen?</div>
+  <div class="choice" data-a="a"><button data-v="a">So fließt das Wasser ohne Pumpe in alle Häuser, die tiefer liegen.</button><button data-v="b">Damit das Wasser kälter wird.</button><button data-v="c">Damit Vögel daraus trinken können.</button></div>
+  <div class="q">Ein Hochhaus ist höher als der Hochbehälter. Was braucht man dann?</div>
+  <div class="choice" data-a="b"><button data-v="a">Gar nichts, das Wasser fließt von allein hinauf.</button><button data-v="b">Eine Pumpe, die das Wasser nach oben drückt.</button></div>
+  <div class="btns"><button class="check">Prüfen</button><button class="reset">↺ Nochmal</button></div>
+  <div class="fb"></div>
+ </div>
+</section>
+
+<!-- ================= QUIZ ================= -->
+<section id="quiz">
+ <h2>🏆 Abschluss-Quiz</h2>
+ <div class="card info"><p>Beantworte alle Fragen. Du siehst sofort, ob deine Antwort stimmt. Es zählt jeweils dein <b>erster</b> Versuch.</p></div>
+ <div class="card" id="quizBox"></div>
+ <div class="card quizscore" id="quizScore">0 von 0 Punkten</div>
+ <div class="btns" style="justify-content:center"><button class="big" id="quizNew">🔀 Quiz neu mischen</button></div>
+</section>
+</main>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const safe=f=>{try{f()}catch(e){console.error(e)}};
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+/* ---------- Navigation ---------- */
+function show(id){$$('section').forEach(s=>s.classList.toggle('show',s.id===id));$$('nav button').forEach(b=>b.classList.toggle('act',b.dataset.go===id));window.scrollTo(0,0);try{window.speechSynthesis&&speechSynthesis.cancel()}catch(e){}}
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)show(g.dataset.go)});
+
+/* ---------- Vorlesen ---------- */
+document.addEventListener('click',e=>{const b=e.target.closest('.read');if(!b||!window.speechSynthesis)return;
+ if(speechSynthesis.speaking){speechSynthesis.cancel();return}
+ const c=b.parentElement.cloneNode(true);$$('.read',c).forEach(x=>x.remove());
+ const u=new SpeechSynthesisUtterance(c.innerText.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu,''));u.lang='de-DE';u.rate=.9;speechSynthesis.speak(u);});
+
+/* ---------- Sterne ---------- */
+const solved=new Set();
+function updStars(){$('#stars').textContent='⭐ '+solved.size+' / '+$$('.task').length}
+function confetti(x,y){for(let i=0;i<8;i++){const s=document.createElement('div');s.className='confetti';s.textContent=['⭐','💧','🎉','✨'][i%4];s.style.left=(x+(Math.random()*160-80))+'px';s.style.top=(y+(Math.random()*40-20))+'px';document.body.appendChild(s);setTimeout(()=>s.remove(),1500)}}
+function markSolved(task){task.classList.add('solved');if(!solved.has(task.id)){solved.add(task.id);updStars();const r=task.getBoundingClientRect();confetti(r.left+r.width/2,Math.min(r.bottom,innerHeight)-60)}}
+
+/* ---------- Kärtchen einsetzen ---------- */
+let selChip=null;
+document.addEventListener('click',e=>{
+ const slot=e.target.closest('.slot'), chip=e.target.closest('.chip');
+ if(slot){const task=slot.closest('.task');
+  if(selChip&&selChip.closest('.task')===task){
+   if(!slot.classList.contains('multi')){const old=slot.querySelector('.chip');if(old)$('.bank',task).appendChild(old)}
+   slot.appendChild(selChip);selChip.classList.remove('sel');selChip=null;
+  }else if(chip){$('.bank',task).appendChild(chip)}
+  clearMarks(task);return;}
+ if(chip&&chip.parentElement.classList.contains('bank')){
+  if(selChip===chip){chip.classList.remove('sel');selChip=null;return}
+  if(selChip)selChip.classList.remove('sel');selChip=chip;chip.classList.add('sel');}
+});
+
+/* ---------- Auswahlknöpfe ---------- */
+document.addEventListener('click',e=>{
+ const t=e.target.closest('.tog');if(t){t.classList.toggle('on');t.classList.remove('r','f');return}
+ const b=e.target.closest('.choice button');if(!b)return;const c=b.parentElement;if(!c.dataset.a)return;
+ if(c.classList.contains('instant')){if(c.dataset.done)return;c.dataset.done=1;const ok=b.dataset.v===c.dataset.a;b.classList.add(ok?'r':'f');
+  if(!ok)$$('button',c).find(x=>x.dataset.v===c.dataset.a).classList.add('r');
+  c.nextElementSibling.textContent=(ok?'✅ Richtig! ':'❌ Leider falsch. ')+(c.dataset.ex||'');if(ok)quizPts++;quizDone++;updQuiz();return}
+ $$('button',c).forEach(x=>x.classList.remove('on','r','f'));b.classList.add('on');
+});
+
+/* ---------- Farbleitungen ---------- */
+document.addEventListener('click',e=>{
+ const p=e.target.closest('.pal button');if(p){$$('button',p.parentElement).forEach(x=>x.classList.remove('on'));p.classList.add('on');return}
+ const pipe=e.target.closest('.pipe');if(pipe){const task=pipe.closest('.task');const c=$('.pal button.on',task).dataset.c;pipe.dataset.c=c;pipe.style.stroke=c;pipe.classList.remove('f')}
+});
+
+/* ---------- Prüfen ---------- */
+function clearMarks(task){$$('.r,.f,.empty',task).forEach(x=>{if(!x.closest('.instant'))x.classList.remove('r','f','empty')});const fb=$('.fb',task);if(fb){fb.textContent='';fb.className='fb'}}
+function check(task){
+ clearMarks(task);let ok=0,n=0;
+ $$('.slot',task).forEach(s=>{const cs=$$('.chip',s);
+  if(s.classList.contains('multi')){cs.forEach(c=>{n++;if(c.dataset.v===s.dataset.a){ok++;c.classList.add('r')}else c.classList.add('f')})}
+  else{n++;const c=cs[0];if(c&&c.dataset.v===s.dataset.a){ok++;c.classList.add('r')}else if(c)c.classList.add('f');else s.classList.add('empty')}});
+ if($('.slot.multi',task))n+=$$('.bank .chip',task).length;
+ $$('select[data-a]',task).forEach(s=>{n++;if(s.value===s.dataset.a){ok++;s.classList.add('r')}else s.classList.add('f')});
+ $$('input[data-a]',task).forEach(i=>{n++;if(i.value!==''&&Math.abs(+i.value-+i.dataset.a)<=(+i.dataset.tol||0)){ok++;i.classList.add('r')}else i.classList.add('f')});
+ $$('.choice[data-a]:not(.instant)',task).forEach(c=>{n++;const b=$('button.on',c);if(b&&b.dataset.v===c.dataset.a){ok++;b.classList.add('r')}else if(b)b.classList.add('f')});
+ $$('.tog',task).forEach(t=>{n++;const on=t.classList.contains('on');if(on===(t.dataset.ok==='1')){ok++;if(on)t.classList.add('r')}else t.classList.add('f')});
+ $$('.pipe',task).forEach(p=>{n++;if(p.dataset.c===p.dataset.a)ok++;else p.classList.add('f')});
+ $$('.order li',task).forEach((li,i)=>{n++;if(+li.dataset.i===i){ok++;li.classList.add('r')}else li.classList.add('f')});
+ $$('.bar[data-a]',task).forEach(b=>{n++;if(Math.abs((+b.dataset.val||0)-+b.dataset.a)<=5){ok++;b.classList.add('r')}else b.classList.add('f')});
+ const fb=$('.fb',task);
+ if(ok===n){fb.textContent='🎉 Super, alles richtig! '+(fb.dataset.ok||'');fb.className='fb ok';markSolved(task)}
+ else{fb.textContent=`${ok} von ${n} richtig. Schau dir die roten Stellen noch einmal an.`;fb.className='fb no'}
+}
+function resetTask(task){
+ const bank=$('.bank',task);if(bank){$$('.slot .chip',task).forEach(c=>bank.appendChild(c));shuffleKids(bank)}
+ $$('select',task).forEach(s=>s.selectedIndex=0);$$('input[data-a]',task).forEach(i=>{i.value='';i.dispatchEvent(new Event('input'))});
+ $$('.choice button,.tog',task).forEach(b=>b.classList.remove('on','r','f'));
+ $$('.pipe',task).forEach(p=>{delete p.dataset.c;p.style.stroke=''});
+ const ol=$('.order',task);if(ol)fillOrder(ol,ol._items);
+ $$('.bar',task).forEach(b=>setBar(b,0));
+ clearMarks(task);
+}
+document.addEventListener('click',e=>{const c=e.target.closest('button.check');if(c)check(c.closest('.task'));const r=e.target.closest('button.reset');if(r&&r.closest('.task'))resetTask(r.closest('.task'))});
+function shuffleKids(el){shuffle([...el.children]).forEach(c=>el.appendChild(c))}
+$$('.bank').forEach(shuffleKids);
+
+/* ---------- Reihenfolge ---------- */
+function fillOrder(ol,items){ol._items=items;ol.innerHTML='';
+ let idx=shuffle(items.map((_,i)=>i));if(idx.every((v,i)=>v===i))idx.reverse();
+ idx.forEach(i=>{const li=document.createElement('li');li.dataset.i=i;li.innerHTML=`<span>${items[i]}</span><button>▲</button><button>▼</button>`;ol.appendChild(li)});}
+document.addEventListener('click',e=>{const b=e.target.closest('.order li button');if(!b)return;const li=b.parentElement,ol=li.parentElement;
+ if(b.textContent==='▲'&&li.previousElementSibling)ol.insertBefore(li,li.previousElementSibling);
+ if(b.textContent==='▼'&&li.nextElementSibling)ol.insertBefore(li.nextElementSibling,li);clearMarks(ol.closest('.task'))});
+fillOrder($('#kreisOrder'),['Die Sonne wärmt das Wasser im Meer.','Das Wasser verdunstet und steigt als Wasserdampf auf.','Der Wasserdampf kühlt ab und bildet Wolken.','Der Wind bläst die Wolken über das Land.','Die Wolken kühlen ab. Es regnet oder schneit.','Das Wasser versickert in der Erde oder fließt in Bächen und Flüssen zurück ins Meer.']);
+fillOrder($('#klOrder'),['🚽 Abwasser aus dem Haus','🪮 Rechen: grobe Teile bleiben hängen','⏬ Vorklärbecken: Teile sinken oder schwimmen oben','🦠 Belebungsbecken: Bakterien fressen den feinen Schmutz','⭕ Nachklärbecken: Schmutzflocken sinken zu Boden','🐟 Fluss: geklärtes Wasser fließt hinein']);
+
+/* ---------- Haushalt: Eimer ---------- */
+const eimer=[['🍳','Kochen',1,'#ff7043'],['🍽️','Abwaschen',1,'#ab47bc'],['🧹','Putzen',1,'#8d6e63'],['🧼','Hände waschen',2,'#26a69a'],['🛁','Baden / Duschen',10,'#1e88e5'],['🚽','Toilette',6,'#5c6bc0'],['👕','Wäsche waschen',4,'#ef5350']];
+$('#eimerGrid').innerHTML=eimer.map(([e,n,k])=>`<div class="pic"><div class="em">${e}</div><p><b>${n}</b></p><div class="buckets">${'🪣'.repeat(k)}</div><input type="number" inputmode="numeric" data-a="${k*5}" class="li"> Liter</div>`).join('');
+function updStack(){const v=$$('#eimerGrid input').map(i=>Math.max(0,+i.value||0));const s=v.reduce((a,b)=>a+b,0),m=Math.max(s,125);
+ $('#stack').innerHTML=v.map((x,i)=>`<div style="width:${x/m*100}%;background:${eimer[i][3]}">${x?eimer[i][0]+' '+x:''}</div>`).join('');}
+$$('#eimerGrid input').forEach(i=>i.addEventListener('input',updStack));updStack();
+
+/* ---------- Wasser sparen ---------- */
+const spar=[['Beim Zähneputzen den Wasserhahn zudrehen und einen Becher benutzen.','j'],['Duschen statt baden.','j'],['Regenwasser in einer Tonne sammeln und damit die Blumen gießen.','j'],['Das Wasser beim Einseifen der Hände laufen lassen.','n'],['Die Spartaste an der Toilette benutzen.','j'],['Jeden Tag das Auto mit dem Gartenschlauch waschen.','n'],['Die Waschmaschine nur ganz voll anstellen.','j'],['Einen tropfenden Wasserhahn nicht reparieren.','n']];
+$('#sparList').innerHTML=spar.map(([s,a])=>`<div class="q">${s}</div><div class="choice" data-a="${a}"><button data-v="j">👍 spart Wasser</button><button data-v="n">👎 verschwendet Wasser</button></div>`).join('');
+
+/* ---------- Säulendiagramm ---------- */
+const jahre=[['1850',20],['1950',85],['1960',99],['1970',124],['1980',145],['1990',150],['heute',130]];
+$('#yax').innerHTML=[0,20,40,60,80,100,120,140,160].map(v=>`<span style="bottom:${v/160*100}%">${v}</span>`).join('');
+$('#chart').insertAdjacentHTML('beforeend',jahre.map(([j,v])=>`<div class="col"><div class="bv">–</div><div class="barwrap"><div class="bar" data-a="${v}"></div></div><b style="font-size:14px">${j}</b></div>`).join(''));
+function setBar(b,v){b.dataset.val=v;b.style.height=v/160*100+'%';b.closest('.col').querySelector('.bv').textContent=v?v+' l':'–'}
+$$('.barwrap').forEach(w=>{const b=$('.bar',w);
+ const f=e=>{const r=w.getBoundingClientRect();let v=Math.round((r.bottom-e.clientY)/r.height*160/5)*5;v=Math.max(0,Math.min(160,v));setBar(b,v);clearMarks(w.closest('.task'))};
+ w.addEventListener('pointerdown',e=>{w.setPointerCapture(e.pointerId);f(e)});
+ w.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='touch')if(w.hasPointerCapture(e.pointerId))f(e)});});
+
+/* ---------- Wasser kann sich verwandeln ---------- */
+const verw=[['⛄☀️','Ein Schneemann steht in der Sonne.','s'],['🌧️➡️☀️','Eine Pfütze in der Sonne wird immer kleiner.','v'],['🚗❄️','Morgens im Winter ist die Autoscheibe voller Eis.','g'],['🧊🗄️','Die Eiswürfelschale kommt ins Gefrierfach.','g'],['👕☀️','Nasse Wäsche hängt draußen auf der Leine und wird trocken.','v'],['🏠❄️☀️','Der Schnee auf dem Dach liegt in der Sonne.','s']];
+$('#verwGrid').innerHTML=verw.map(([e,t,a],i)=>`<div class="pic"><div class="em">${e}</div><p>${i+1}. ${t}</p><select data-a="${a}"><option value="">Was passiert?</option><option value="s">schmilzt – wird flüssig</option><option value="v">verdunstet – wird gasförmig</option><option value="g">gefriert – wird fest</option></select></div>`).join('');
+
+/* ---------- Aggregatzustände: Animation ---------- */
+safe(function(){const cv=$('#cvZ'),c=cv.getContext('2d'),sl=$('#tempR'),lid=$('#lidC');let T=20,puffs=[],bub=[],ld=[],tk=0;
+ function upd(){T=+sl.value;$('#tVal').textContent=T+' °C';let s;
+  if(T<0)s='❄️ Eis – fest. Unter 0 °C ist das Wasser gefroren.';
+  else if(T<5)s='🧊➡️💧 Das Eis schmilzt – es wird flüssig.';
+  else if(T<100)s='💧 Wasser – flüssig.'+(T>40?' Ein wenig Wasser verdunstet schon – du siehst es aufsteigen.':'');
+  else s='♨️ Bei 100 °C kocht das Wasser. Es verdampft und wird gasförmig.';
+  if(lid.checked&&T>=50)s+=' Am kalten Deckel kühlt der Dampf ab und kondensiert: Es bilden sich Tropfen, sie werden wieder flüssig.';
+  if(lid.checked&&T<0)s+=' (Der Deckel bringt nur etwas, wenn Dampf aufsteigt.)';
+  $('#zLab').textContent=s}
+ sl.oninput=upd;lid.onchange=upd;upd();
+ const xl=y=>240+15*(y-90)/220, xr=y=>440-15*(y-90)/220;
+ function glass(){c.beginPath();c.moveTo(240,90);c.lineTo(255,310);c.lineTo(425,310);c.lineTo(440,90)}
+ function cube(x,y,s){c.fillStyle='#b3e5fc';c.strokeStyle='#29b6f6';c.lineWidth=2;c.fillRect(x,y,s,s);c.strokeRect(x,y,s,s);c.strokeStyle='#fff';c.beginPath();c.moveTo(x+5,y+5);c.lineTo(x+s*.5,y+5);c.stroke()}
+ function draw(){tk++;c.fillStyle=T<0?'#e1f5fe':T>=100?'#fff3e0':'#fffde7';c.fillRect(0,0,600,340);
+  // Thermometer
+  c.lineWidth=3;c.strokeStyle='#555';c.fillStyle='#fff';c.fillRect(40,40,24,240);c.strokeRect(40,40,24,240);
+  c.beginPath();c.arc(52,295,18,0,7);c.fill();c.stroke();
+  const ty=y=>275-(y+20)/140*230;c.fillStyle='#e53935';c.fillRect(46,ty(T),12,295-ty(T));c.beginPath();c.arc(52,295,13,0,7);c.fill();
+  c.font='14px Trebuchet MS';c.fillStyle='#333';[-20,0,50,100,120].forEach(v=>{c.fillRect(64,ty(v)-1,8,2);c.fillText(v+'°',76,ty(v)+5)});
+  // Herd
+  c.fillStyle='#455a64';c.fillRect(200,316,280,12);
+  if(T>40){const k=(T-40)/80;for(let i=0;i<6;i++){const x=230+i*45,h=(14+Math.sin(tk*.3+i)*5)*k+6;c.fillStyle='#ff9800';c.beginPath();c.moveTo(x-9,316);c.quadraticCurveTo(x,316-h*2,x+9,316);c.fill();c.fillStyle='#ffeb3b';c.beginPath();c.moveTo(x-4,316);c.quadraticCurveTo(x,316-h,x+4,316);c.fill()}}
+  // Inhalt
+  c.save();glass();c.closePath();c.clip();
+  if(T<0){[[262,262],[312,265],[362,262],[285,218],[337,220],[310,176]].forEach(([x,y])=>cube(x,y,46));}
+  else{const wy=170;c.fillStyle='#42a5f5';c.beginPath();c.moveTo(230,wy);for(let x=230;x<=450;x+=10)c.lineTo(x,wy+Math.sin(x/18+tk*(T>=100?.25:.06))*(T>=100?4:2));c.lineTo(450,320);c.lineTo(230,320);c.fill();
+   if(T<5){const s=46*(1-T/5)+8;[[270,wy-s*.3],[330,wy-s*.3],[380,wy-s*.25]].forEach(([x,y])=>cube(x,y,s))}
+   if(T>=100){if(Math.random()<.5)bub.push({x:262+Math.random()*156,y:305,r:3+Math.random()*4});}
+   c.fillStyle='rgba(255,255,255,.8)';bub.forEach(b=>{b.y-=2.2;c.beginPath();c.arc(b.x,b.y,b.r,0,7);c.fill()});bub=bub.filter(b=>b.y>wy&&T>=100);}
+  c.restore();
+  c.lineWidth=4;c.strokeStyle='#78909c';glass();c.stroke();
+  if(T<0){c.font='22px serif';c.fillText('❄️',470,80+Math.sin(tk*.05)*6);c.fillText('❄️',150,120+Math.cos(tk*.05)*6)}
+  // Dampf
+  const rate=T>=100?.7:T>40?(T-40)/350:0;
+  if(Math.random()<rate)puffs.push({x:265+Math.random()*150,y:165,r:5,a:.75});
+  puffs.forEach(p=>{p.y-=T>=100?1.9:1.1;p.x+=Math.sin(p.y/15)*.4;p.r+=.22;p.a-=.006;
+   if(lid.checked&&p.y<100){p.y=100;p.a-=.05;if(Math.random()<.03)ld.push({x:p.x,y:95,r:1,vy:0})}});
+  puffs=puffs.filter(p=>p.a>0);puffs.forEach(p=>{c.fillStyle=`rgba(190,200,210,${p.a})`;c.beginPath();c.arc(p.x,p.y,p.r,0,7);c.fill()});
+  if(lid.checked){c.fillStyle='#90a4ae';c.fillRect(225,80,230,12);c.fillStyle='#607d8b';c.fillRect(330,70,20,10);
+   ld.forEach(d=>{if(d.r<5)d.r+=.04;else{d.vy+=.25;d.y+=d.vy}});ld=ld.filter(d=>d.y<175);
+   c.fillStyle='#1e88e5';ld.forEach(d=>{c.beginPath();c.arc(d.x,d.y,d.r,0,7);c.fill()})}else ld=[];
+  requestAnimationFrame(draw)}
+ draw();});
+
+/* ---------- Wasserkreislauf Schritte ---------- */
+const steps=[['g-verd','☀️ Die Sonne wärmt das Wasser im Meer. Das Wasser verdunstet und steigt als unsichtbarer Wasserdampf auf. Auch Seen und Wälder verdunsten Wasser.'],
+ ['g-wolke','☁️ Oben ist es kalt. Der Wasserdampf kühlt ab und wird zu winzigen Tröpfchen: Er kondensiert. So entstehen Wolken.'],
+ ['g-wind','💨 Der Wind bläst die Wolken weiter über das Land.'],
+ ['g-regen','🌧️ An den Bergen kühlen die Wolken weiter ab. Die Tropfen werden schwer – es regnet oder schneit.'],
+ ['g-fluss','🏞️ Das Regenwasser fließt in Bächen und Flüssen ab – bis zurück ins Meer.'],
+ ['g-sicker','⬇️ Ein Teil des Wassers versickert in der Erde. Es sammelt sich als Grundwasser und fließt unterirdisch weiter zum Meer.']];
+$('#stepBtns').innerHTML=steps.map((_,i)=>`<button>${i+1}</button>`).join('');
+$$('#stepBtns button').forEach((b,i)=>b.onclick=()=>{$$('#stepBtns button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+ steps.forEach(([g])=>$('#'+g).classList.remove('hl'));$('#'+steps[i][0]).classList.add('hl');$('#stepText').textContent=steps[i][1];
+ if(window.speechSynthesis){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(steps[i][1].replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/gu,''));u.lang='de-DE';u.rate=.9;speechSynthesis.speak(u)}});
+
+/* ---------- Klappbilder ---------- */
+document.addEventListener('click',e=>{const f=e.target.closest('.flip');if(f)f.classList.toggle('open')});
+
+/* ---------- Kläranlage ---------- */
+const kl=['🪮 <b>Rechen:</b> Große, grobe Teile bleiben hängen – zum Beispiel Stöcke, Plastiktüten, Wattestäbchen, Papier oder Windeln. Vieles davon gehört gar nicht in die Toilette!',
+ '⏬ <b>Vorklärbecken:</b> Das Wasser fließt hier ganz langsam. Schwere Teile wie Sand und Steinchen sinken zu Boden. Leichte Teile wie Fett, Öl, Holz oder Styropor schwimmen oben und werden abgeschöpft.',
+ '🦠 <b>Belebungsbecken:</b> Essensreste und Kot sind fein im Wasser verteilt. Winzige Lebewesen, die Bakterien, fressen diesen Schmutz. Dafür wird Luft ins Wasser geblasen. Es entstehen große Schmutzflocken.',
+ '⭕ <b>Nachklärbecken:</b> Die Schmutzflocken setzen sich am Boden ab. Sie werden entfernt und mit dem anderen Schmutz verbrannt oder auf eine Deponie gebracht.',
+ '🐟 <b>Fluss:</b> Das geklärte Wasser fließt in einen Fluss. Es enthält nur noch wenig Schmutz. In der Natur wird es weiter gereinigt, zum Beispiel durch den Boden. Später kann es wieder Rohwasser für das Wasserwerk werden.'];
+$$('#klSvg .st').forEach(g=>g.addEventListener('click',()=>{$$('#klSvg .st').forEach(x=>x.classList.remove('on'));g.classList.add('on');$('#klText').innerHTML=kl[g.dataset.i]}));
+
+/* ---------- Filterversuch ---------- */
+$('#pourBtn').onclick=()=>{const f=$('#filt');f.classList.add('run');setTimeout(()=>{$('.stream',f).style.opacity=0;$('.drip',f).style.animation='none';$('.drip',f).style.opacity=0},5200)};
+$('#pourReset').onclick=()=>{const f=$('#filt');f.classList.remove('run');$('.stream',f).style.opacity='';$('.drip',f).style.animation='';$('.drip',f).style.opacity=''};
+
+/* ---------- Trichter-Versuch ---------- */
+safe(function(){const r=$('#uR');function upd(){const ry=+r.value,lv=Math.max(110,ry+8);
+ const d=`M80,90 V190 Q80,230 120,230 H280 Q320,230 320,190 V${ry+30}`;$('#uGrey').setAttribute('d',d);$('#uBlue').setAttribute('d',d);
+ const fp=`${290},${ry} ${350},${ry} ${328},${ry+30} ${312},${ry+30}`;$('#fR').setAttribute('points',fp);
+ $('#fRb').setAttribute('points',`${292},${ry+1} ${348},${ry+1} ${327},${ry+29} ${313},${ry+29}`);
+ $('#clipURect').setAttribute('y',lv);$('#lvl').setAttribute('y1',lv);$('#lvl').setAttribute('y2',lv);
+ $('#spill').textContent=ry+8>110?'💦 Wasser läuft über!':'';}
+ r.oninput=upd;upd();});
+
+/* ---------- Behälter mit Hähnen ---------- */
+safe(function(){const ys=[100,180,260];
+ $('#taps').innerHTML=ys.map(y=>`<path d="M300,${y} H332 V${y+10}" fill="none" stroke="#78909c" stroke-width="8"/><rect x="318" y="${y-12}" width="12" height="8" fill="#e53935"/><line class="tap-flow flow" data-y="${y}" x1="332" y1="${y+16}" x2="332" y2="${y+48}"/>`).join('');
+ const r=$('#wR');let cnt=0;
+ function upd(){const wy=300-2.4*+r.value;$('#tankW').setAttribute('y',wy);$('#tankW').setAttribute('height',300-wy);$('#clipWRect').setAttribute('y',wy);
+  cnt=0;$$('#taps .tap-flow').forEach(l=>{const on=+r.value>0&&+l.dataset.y>wy+4;l.style.display=on?'':'none';if(on)cnt++});
+  $('#tapInfo').textContent=+r.value===0?'Der Behälter ist leer.':`Aus ${['keinem','einem','zwei','drei'][cnt]} ${cnt===1?'Hahn':'Hähnen'} fließt Wasser.`;}
+ r.oninput=upd;upd();
+ $$('#t_haehne .challenge button').forEach(b=>b.onclick=()=>{const n=+b.dataset.n;const ok=cnt===n&&+r.value>0;const s=b.parentElement.querySelector('span');
+  s.textContent=ok?'✅':'❌ Noch nicht – verändere den Wasserstand.';b.parentElement.dataset.ok=ok?1:'';
+  if($$('#t_haehne .challenge').every(c=>c.dataset.ok))markSolved($('#t_haehne'))});});
+
+/* ---------- Quiz ---------- */
+const quizQ=[
+ ['Wie viel Wasser braucht ein Mensch in Deutschland ungefähr am Tag?',['12 Liter','125 Liter','1000 Liter'],1,'Das sind ungefähr 25 Eimer.'],
+ ['Wofür brauchen wir im Haushalt das meiste Wasser?',['Kochen','Baden und Duschen','Hände waschen'],1,'Baden und Duschen braucht ungefähr 50 Liter am Tag.'],
+ ['Eis ist …',['fest','flüssig','gasförmig'],0,''],
+ ['Wenn Eis warm wird, …',['verdampft es sofort','schmilzt es','gefriert es'],1,'Es wird flüssig.'],
+ ['Wenn Wasserdampf abkühlt, …',['kondensiert er zu Tropfen','versickert er','schmilzt er'],0,'Darum beschlägt ein kalter Spiegel im Bad.'],
+ ['Bei wie viel Grad gefriert Wasser?',['100 °C','37 °C','0 °C'],2,''],
+ ['Bei wie viel Grad kocht Wasser?',['100 °C','0 °C','50 °C'],0,''],
+ ['Was passiert mit einer Pfütze in der Sonne?',['Sie gefriert.','Das Wasser verdunstet.','Sie wird größer.'],1,'Das Wasser wird gasförmig und steigt auf.'],
+ ['Wie entstehen Wolken?',['Aus Rauch von Fabriken','Aus abgekühltem Wasserdampf','Aus Staub'],1,''],
+ ['Geht im Wasserkreislauf Wasser verloren?',['Nein, es kommt immer wieder zurück.','Ja, jedes Jahr ein bisschen.'],0,''],
+ ['Wie nennt man das Wasser, das ins Wasserwerk kommt?',['Abwasser','Rohwasser','Salzwasser'],1,''],
+ ['Wo wird Rohwasser zu Trinkwasser?',['In der Kläranlage','Im Wasserwerk','Im Gully'],1,''],
+ ['Wohin fließt das Abwasser aus der Toilette?',['Ins Wasserwerk','Direkt ins Meer','In die Kläranlage'],2,''],
+ ['Wer frisst im Belebungsbecken den feinen Schmutz?',['Bakterien','Fische','Der Rechen'],0,''],
+ ['Was gehört NICHT in die Toilette?',['Toilettenpapier','Wattestäbchen'],1,'Wattestäbchen gehören in den Müll.'],
+ ['Wie holten die Menschen früher Wasser?',['Aus dem Wasserhahn','Mit dem Eimer aus dem Brunnen','Aus dem Supermarkt'],1,''],
+ ['Warum steht ein Hochbehälter hoch oben?',['Damit das Wasser ohne Pumpe in die Häuser fließt','Damit er besser aussieht','Damit das Wasser warm wird'],0,''],
+ ['Was kann man tun, um Wasser zu sparen?',['Duschen statt baden','Wasser beim Zähneputzen laufen lassen','Jeden Tag das Auto waschen'],0,''],
+];
+let quizPts=0,quizDone=0;
+function updQuiz(){$('#quizScore').textContent=`${quizPts} von ${quizQ.length} Punkten`+(quizDone===quizQ.length?(quizPts>=quizQ.length-1?' – 🏆 Wasser-Profi!':quizPts>=quizQ.length*.7?' – 👍 Gut gemacht!':' – Schau dir die Kapitel noch einmal an.'):'')}
+function buildQuiz(){quizPts=0;quizDone=0;
+ $('#quizBox').innerHTML=shuffle(quizQ.map((q,i)=>i)).map((qi,k)=>{const [q,o,a,ex]=quizQ[qi];const ord=shuffle(o.map((_,i)=>i));
+  return `<div class="q">${k+1}. ${q}</div><div class="choice instant" data-a="${a}" data-ex="${ex}">${ord.map(i=>`<button data-v="${i}">${o[i]}</button>`).join('')}</div><div class="ex"></div>`}).join('');updQuiz()}
+$('#quizNew').onclick=buildQuiz;buildQuiz();
+updStars();
+</script>
+</body>
+</html>
