@@ -1,0 +1,317 @@
+from calliopemini import *
+import music, neopixel, random, math, radio
+
+_rgb = neopixel.NeoPixel(pin_RGB, 3)
+_tasks = []
+_run = {}
+_vol = 100
+_pa = _pb = False
+_msg = ''
+_lg = ''
+_INF = float('inf')
+_NAN = float('nan')
+_FW = '00155550001101054144555555001115544444454354455444545455454151150544444440141544444425554541032'
+
+def _n(v):
+    if v is True or v is False:
+        return int(v)
+    if type(v) is int or type(v) is float:
+        return v
+    try:
+        return int(v)
+    except Exception:
+        pass
+    try:
+        return float(v)
+    except Exception:
+        return 0
+
+def _isnum(v):
+    if v is True or v is False:
+        return False
+    if type(v) is int or type(v) is float:
+        return True
+    try:
+        float(v)
+        return True
+    except Exception:
+        return False
+
+def _s(v):
+    if v is True:
+        return 'wahr'
+    if v is False:
+        return 'falsch'
+    if type(v) is float:
+        if v != v:
+            return 'NaN'
+        if v == _INF:
+            return 'Unendlich'
+        if v == -_INF:
+            return '-Unendlich'
+        r = round(v, 6)
+        return str(int(r)) if r == int(r) else str(r)
+    return str(v)
+
+def _b(v):
+    if v is True or v is False:
+        return v
+    if type(v) is int or type(v) is float:
+        return v == v and v != 0
+    return _s(v).strip().lower() not in ('', '0', 'false', 'falsch')
+
+def _cmp(a, b):
+    if _isnum(a) and _isnum(b):
+        d = _n(a) - _n(b)
+    else:
+        a = _s(a).lower()
+        b = _s(b).lower()
+        d = (a > b) - (a < b)
+    return (d > 0) - (d < 0)
+
+def _rnd(v):
+    try:
+        return math.floor(_n(v) + 0.5)
+    except Exception:
+        return 0
+
+def _div(a, b):
+    a = _n(a)
+    b = _n(b)
+    if b == 0:
+        return _NAN if a == 0 else (_INF if a > 0 else -_INF)
+    return a / b
+
+def _mod(a, b):
+    a = _n(a)
+    b = _n(b)
+    return _NAN if b == 0 else a % b
+
+def _isint(v):
+    n = _n(v)
+    try:
+        return (type(n) is int or n == int(n)) and '.' not in _s(v)
+    except Exception:
+        return False
+
+def _rand(a, b):
+    ia = _isint(a) and _isint(b)
+    lo = _n(a)
+    hi = _n(b)
+    if lo > hi:
+        lo, hi = hi, lo
+    if ia:
+        return random.randint(int(lo), int(hi))
+    return lo + random.random() * (hi - lo)
+
+def _letter(i, t):
+    t = _s(t)
+    try:
+        i = int(math.floor(_n(i))) - 1
+    except Exception:
+        return ''
+    return t[i] if 0 <= i < len(t) else ''
+
+def _math(op, n):
+    n = _n(n)
+    try:
+        if op == 'abs': return abs(n)
+        if op == 'floor': return math.floor(n)
+        if op == 'ceiling': return math.ceil(n)
+        if op == 'sqrt': return math.sqrt(n)
+        if op == 'sin': return round(math.sin(n * math.pi / 180), 6)
+        if op == 'cos': return round(math.cos(n * math.pi / 180), 6)
+        if op == 'tan': return round(math.tan(n * math.pi / 180), 6)
+        if op == 'asin': return math.asin(n) * 180 / math.pi
+        if op == 'acos': return math.acos(n) * 180 / math.pi
+        if op == 'atan': return math.atan(n) * 180 / math.pi
+        if op == 'ln': return -_INF if n == 0 else math.log(n)
+        if op == 'log': return -_INF if n == 0 else math.log(n) / math.log(10)
+        if op == 'e^': return math.exp(n)
+        if op == '10^': return 10.0 ** n
+    except Exception:
+        return _NAN
+    return 0
+
+def _c255(v):
+    return max(0, min(255, _rnd(v)))
+
+def _hex(r, g, b):
+    return '#%02X%02X%02X' % (_c255(r), _c255(g), _c255(b))
+
+def _setrgb(w, v):
+    v = _s(v).strip()
+    try:
+        c = (int(v[1:3], 16), int(v[3:5], 16), int(v[5:7], 16)) if len(v) == 7 and v[0] == '#' else (0, 0, 0)
+    except Exception:
+        c = (0, 0, 0)
+    for i in (range(3) if w < 0 else (w,)):
+        _rgb[i] = c
+    _rgb.show()
+
+def _plot(x, y, m):
+    x = _rnd(x)
+    y = _rnd(y)
+    if 0 <= x <= 4 and 0 <= y <= 4:
+        if m == 2:
+            m = 0 if display.get_pixel(x, y) else 1
+        display.set_pixel(x, y, 9 if m else 0)
+
+def _txt(v):
+    s = _s(v)
+    for a, b in (('ä', 'ae'), ('ö', 'oe'), ('ü', 'ue'), ('Ä', 'Ae'), ('Ö', 'Oe'), ('Ü', 'Ue'), ('ß', 'ss')):
+        s = s.replace(a, b)
+    return ''.join([c if 32 <= ord(c) < 127 else '?' for c in s])
+
+def _show_text(v):
+    s = _txt(v)
+    if not s:
+        return 0
+    if len(s) == 1:
+        display.show(s)
+        return 400
+    n = 4
+    for i in range(len(s)):
+        d = ord(_FW[ord(s[i]) - 32]) - 48
+        n += d % 3 + 3 + (1 if i == 0 else d // 3)
+    display.scroll(s, delay=150, wait=False)
+    return n * 150
+
+def _tone(f, ms):
+    f = _n(f)
+    ms = int(_n(ms))
+    if ms <= 0:
+        return 0
+    if f > 0:
+        music.pitch(int(min(f, 20000)), duration=ms, wait=False)
+    else:
+        music.stop()
+    return ms
+
+def _setvol(p):
+    global _vol
+    _vol = max(0, min(100, _n(p)))
+    set_volume(int(_vol * 255 / 100))
+
+def _btn(k):
+    a = button_a.is_pressed()
+    b = button_b.is_pressed()
+    return (a and b) if k == 'AB' else (a if k == 'A' else b)
+
+def _read(k):
+    if k == 'LIGHT':
+        return display.read_light_level()
+    if k == 'TEMP':
+        return temperature()
+    return microphone.sound_level()
+
+def _chan(n):
+    radio.config(channel=max(0, min(83, _rnd(n))))
+    radio.on()
+
+def _start(f):
+    if f in _run:
+        return
+    t = [f(), 0, f, True]
+    _tasks.append(t)
+    _run[f] = t
+
+def _end(t):
+    t[3] = False
+    if t in _tasks:
+        _tasks.remove(t)
+    if _run.get(t[2]) is t:
+        del _run[t[2]]
+
+def _restart(f):
+    t = _run.get(f)
+    if t is not None:
+        _end(t)
+    _start(f)
+
+def _stop_all():
+    for t in _tasks:
+        t[3] = False
+    del _tasks[:]
+    _run.clear()
+    music.stop()
+
+def _poll():
+    global _pa, _pb
+    a = button_a.is_pressed()
+    b = button_b.is_pressed()
+    na = a and not _pa
+    nb = b and not _pb
+    _pa = a
+    _pb = b
+    if na or nb:
+        for f in _BTN.get('AB' if a and b else ('A' if na else 'B'), ()):
+            _start(f)
+
+def _poll_gesture():
+    global _lg
+    g = accelerometer.current_gesture()
+    if g == _lg:
+        return
+    _lg = g
+    if not g:
+        return
+    for h in _GEST:
+        if h[1] == g:
+            _start(h[0])
+
+def _poll_radio():
+    global _msg
+    m = radio.receive()
+    while m is not None:
+        _msg = m
+        for f in _RADIO:
+            _restart(f)
+        m = radio.receive()
+
+def _poll_sensors():
+    for h in _SENS:
+        try:
+            now = _read(h[1]) > _n(h[2]())
+        except Exception:
+            now = False
+        if now and not h[3]:
+            _start(h[0])
+        h[3] = now
+
+def _main():
+    _setrgb(-1, '#000000')
+    _setvol(100)
+    if _RADIO_USED:
+        radio.on()
+    for f in _START:
+        _start(f)
+    tb = ts = running_time()
+    while True:
+        now = running_time()
+        if now - tb >= 10:
+            tb = now
+            _poll()
+            if _RADIO_USED:
+                _poll_radio()
+        if (_SENS or _GEST) and now - ts >= 50:
+            ts = now
+            _poll_sensors()
+            _poll_gesture()
+        nxt = now + 10
+        for t in _tasks[:]:
+            if not t[3]:
+                continue
+            if t[1] <= now:
+                try:
+                    d = next(t[0])
+                    t[1] = running_time() + (int(d) if d and d > 0 else 0)
+                except StopIteration:
+                    _end(t)
+                except Exception as e:
+                    print('Fehler:', e)
+                    _end(t)
+            if t[3] and t[1] < nxt:
+                nxt = t[1]
+        w = nxt - running_time()
+        sleep(w if w > 0 else 0)

@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<!--
+  Calliope-Blöcke: Editor und Simulator (Stufe 5)
+  Enthält Blockly (Copyright Google LLC / Raspberry Pi Foundation, Apache-2.0),
+  @blockly/continuous-toolbox (Apache-2.0), MicroPython für den Calliope mini 3
+  (MIT, Micro:bit Educational Foundation / Calliope gGmbH), microbit-fs (MIT),
+  dapjs (MIT, Arm), WebUSB-Übertragung aus dem Calliope-Python-Editor (MIT)
+  und die Displayschrift aus CODAL (MIT, Lancaster University).
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calliope-Blöcke – Editor und Simulator</title>
+<style>
+  :root {
+    --menu: #4C97FF;
+    --page: #E9F1FC;
+    --line: #D9D9D9;
+    --ink: #575E75;
+    --ink-soft: #8A91A6;
+    --panel: #FFFFFF;
+    --board: #1F5E6B;
+    --board-edge: #174A55;
+    --led-off: #3B2A2E;
+    --led-on: #FF3D2E;
+    --focus: #FFBF00;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--page);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  button { font: inherit; color: inherit; }
+  button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  /* Menüleiste */
+  .menubar {
+    height: 48px; flex: none;
+    background: var(--menu); color: #fff;
+    display: flex; align-items: center; gap: 4px;
+    padding: 0 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: .01em; }
+  .brand svg { width: 26px; height: 26px; }
+  .menubar .hint { margin-left: auto; font-size: 13px; opacity: .9; }
+
+  /* Hauptbereich */
+  .app {
+    flex: 1; min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--stage-w, 480px);
+    gap: 8px; padding: 8px;
+  }
+  @media (max-width: 1280px) { .app { --stage-w: 380px; } }
+  @media (max-width: 960px)  { .app { --stage-w: 300px; } }
+
+  .editor {
+    position: relative; min-width: 0;
+    background: var(--panel);
+    border: 1px solid var(--line); border-radius: 8px;
+    overflow: hidden;
+  }
+  #blocklyDiv { position: absolute; inset: 0; }
+
+  .zoom {
+    position: absolute; right: 20px; bottom: 20px; z-index: 5;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .zoom button {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid var(--line); background: #fff;
+    display: grid; place-items: center; cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,.08);
+  }
+  .zoom button:hover { background: #F2F7FF; }
+  .zoom svg { width: 18px; height: 18px; stroke: var(--ink); stroke-width: 2.2; fill: none; stroke-linecap: round; }
+
+  /* Bühne */
+  .stagePane { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  .stageHeader { display: flex; align-items: center; gap: 4px; height: 40px; }
+  .iconBtn {
+    width: 40px; height: 40px; border-radius: 6px;
+    border: 0; background: transparent; cursor: pointer;
+    display: grid; place-items: center;
+  }
+  .iconBtn:hover { background: rgba(76,151,255,.15); }
+  .iconBtn.active { background: rgba(76,151,255,.25); }
+  .iconBtn svg { width: 26px; height: 26px; }
+  .runStatus { margin-left: auto; font-size: 13px; color: var(--ink-soft); padding-right: 4px; }
+
+  .stage {
+    background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    aspect-ratio: 4 / 3; display: grid; place-items: center; overflow: hidden;
+    flex: none;
+  }
+  .calBoard { width: 100%; flex: 1 1 auto; min-height: 0; user-select: none; touch-action: none; }
+  .calBoard .board { fill: var(--board); stroke: var(--board-edge); stroke-width: 3; stroke-linejoin: round; }
+  .calBoard .boardLabel { fill: #E8F1F2; font-size: 16px; font-weight: 700; }
+  .calBoard .boardLabel.small { font-size: 11px; font-weight: 600; opacity: .75; }
+  .calBoard .pad { fill: #D4A64A; stroke: #B7892F; stroke-width: 1.5; }
+  .calBoard .padHole { fill: var(--board-edge); }
+  .calBoard .led { fill: var(--led-off); stroke: rgba(0,0,0,.35); stroke-width: 1; transition: fill 40ms linear; }
+  .calBoard .led.on { fill: var(--led-on); stroke: #FFB3A8; filter: var(--glow); }
+  .calBoard .hwButton { cursor: pointer; }
+  .calBoard .btnPlate { fill: #C9CFD6; stroke: #98A1AB; stroke-width: 1.5; }
+  .calBoard .btnCap { fill: #2F3338; stroke: #15181B; stroke-width: 2; transition: transform 60ms; transform-box: fill-box; transform-origin: center; }
+  .calBoard .hwButton:hover .btnCap { fill: #3A3F45; }
+  .calBoard .hwButton.down .btnCap { fill: #4C97FF; stroke: #2F6FCC; transform: scale(.9); }
+
+  .stageFooter {
+    background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px 14px; display: flex; align-items: center; gap: 14px;
+    font-size: 13px; line-height: 1.45;
+  }
+  .abBtn {
+    flex: none; min-width: 72px; height: 40px; padding: 0 14px;
+    border-radius: 20px; border: 1px solid #98A1AB; background: #EEF1F4;
+    font-weight: 700; cursor: pointer; touch-action: none;
+  }
+  .abBtn.down { background: #4C97FF; border-color: #2F6FCC; color: #fff; }
+  kbd {
+    font-family: inherit; font-size: 12px; font-weight: 700;
+    border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
+    padding: 0 5px; background: #F7F8FA;
+  }
+
+  /* ---------- Blockly im Scratch-Stil ---------- */
+  .blocklyToolbox { background: #fff; border-right: 1px solid var(--line); padding-top: 4px; width: 64px; }
+  .blocklyToolboxCategoryContainer { margin: 0; }
+  .blocklyToolboxCategory { padding: 6px 0 !important; cursor: pointer; border-radius: 0; background: transparent !important; }
+  .blocklyToolboxCategory:hover .blocklyToolboxCategoryLabel { color: var(--menu); }
+  .blocklyToolboxSelected { background: #E9F1FC !important; }
+  .blocklyToolboxCategoryLabel { font-size: 11px; color: var(--ink) !important; padding: 0 2px; }
+  .blocklyToolboxSelected .blocklyToolboxCategoryLabel { color: var(--menu) !important; }
+  .categoryBubble { border-color: rgba(0,0,0,.18) !important; }
+  .blocklyToolboxCategoryIcon { background-image: none !important; }
+  .blocklyFlyoutLabelText { font-size: 14px !important; font-weight: 700 !important; fill: var(--ink) !important; }
+  .blocklyMainBackground { stroke: none !important; }
+  .blocklyDraggable, .blocklyToolboxCategory, .blocklyFlyout .blocklyDraggable { cursor: grab; }
+  .blocklyDragging, .blocklyDragging * { cursor: grabbing !important; }
+  .blocklyMenuItemSelected .blocklyMenuItemCheckbox { background: none; }
+
+  /* Einfügestelle beim Ziehen deutlich zeigen */
+  .blocklyInsertionMarker > .blocklyPath {
+    stroke: #3D4254 !important; stroke-width: 2px !important; stroke-dasharray: 6 4;
+  }
+  /* gezogener Block leicht durchsichtig, damit die Einfügestelle darunter sichtbar bleibt */
+  .blocklyDragging { opacity: .7; }
+
+  /* laufendes Skript: gelber Schein wie in Scratch */
+  .calRunning { filter: drop-shadow(0 0 1.5px #FFD500) drop-shadow(0 0 1.5px #FFD500) drop-shadow(0 0 3px #FFE55C); }
+
+  /* LED-Feld im Block */
+  .calLedFieldBg { fill: rgba(0,0,0,.22); }
+  .calLedOff { fill: rgba(255,255,255,.28); }
+  .calLedOn { fill: #fff; }
+  .calLedField { cursor: pointer; }
+
+  .calLedEditor { padding: 10px; }
+  .calLedEditorGrid { display: grid; grid-template-columns: repeat(5, 30px); gap: 6px; }
+  .calLedEditorGrid button {
+    width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+    border: 2px solid rgba(0,0,0,.2); background: rgba(255,255,255,.3);
+  }
+  .calLedEditorGrid button.on { background: #fff; border-color: #fff; }
+  .calLedEditorActions { display: flex; gap: 6px; margin-top: 10px; }
+  .calLedEditorActions button {
+    flex: 1; height: 28px; border-radius: 14px; border: 0; cursor: pointer;
+    background: rgba(0,0,0,.18); color: #fff; font-size: 12px; font-weight: 600;
+  }
+  .calLedEditorActions button:hover { background: rgba(0,0,0,.28); }
+
+
+
+  /* Menü und Projektname */
+  .brand { padding-right: 8px; }
+  .menuWrap { position: relative; height: 100%; display: flex; align-items: center; }
+  .menuBtn {
+    height: 100%; padding: 0 14px; border: 0; background: transparent; color: #fff;
+    font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; cursor: pointer;
+  }
+  .menuBtn svg { width: 10px; height: 6px; stroke: #fff; stroke-width: 1.8; fill: none; }
+  .menuBtn:hover, .menuBtn[aria-expanded="true"] { background: rgba(0,0,0,.12); }
+  .menu {
+    position: absolute; top: 100%; left: 0; z-index: 800; min-width: 290px;
+    background: var(--menu); border-radius: 0 0 8px 8px; padding: 4px 0;
+    box-shadow: 0 8px 16px rgba(0,0,0,.18);
+    display: flex; flex-direction: column;
+  }
+  .menu[hidden] { display: none; }
+  .menu button {
+    border: 0; background: transparent; color: #fff; text-align: left; cursor: pointer;
+    padding: 10px 16px; font-size: 14px; display: flex; justify-content: space-between; gap: 18px;
+  }
+  .menu button:hover, .menu button:focus-visible { background: rgba(0,0,0,.14); outline: none; }
+  .shortcut { opacity: .75; font-size: 12px; }
+  .projectNameWrap { margin-left: 8px; }
+  .projectName {
+    height: 32px; width: 220px; padding: 0 10px; border-radius: 6px;
+    border: 1px dashed rgba(255,255,255,.55); background: rgba(255,255,255,.22); color: #fff;
+    font: inherit; font-size: 14px;
+  }
+  .projectName:hover { background: rgba(255,255,255,.3); }
+  .projectName:focus { outline: none; background: #fff; color: var(--ink); border-style: solid; border-color: #fff; }
+  .visuallyHidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (max-width: 1100px) { .menubar .hint { display: none; } .projectName { width: 160px; } .flashBtn { margin-left: auto; } }
+
+  /* Sechseck-Board */
+  .calBoard .boardLabel.part { font-size: 9.5px; font-weight: 700; fill: #E8F1F2; opacity: .9; }
+  .calBoard .pad { fill: #D4A64A; stroke: #B7892F; stroke-width: 1.2; }
+  .calBoard .padLabel { font-size: 8px; font-weight: 700; fill: #4A3712; text-anchor: middle; }
+  .calBoard .chipBody { fill: #2B2F33; stroke: #15181B; stroke-width: 1.2; }
+  .calBoard .chipPin { stroke: #C9CFD6; stroke-width: 1.6; stroke-linecap: round; }
+  .calBoard .thermoStem { fill: #E8F1F2; }
+  .calBoard .thermoBulb { stroke: #E8F1F2; stroke-width: 1; }
+  .calBoard .sunCore { fill: #FFD500; }
+  .calBoard .sunRay { stroke: #FFD500; stroke-width: 1.6; stroke-linecap: round; }
+  .calBoard .sensorTag, .calBoard .chip, .calBoard .speaker, .calBoard .mic, .calBoard .rgb { cursor: default; }
+
+
+  /* Übertragen */
+  .flashBtn {
+    margin-left: 14px; height: 34px; padding: 0 14px 0 10px; border-radius: 17px; border: 0; cursor: pointer;
+    background: #fff; color: #3373CC; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;
+    flex: none;
+  }
+  .flashBtn:hover { background: #E9F1FC; }
+  .flashBtn:disabled { opacity: .6; cursor: progress; }
+  .flashBtn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .menubar .hint { margin-left: auto; }
+  .menuSep { height: 1px; background: rgba(255,255,255,.3); margin: 4px 0; }
+  .modalActions[hidden] { display: none; }
+  .progress { height: 12px; border-radius: 6px; background: #E6F0FF; overflow: hidden; margin: 6px 0 14px; }
+  .progressBar { height: 100%; width: 0; background: var(--menu); border-radius: 6px; transition: width .2s; }
+  .progressText { font-size: 13px; color: var(--ink-soft); margin: 0 0 12px; }
+  .modalBody ol { margin: 0 0 12px; padding-left: 20px; }
+  .modalBody li { margin-bottom: 4px; }
+
+
+  /* Zwei Calliopes auf der Bühne */
+  .boards { display: flex; gap: 6px; width: 100%; height: 100%; min-height: 0; align-items: stretch; justify-content: center; }
+  .boardBox { margin: 0; flex: 1 1 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 0; }
+  .boardBox[hidden] { display: none; }
+  .boardName { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-top: 2px; }
+  .boards:not(.two) .boardName { display: none; }
+  .stage.two { aspect-ratio: 2 / 1; }
+
+  /* Lagesensor, Kompass und Funk auf dem Board */
+  .calBoard .levelRing { fill: rgba(0,0,0,.25); stroke: #8FA7AD; stroke-width: 1; }
+  .calBoard .levelBubble { fill: #FFD500; }
+  .calBoard .needleN { fill: #9FB3B8; }
+  .calBoard .needleS { fill: #5E767C; }
+  .calBoard .needle.ok .needleN { fill: #EC5959; }
+  .calBoard .needle.ok .needleS { fill: #E8F1F2; }
+  .calBoard .radio .wave { fill: none; stroke: #E8F1F2; stroke-width: 2; stroke-linecap: round; opacity: .3; }
+  .calBoard .radio.active .wave { opacity: 1; stroke: #0FBD8C; }
+  .calBoard .radio.active .boardIconLine { stroke: #0FBD8C; }
+
+  /* Eingänge: Überschriften, Knopfreihen, Funk */
+  .panel > summary {
+    cursor: pointer; font-weight: 700; font-size: 13px; list-style: none;
+    display: flex; align-items: center; gap: 8px; margin: -2px 0;
+  }
+  .panel > summary::-webkit-details-marker { display: none; }
+  .panel > summary::before {
+    content: ''; width: 0; height: 0; flex: none;
+    border-left: 6px solid var(--ink-soft); border-top: 4px solid transparent; border-bottom: 4px solid transparent;
+    transition: transform .15s;
+  }
+  .panel[open] > summary::before { transform: rotate(90deg); }
+  .panel:not([open]) { padding-bottom: 10px; }
+  .sensor { grid-template-columns: 11.5em 1fr 3.6em; }
+  .btnRow { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+  .checkRow { display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
+  .checkRow input { width: 18px; height: 18px; margin-top: 1px; accent-color: #0FBD8C; flex: none; }
+  .radioStatus { font-size: 12px; font-weight: 500; color: var(--ink-soft); margin-left: auto; }
+  .radioLog {
+    list-style: none; margin: 0; padding: 6px 8px; max-height: 108px; overflow-y: auto;
+    background: #F7F8FA; border: 1px solid var(--line); border-radius: 6px;
+    font-size: 12px; line-height: 1.5; display: flex; flex-direction: column; gap: 2px;
+  }
+  .radioLog li { display: flex; gap: 6px; align-items: baseline; }
+  .radioEmpty { color: var(--ink-soft); }
+  .radioFrom { font-weight: 700; white-space: nowrap; }
+  .radioChan { color: #0B8E69; white-space: nowrap; }
+  .radioBody { overflow-wrap: anywhere; }
+  .radioHeard { margin-left: auto; color: var(--ink-soft); white-space: nowrap; }
+  .radioSend { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; font-size: 12px; }
+  .radioSend label { display: flex; flex-direction: column; gap: 3px; }
+  .radioSend .grow { flex: 1 1 8em; min-width: 7em; }
+  .radioSend input {
+    height: 28px; border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; font: inherit; font-size: 13px; color: var(--ink);
+  }
+  .radioSend input[type=number] { width: 4.5em; }
+  .radioSend input:focus { outline: none; border-color: var(--menu); box-shadow: 0 0 0 3px rgba(76,151,255,.25); }
+
+  /* Stufe 2: Board-Elemente */
+  .calBoard .boardLabel.tiny { font-size: 10px; font-weight: 600; opacity: .7; }
+  .calBoard .rgbRing { fill: #E9EEF0; stroke: #9FB3B8; stroke-width: 1.5; }
+  .calBoard .rgbLed { stroke: rgba(0,0,0,.25); stroke-width: 1; }
+  .calBoard .boardIcon { fill: #E8F1F2; opacity: .85; }
+  .calBoard .boardIconLine { fill: none; stroke: #E8F1F2; stroke-width: 2; stroke-linecap: round; opacity: .85; }
+  .calBoard .speaker .wave { fill: none; stroke: #E8F1F2; stroke-width: 2.2; stroke-linecap: round; opacity: 0; }
+  .calBoard .speaker.playing .wave { opacity: .9; animation: calWave .5s ease-in-out infinite alternate; }
+  .calBoard .speaker.playing .w2 { animation-delay: .15s; }
+  @keyframes calWave { from { opacity: .25; } to { opacity: 1; } }
+  .calBoard .micLevel { fill: #FFD500; opacity: 0; }
+
+  /* Bühne mit Variablen-Anzeigen */
+  .stage { position: relative; }
+  .monitors {
+    position: absolute; top: 8px; left: 8px; z-index: 2;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+    pointer-events: none;
+  }
+  .monitor {
+    display: flex; align-items: center; gap: 6px;
+    background: #E6F0FF; border: 1px solid #C4CCD9; border-radius: 4px;
+    padding: 2px 3px 2px 6px; font-size: 12px; font-weight: 700; color: var(--ink);
+    max-width: 220px;
+  }
+  .monitorName { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .monitorValue {
+    background: #FF8C1A; color: #fff; border-radius: 4px;
+    min-width: 34px; padding: 1px 6px; text-align: center; font-weight: 500;
+  }
+
+  /* Eingänge-Panel */
+  .inputs {
+    flex: none;
+    background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 14px; display: grid; gap: 8px; font-size: 13px;
+  }
+  .inputsRow { display: flex; align-items: center; gap: 12px; line-height: 1.4; }
+  .sensor { display: grid; grid-template-columns: 9.5em 1fr 4.2em; align-items: center; gap: 10px; }
+  .sensor output { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .sensor input[type=range] { width: 100%; accent-color: #5CB1D6; }
+  .clapRow { display: flex; justify-content: flex-end; }
+  .smallBtn {
+    height: 28px; padding: 0 12px; border-radius: 14px; cursor: pointer;
+    border: 1px solid #98A1AB; background: #EEF1F4; font-size: 12px; font-weight: 600;
+  }
+  .smallBtn:active { background: #5CB1D6; color: #fff; border-color: #2E8EB8; }
+  .stagePane { overflow-y: auto; }
+
+  /* Farbfeld im Block */
+  .calColourSwatch { stroke: #fff; stroke-width: 2; }
+  .calColourField { cursor: pointer; }
+  .calColourGrid { display: grid; grid-template-columns: repeat(4, 30px); gap: 8px; padding: 10px; }
+  .calColourGrid button {
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    border: 2px solid rgba(255,255,255,.7);
+  }
+  .calColourGrid button.current { border-color: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
+
+  /* Knöpfe in der Blockpalette */
+  .blocklyFlyoutButton { cursor: pointer; }
+  .blocklyFlyoutButton > rect.blocklyFlyoutButtonBackground,
+  .blocklyFlyoutButton > rect:not(.blocklyFlyoutButtonShadow) { fill: #fff !important; stroke: #C6C6C6; stroke-width: 1px; }
+  .blocklyFlyoutButton:hover > rect:not(.blocklyFlyoutButtonShadow) { fill: #E9F1FC !important; }
+  .blocklyFlyoutButtonShadow { fill: transparent !important; }
+  .blocklyFlyoutButton .blocklyText { fill: var(--ink) !important; }
+
+  /* Dialog */
+  .modalBackdrop {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(76,151,255,.55); display: grid; place-items: center;
+  }
+  .modalBackdrop[hidden] { display: none; }
+  .modal {
+    width: min(420px, calc(100vw - 32px)); background: #fff; border-radius: 12px;
+    overflow: hidden; box-shadow: 0 0 0 4px rgba(255,255,255,.35);
+  }
+  .modalHead { background: var(--menu); color: #fff; text-align: center; font-weight: 700; padding: 14px; font-size: 16px; }
+  .modalBody { padding: 18px 20px 6px; font-size: 14px; line-height: 1.45; }
+  .modalBody p { margin: 0 0 12px; }
+  .modalLabel { display: grid; gap: 10px; }
+  .modalInput {
+    height: 40px; border-radius: 20px; border: 1px solid #C6C6C6; padding: 0 16px;
+    font: inherit; color: var(--ink);
+  }
+  .modalInput:focus { outline: none; border-color: var(--menu); box-shadow: 0 0 0 4px rgba(76,151,255,.3); }
+  .monitorChoice { display: grid; gap: 6px; margin-bottom: 12px; max-height: 240px; overflow-y: auto; }
+  .monitorChoice label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .monitorChoice input { width: 18px; height: 18px; accent-color: #FF8C1A; }
+  .modalActions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px 18px; }
+  .modalActions button {
+    height: 36px; padding: 0 18px; border-radius: 18px; cursor: pointer; font-weight: 700;
+    border: 1px solid #C6C6C6; background: #fff;
+  }
+  .modalActions button.primary { background: var(--menu); border-color: var(--menu); color: #fff; }
+
+  /* Wert-Sprechblase */
+  .valueBubble {
+    position: fixed; z-index: 900; transform: translate(-50%, -100%);
+    background: #fff; color: var(--ink); border: 1px solid #C6C6C6; border-radius: 14px;
+    padding: 5px 12px; font-size: 13px; font-weight: 600; pointer-events: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,.12); max-width: 260px; overflow-wrap: anywhere;
+  }
+  .valueBubble[hidden] { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .calBoard .led, .calBoard .btnCap { transition: none; }
+    .calBoard .speaker.playing .wave { animation: none; }
+  }
+</style>
+</head>
+<body>
+<header class="menubar">
+  <div class="brand">
+    <svg viewBox="0 0 26 26" aria-hidden="true">
+      <rect x="1" y="1" width="24" height="24" rx="6" fill="rgba(255,255,255,.18)"/>
+      <g fill="#fff">
+        <rect x="6" y="6" width="3" height="3" rx=".8"/><rect x="17" y="6" width="3" height="3" rx=".8"/>
+        <rect x="6" y="15" width="3" height="3" rx=".8"/><rect x="9.5" y="18" width="3" height="3" rx=".8"/>
+        <rect x="13.5" y="18" width="3" height="3" rx=".8"/><rect x="17" y="15" width="3" height="3" rx=".8"/>
+      </g>
+    </svg>
+    Calliope-Blöcke
+  </div>
+  <div class="menuWrap">
+    <button id="fileMenuBtn" class="menuBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="fileMenu">
+      Datei
+      <svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg>
+    </button>
+    <div id="fileMenu" class="menu" role="menu" hidden>
+      <button type="button" role="menuitem" data-action="new">Neu</button>
+      <button type="button" role="menuitem" data-action="open">Von deinem Computer laden <span class="shortcut">Strg+O</span></button>
+      <button type="button" role="menuitem" data-action="save">Auf deinem Computer speichern <span class="shortcut">Strg+S</span></button>
+      <div class="menuSep" role="separator"></div>
+      <button type="button" role="menuitem" data-action="hex">Als .hex-Datei für den Calliope herunterladen</button>
+    </div>
+  </div>
+  <label class="projectNameWrap">
+    <span class="visuallyHidden">Projektname</span>
+    <input id="projectName" class="projectName" type="text" value="Calliope-Projekt" maxlength="60" spellcheck="false">
+  </label>
+  <input id="fileInput" type="file" accept=".json,application/json" hidden>
+  <div class="hint">Tipp: Ein Skript anklicken startet es.</div>
+  <button id="flashBtn" class="flashBtn" type="button" title="Programm per USB-Kabel auf den Calliope mini 3 übertragen">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v13M8 7l4-4 4 4M7 12v3h10v-3M12 16v5"/><circle cx="12" cy="21" r="1.2"/></svg>
+    Auf Calliope übertragen
+  </button>
+</header>
+
+<main class="app">
+  <section class="editor" aria-label="Programmierbereich">
+    <div id="blocklyDiv"></div>
+    <div class="zoom">
+      <button id="zoomIn" type="button" aria-label="Vergrößern" title="Vergrößern">
+        <svg viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M13 13l4.5 4.5M8.5 6v5M6 8.5h5"/></svg>
+      </button>
+      <button id="zoomOut" type="button" aria-label="Verkleinern" title="Verkleinern">
+        <svg viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M13 13l4.5 4.5M6 8.5h5"/></svg>
+      </button>
+      <button id="zoomReset" type="button" aria-label="Normale Größe" title="Normale Größe">
+        <svg viewBox="0 0 20 20"><path d="M5 7h10M5 13h10"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <aside class="stagePane" aria-label="Simulator">
+    <div class="stageHeader">
+      <button id="flagBtn" class="iconBtn" type="button" aria-label="Programm starten" title="Programm starten">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 3v19" stroke="#45993D" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M6 4c4-2 7 2 12 0v10c-5 2-8-2-12 0z" fill="#4CBF56" stroke="#45993D" stroke-width="1.4" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button id="stopBtn" class="iconBtn" type="button" aria-label="Alles anhalten" title="Alles anhalten">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 2.5h8L21.5 8v8L16 21.5H8L2.5 16V8z" fill="#EC5959" stroke="#B84848" stroke-width="1.4" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <span id="runStatus" class="runStatus" aria-live="polite">Angehalten</span>
+    </div>
+
+    <div class="stage">
+      <div id="monitors" class="monitors" aria-live="polite"></div>
+      <div class="boards">
+        <figure class="boardBox">
+          <svg id="board" class="calBoard" role="img" aria-label="Simuliertes Board mit LED-Anzeige, RGB-LEDs, Knöpfen A und B, Lautsprecher, Mikrofon, Temperatur-, Lage- und Kompasssensor sowie Funk"></svg>
+          <figcaption class="boardName">Calliope 1</figcaption>
+        </figure>
+        <figure class="boardBox" id="board2Box" hidden>
+          <svg id="board2" class="calBoard" role="img" aria-label="Zweiter simulierter Calliope für den Funk"></svg>
+          <figcaption class="boardName">Calliope 2</figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <div class="inputs" aria-label="Eingänge des Simulators">
+      <div class="inputsRow">
+        <button id="abBtn" class="abBtn" type="button" title="Knopf A und B gleichzeitig drücken">A+B</button>
+        <div>Knöpfe mit der Maus drücken oder mit den Tasten <kbd>A</kbd> und <kbd>B</kbd>.</div>
+      </div>
+      <label class="sensor"><span>Helligkeit</span>
+        <input id="sLight" type="range" min="0" max="255" value="120" data-sensor="LIGHT">
+        <output id="sLightOut"></output></label>
+      <label class="sensor"><span>Temperatur</span>
+        <input id="sTemp" type="range" min="-10" max="50" value="21" data-sensor="TEMP" data-unit=" °C">
+        <output id="sTempOut"></output></label>
+      <label class="sensor"><span>Mikrofon-Lautstärke</span>
+        <input id="sSound" type="range" min="0" max="255" value="20" data-sensor="SOUND">
+        <output id="sSoundOut"></output></label>
+      <div class="clapRow"><button id="clapBtn" class="smallBtn" type="button" title="Kurzes lautes Geräusch am Mikrofon">Klatschen</button></div>
+
+    </div>
+
+    <details class="inputs panel">
+      <summary>Lage und Kompass</summary>
+      <label class="sensor"><span>Neigung links/rechts</span>
+        <input id="sRoll" type="range" min="-180" max="180" value="0" data-tilt="roll" data-unit=" °">
+        <output id="sRollOut"></output></label>
+      <label class="sensor"><span>Neigung vorn/hinten</span>
+        <input id="sPitch" type="range" min="-180" max="180" value="0" data-tilt="pitch" data-unit=" °">
+        <output id="sPitchOut"></output></label>
+      <label class="sensor"><span>Kompass-Richtung</span>
+        <input id="sHeading" type="range" min="0" max="359" value="0" data-heading="1" data-unit=" °">
+        <output id="sHeadingOut"></output></label>
+      <div class="btnRow">
+        <button id="flatBtn" class="smallBtn" type="button" title="Neigung auf 0 zurücksetzen">Flach legen</button>
+        <button id="shakeBtn" class="smallBtn" type="button" title="Calliope kurz schütteln">Schütteln</button>
+        <button id="fallBtn" class="smallBtn" type="button" title="Calliope kurz fallen lassen">Freier Fall</button>
+      </div>
+    </details>
+
+    <details class="inputs panel" id="radioPanel">
+      <summary>Funk <span id="radioStatus" class="radioStatus">Kanal 7</span></summary>
+      <label class="checkRow">
+        <input id="partnerToggle" type="checkbox">
+        <span>Zweiten Calliope anzeigen – beide führen dasselbe Programm aus</span>
+      </label>
+      <ul id="radioLog" class="radioLog" aria-live="polite"><li class="radioEmpty">Noch keine Nachrichten.</li></ul>
+      <div class="radioSend">
+        <label>Kanal <input id="radioChannel" type="number" min="0" max="83" value="7"></label>
+        <label class="grow">Nachricht <input id="radioText" type="text" value="Hallo!" maxlength="60"></label>
+        <button id="radioSendBtn" class="smallBtn" type="button" title="Nachricht an alle Calliopes auf diesem Kanal schicken">Senden</button>
+      </div>
+    </details>
+  </aside>
+</main>
+
+<div id="modal" class="modalBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
+    <div id="modalTitle" class="modalHead"></div>
+    <div id="modalBody" class="modalBody"></div>
+    <div class="modalActions">
+      <button id="modalCancel" type="button">Abbrechen</button>
+      <button id="modalOk" type="button" class="primary">OK</button>
+    </div>
+  </div>
+</div>
+<div id="valueBubble" class="valueBubble" hidden></div>
+
+<!--INLINE:blockly_compressed.js-->
+<!--INLINE:msg/de.js-->
+<!--INLINE:continuous-toolbox.js-->
+<!--INLINE:src/font.js-->
+<!--INLINE:src/sounds.js-->
+<!--INLINE:src/blocks.js-->
+<!--INLINE:src/runtime.js-->
+<!--INLINE:pyprelude-->
+<!--INLINE:src/export.js-->
+<!--INLINE:flashlib.js-->
+<!--INLINE:firmware-->
+<!--INLINE:src/device.js-->
+<!--INLINE:src/project.js-->
+<!--INLINE:src/main.js-->
+</body>
+</html>

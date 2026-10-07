@@ -1,0 +1,6 @@
+{
+  "title": "Calliope-Blöcke – Editor und Simulator",
+  "description": "Scratch-ähnliche Blockumgebung für den Calliope mini 3: läuft offline als einzelne HTML-Datei, simuliert das Board mit LED-Matrix, RGB-LEDs, Klang, Sensoren, Lage, Kompass und Funk und überträgt das Programm per USB oder als .hex-Datei.",
+  "icon": "🧩",
+  "tags": ["Informatik", "Klasse 10", "Calliope", "Blockprogrammierung"]
+}
