@@ -1,6 +1,21 @@
 {
-  "generated": "2026-10-07T08:22:13+00:00",
+  "generated": "2026-10-07T08:34:26+00:00",
   "projects": [
+    {
+      "folder": "calliope-bloecke",
+      "title": "Calliope-Blöcke – Editor und Simulator",
+      "description": "Scratch-ähnliche Blockumgebung für den Calliope mini 3: läuft offline als einzelne HTML-Datei, simuliert das Board mit LED-Matrix, RGB-LEDs, Klang, Sensoren, Lage, Kompass und Funk und überträgt das Programm per USB oder als .hex-Datei.",
+      "icon": "🧩",
+      "tags": [
+        "Informatik",
+        "Klasse 10",
+        "Calliope",
+        "Blockprogrammierung"
+      ],
+      "hasIndex": true,
+      "files": [],
+      "updated": "2026-10-07T10:34:10+02:00"
+    },
     {
       "folder": "wasser-klasse3",
       "title": "Wasser – Sachunterricht Klasse 3",
