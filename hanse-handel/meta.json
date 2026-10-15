@@ -1,0 +1,6 @@
+{
+  "title": "Hanse-Handel – Koop-Handelsspiel",
+  "description": "Einfache Handelssimulation im Stil von „Der Patrizier“ für zwei Spieler gleichzeitig: gemeinsame Kasse, Echtzeit, Boten-Briefe. Verbindung per Raumcode (PeerJS).",
+  "icon": "⚓",
+  "tags": ["Spiel", "Multiplayer", "Hanse"]
+}

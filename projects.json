@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-07T08:34:26+00:00",
+  "generated": "2026-10-15T11:24:06+00:00",
   "projects": [
     {
       "folder": "calliope-bloecke",
@@ -14,7 +14,21 @@
       ],
       "hasIndex": true,
       "files": [],
-      "updated": "2026-10-07T10:34:10+02:00"
+      "updated": "2026-10-07T08:34:26+00:00"
+    },
+    {
+      "folder": "hanse-handel",
+      "title": "Hanse-Handel – Koop-Handelsspiel",
+      "description": "Einfache Handelssimulation im Stil von „Der Patrizier“ für zwei Spieler gleichzeitig: gemeinsame Kasse, Echtzeit, Boten-Briefe. Verbindung per Raumcode (PeerJS).",
+      "icon": "⚓",
+      "tags": [
+        "Spiel",
+        "Multiplayer",
+        "Hanse"
+      ],
+      "hasIndex": true,
+      "files": [],
+      "updated": null
     },
     {
       "folder": "wasser-klasse3",
@@ -30,7 +44,7 @@
       "files": [
         "Wasser_Arbeitsblaetter_Kl3.pdf"
       ],
-      "updated": "2026-10-07T10:22:03+02:00"
+      "updated": "2026-10-07T08:34:26+00:00"
     }
   ]
 }
