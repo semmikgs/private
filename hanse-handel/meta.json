@@ -1,6 +1,6 @@
 {
   "title": "Hanse-Handel – Koop-Handelsspiel",
-  "description": "Einfache Handelssimulation im Stil von „Der Patrizier“ für zwei Spieler gleichzeitig: gemeinsame Kasse, Echtzeit, Boten-Briefe. Verbindung per Raumcode (PeerJS).",
+  "description": "Einfache Handelssimulation im Stil von „Der Patrizier“ für zwei Spieler gleichzeitig: gemeinsame Kasse, Echtzeit, Boten-Briefe. Verbindung per Raumcode über öffentliche MQTT-Server.",
   "icon": "⚓",
   "tags": ["Spiel", "Multiplayer", "Hanse"]
 }
