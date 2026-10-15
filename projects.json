@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-15T11:24:17+00:00",
+  "generated": "2026-10-15T14:03:13+00:00",
   "projects": [
     {
       "folder": "calliope-bloecke",
@@ -19,7 +19,7 @@
     {
       "folder": "hanse-handel",
       "title": "Hanse-Handel – Koop-Handelsspiel",
-      "description": "Einfache Handelssimulation im Stil von „Der Patrizier“ für zwei Spieler gleichzeitig: gemeinsame Kasse, Echtzeit, Boten-Briefe. Verbindung per Raumcode (PeerJS).",
+      "description": "Einfache Handelssimulation im Stil von „Der Patrizier“ für zwei Spieler gleichzeitig: gemeinsame Kasse, Echtzeit, Boten-Briefe. Verbindung per Raumcode über öffentliche MQTT-Server.",
       "icon": "⚓",
       "tags": [
         "Spiel",
@@ -28,7 +28,7 @@
       ],
       "hasIndex": true,
       "files": [],
-      "updated": "2026-10-15T14:24:06+03:00"
+      "updated": "2026-10-15T17:03:04+03:00"
     },
     {
       "folder": "wasser-klasse3",
