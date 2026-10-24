@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trading-Strategien</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+<style>
+:root{
+  --bg:#f6f5f1; --paper:#ffffff; --ink:#1c2430; --mute:#5d6673; --line:#e3e0d8;
+  --accent:#0f766e; --accent-soft:#e6f4f2; --warn:#b45309; --warn-soft:#fdf3e2;
+  --info:#1d4ed8; --info-soft:#e8eefc; --up:#15803d; --dn:#b91c1c;
+  --radius:12px; --serif:"Source Serif 4", Georgia, serif; --sans:"Source Sans 3", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171c; --paper:#1c2027; --ink:#e7e9ec; --mute:#a2a9b3; --line:#2e343d;
+    --accent:#2dd4bf; --accent-soft:#163532; --warn:#f59e0b; --warn-soft:#33270f;
+    --info:#7aa2ff; --info-soft:#1a2440; --up:#4ade80; --dn:#f87171;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171c; --paper:#1c2027; --ink:#e7e9ec; --mute:#a2a9b3; --line:#2e343d;
+  --accent:#2dd4bf; --accent-soft:#163532; --warn:#f59e0b; --warn-soft:#33270f;
+  --info:#7aa2ff; --info-soft:#1a2440; --up:#4ade80; --dn:#f87171;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 var(--sans);-webkit-text-size-adjust:100%}
+a{color:var(--accent)}
+header.top{border-bottom:1px solid var(--line);background:var(--paper)}
+.top-in{max-width:1180px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font:700 20px/1.2 var(--serif);color:var(--ink);text-decoration:none;margin-right:auto}
+.brand small{display:block;font:400 13px var(--sans);color:var(--mute)}
+.btn{font:600 14px var(--sans);border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:7px 14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--accent)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+main{max-width:1180px;margin:0 auto;padding:24px 16px 64px}
+.disclaimer{background:var(--warn-soft);border-left:4px solid var(--warn);padding:10px 14px;border-radius:8px;font-size:15px;margin-bottom:24px}
+h1,h2,h3{font-family:var(--serif);line-height:1.25}
+h1{font-size:clamp(28px,4vw,40px);margin:.2em 0 .3em}
+h2{font-size:24px;margin:2.2em 0 .6em;padding-top:.4em;border-top:1px solid var(--line);scroll-margin-top:16px}
+h3{font-size:18px;margin:1.2em 0 .4em}
+.lead{font-size:19px;color:var(--mute);max-width:70ch}
+/* Übersicht */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:20px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:8px;text-decoration:none;color:inherit;transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.card .nr{font:700 13px var(--sans);color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
+.card h3{margin:0}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.tag{font-size:12px;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:2px 9px;font-weight:600}
+/* Detail */
+.layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px}
+nav.toc{position:sticky;top:16px;align-self:start;font-size:14px}
+nav.toc ol{list-style:none;padding:0;margin:0;border-left:2px solid var(--line)}
+nav.toc a{display:block;padding:5px 12px;color:var(--mute);text-decoration:none;margin-left:-2px;border-left:2px solid transparent}
+nav.toc a:hover,nav.toc a.aktiv{color:var(--accent);border-left-color:var(--accent)}
+nav.toc .zur{display:inline-block;margin-bottom:14px;font-weight:600}
+article{max-width:780px}
+.eyebrow{font:700 13px var(--sans);color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
+.quelle{font-size:14px;color:var(--mute);margin-top:10px}
+table{border-collapse:collapse;width:100%;font-size:15px;background:var(--paper);border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--accent-soft);font-weight:700}
+tr:last-child td{border-bottom:0}
+.steckbrief td:first-child{font-weight:700;width:34%;color:var(--mute)}
+.tabwrap{overflow-x:auto;margin:14px 0}
+.tabtitel{font-weight:700;margin:16px 0 6px}
+figure{margin:22px 0;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:10px}
+figure img{width:100%;height:auto;display:block}
+figcaption{font-size:14px;color:#5d6673;padding:8px 4px 2px}
+.box{border-radius:10px;padding:12px 16px;margin:14px 0;border-left:4px solid}
+.box.warnung{background:var(--warn-soft);border-color:var(--warn)}
+.box.info{background:var(--info-soft);border-color:var(--info)}
+.box.beispiel{background:var(--accent-soft);border-color:var(--accent)}
+.box .lbl{font-weight:700;display:block;font-size:13px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.formel{font:600 18px var(--serif);text-align:center;background:var(--paper);border:1px dashed var(--accent);border-radius:10px;padding:14px;margin:16px 0}
+ul.check{list-style:none;padding:0}
+ul.check li{margin:6px 0}
+ul.check label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+ul.check input{width:20px;height:20px;margin-top:3px;accent-color:var(--accent);flex:none}
+.checktitel{font-weight:700;margin:16px 0 4px}
+/* Rechner */
+.rechner{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;margin:18px 0}
+.rechner h3{margin-top:0}
+.felder{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.felder label{font-size:13px;color:var(--mute);font-weight:600;display:flex;flex-direction:column;gap:4px}
+.felder input{font:600 17px var(--sans);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%}
+.ergebnis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.kpi{background:var(--bg);border-radius:8px;padding:8px 12px}
+.kpi b{display:block;font-size:20px}
+.kpi span{font-size:12px;color:var(--mute)}
+.rwarn{color:var(--warn);font-size:14px;margin-top:10px;min-height:1em}
+.web-only-note{font-size:13px;color:var(--mute)}
+footer{color:var(--mute);font-size:13px;text-align:center;padding:24px 16px}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .ergebnis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  nav.toc{position:static;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:12px}
+}
+@media print{
+  header.top,nav.toc,.rechner,.btn{display:none!important}
+  body{background:#fff;color:#000}
+  .layout{display:block}
+  h2{break-after:avoid}
+  figure,table,.box{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="brand" href="#">Trading-Strategien<small>Handbuch · Regelwerke verständlich aufbereitet</small></a>
+  <button class="btn" id="odt" disabled title="ODT-Export folgt">⬇ Handbuch als .odt (folgt)</button>
+  <button class="btn" id="theme" aria-label="Hell/Dunkel umschalten"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg></button>
+</div></header>
+<main id="app"><p>Lade …</p></main>
+<footer>Keine Anlageberatung. Inhalte dienen der Dokumentation und Analyse. Grafiken sind schematisch und zeigen keine echten Kursdaten.</footer>
+
+<script>
+"use strict";
+const app = document.getElementById("app");
+let KATALOG = null;
+const CACHE = {};
+
+// ---------- Theme
+(function(){
+  const root = document.documentElement;
+  try { const t = localStorage.getItem("ts-theme"); if (t) root.dataset.theme = t; } catch(e){}
+  document.getElementById("theme").onclick = () => {
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("ts-theme", root.dataset.theme); } catch(e){}
+  };
+})();
+
+// ---------- Hilfen
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+// Inline-Format: nur **fett** (wird später 1:1 auf ODT-Spans abgebildet)
+const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+const slug = s => s.toLowerCase().replace(/[äöüß]/g, c => ({ä:"ae",ö:"oe",ü:"ue",ß:"ss"}[c])).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const nf = (x, d=2) => Number.isFinite(x) ? x.toLocaleString("de-DE", {minimumFractionDigits:d, maximumFractionDigits:d}) : "–";
+
+async function json(url){
+  if (CACHE[url]) return CACHE[url];
+  const r = await fetch(url, {cache:"no-cache"});
+  if (!r.ok) throw new Error(url + ": " + r.status);
+  return CACHE[url] = await r.json();
+}
+
+// ---------- Blöcke → HTML  (jeder Typ hat später ein ODT-Gegenstück)
+const RENDER = {
+  absatz: b => `<p>${inl(b.text)}</p>`,
+  aufzaehlung: b => `<ul>${b.punkte.map(p => `<li>${inl(p)}</li>`).join("")}</ul>`,
+  nummeriert: b => `<ol>${b.punkte.map(p => `<li>${inl(p)}</li>`).join("")}</ol>`,
+  checkliste: b => `${b.titel ? `<div class="checktitel">${inl(b.titel)}</div>` : ""}<ul class="check">${b.punkte.map(p => `<li><label><input type="checkbox"><span>${inl(p)}</span></label></li>`).join("")}</ul>`,
+  hinweis: b => `<div class="box ${b.art === "warnung" ? "warnung" : "info"}"><span class="lbl">${b.art === "warnung" ? "Achtung" : "Hinweis"}</span>${inl(b.text)}</div>`,
+  beispiel: b => `<div class="box beispiel"><span class="lbl">Beispiel</span>${inl(b.text)}</div>`,
+  formel: b => `<div class="formel">${inl(b.text)}</div>`,
+  tabelle: b => `${b.titel ? `<div class="tabtitel">${inl(b.titel)}</div>` : ""}<div class="tabwrap"><table><thead><tr>${b.kopf.map(k => `<th>${inl(k)}</th>`).join("")}</tr></thead><tbody>${b.zeilen.map(z => `<tr>${z.map(c => `<td>${inl(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`,
+  bild: b => `<figure><a href="${esc(b.src)}" target="_blank" rel="noopener" title="Grafik groß öffnen"><img src="${esc(b.src)}" alt="${esc(b.unterschrift)}" loading="lazy"></a><figcaption>${inl(b.unterschrift)}</figcaption></figure>`,
+  rechner: () => `<div class="rechner" data-rechner>
+      <h3>Positionsgrößen-Rechner</h3>
+      <div class="felder">
+        <label>Konto ($)<input type="number" inputmode="decimal" data-f="konto" value="10000" min="0" step="100"></label>
+        <label>Risiko je Trade (%)<input type="number" inputmode="decimal" data-f="risiko" value="0.5" min="0" step="0.1"></label>
+        <label>Einstieg ($)<input type="number" inputmode="decimal" data-f="ein" value="20" min="0" step="0.01"></label>
+        <label>Stop ($)<input type="number" inputmode="decimal" data-f="stop" value="19.5" min="0" step="0.01"></label>
+      </div>
+      <div class="ergebnis" data-out></div>
+      <div class="rwarn" data-warn></div>
+      <div class="web-only-note">Nur auf der Webseite – im Handbuch steht das Rechenbeispiel als Tabelle.</div>
+    </div>`
+};
+const block = b => (RENDER[b.typ] || (() => `<p><em>Unbekannter Block: ${esc(b.typ)}</em></p>`))(b);
+
+function rechnerAktivieren(root){
+  root.querySelectorAll("[data-rechner]").forEach(r => {
+    const get = k => parseFloat(r.querySelector(`[data-f="${k}"]`).value.replace(",", "."));
+    const upd = () => {
+      const konto = get("konto"), risk = get("risiko") / 100, ein = get("ein"), stop = get("stop");
+      const R = ein - stop, verlust = konto * risk;
+      const stueck = R > 0 ? Math.floor(verlust / R) : NaN;
+      const einsatz = stueck * ein, abstand = R / ein * 100;
+      const k = (v, l) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`;
+      r.querySelector("[data-out]").innerHTML =
+        k(nf(verlust) + " $", "erlaubter Verlust") + k(nf(R) + " $", "1R je Aktie") +
+        k(Number.isFinite(stueck) ? stueck.toLocaleString("de-DE") : "–", "Stückzahl") +
+        k(nf(einsatz) + " $", `Einsatz (${nf(einsatz / konto * 100, 0)} % Konto)`) +
+        k(nf(ein + 3 * R) + " $", "Kurs bei +3R") + k(nf(ein + 5 * R) + " $", "Kurs bei +5R");
+      const w = [];
+      if (!(R > 0)) w.push("Der Stop muss unter dem Einstieg liegen.");
+      else {
+        if (abstand > 3) w.push(`Stop-Abstand ${nf(abstand, 1)} % – über der Faustregel von 2,5–3 %.`);
+        if (einsatz > konto) w.push("Einsatz größer als das Konto – Stop zu eng oder Risiko zu hoch.");
+        if (risk > 0.01) w.push("Risiko über 1 % je Trade – deutlich mehr als in der Strategie vorgesehen.");
+      }
+      r.querySelector("[data-warn]").textContent = w.join(" ");
+    };
+    r.querySelectorAll("input").forEach(i => i.addEventListener("input", upd));
+    upd();
+  });
+}
+
+// ---------- Ansichten
+function uebersicht(){
+  document.title = "Trading-Strategien";
+  app.innerHTML = `
+    <div class="disclaimer"><strong>Keine Anlageberatung.</strong> Die Strategien sind aus öffentlichen Quellen aufbereitet. Trading kann zum Totalverlust des eingesetzten Kapitals führen.</div>
+    <h1>${esc(KATALOG.titel)}</h1>
+    <p class="lead">Jede Strategie ist gleich aufgebaut: Steckbrief, Kernidee, Regelwerk in Schritten, Rechenbeispiel, Grafiken, Einordnung der Risiken und eine Checkliste.</p>
+    <div class="grid">${KATALOG.strategien.map((s, i) => `
+      <a class="card" href="#${esc(s.id)}">
+        <span class="nr">Strategie ${i + 1}</span>
+        <h3>${esc(s.titel)}</h3>
+        <span>${esc(s.kurz)}</span>
+        <span class="tags">${(s.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</span>
+      </a>`).join("")}
+    </div>`;
+  window.scrollTo(0, 0);
+}
+
+async function detail(eintrag){
+  const s = await json(eintrag.datei);
+  document.title = s.titel + " · Trading-Strategien";
+  const abschnitte = [{titel: "Steckbrief", id: "steckbrief"}, ...s.abschnitte.map(a => ({titel: a.titel, id: slug(a.titel)}))];
+  app.innerHTML = `
+    <div class="layout">
+      <nav class="toc" aria-label="Inhalt">
+        <a class="zur" href="#">← Alle Strategien</a>
+        <ol>${abschnitte.map(a => `<li><a href="#${eintrag.id}/${a.id}" data-ziel="${a.id}">${esc(a.titel)}</a></li>`).join("")}</ol>
+      </nav>
+      <article>
+        <div class="disclaimer"><strong>Keine Anlageberatung.</strong> Aufbereitung einer öffentlich beschriebenen Strategie zu Lern- und Dokumentationszwecken.</div>
+        <span class="eyebrow">Strategie ${s.nr}</span>
+        <h1>${esc(s.titel)}</h1>
+        <p class="lead">${esc(s.untertitel)}</p>
+        <p>${inl(s.kurz)}</p>
+        <p class="quelle">Quelle: ${esc(s.quelle.person)} – <a href="${esc(s.quelle.url)}" target="_blank" rel="noopener">${esc(s.quelle.text)}</a><br>
+          ${esc(s.quelle.beleg)} <a href="${esc(s.quelle.beleg_url)}" target="_blank" rel="noopener">Beleg</a> · Stand: ${new Date(s.stand).toLocaleDateString("de-DE")}</p>
+        <h2 id="steckbrief">Steckbrief</h2>
+        <div class="tabwrap"><table class="steckbrief"><tbody>${s.steckbrief.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${inl(v)}</td></tr>`).join("")}</tbody></table></div>
+        ${s.abschnitte.map(a => `<h2 id="${slug(a.titel)}">${esc(a.titel)}</h2>${a.bloecke.map(block).join("")}`).join("")}
+      </article>
+    </div>`;
+  rechnerAktivieren(app);
+  // Inhaltsverzeichnis: Sprung + aktive Markierung
+  app.querySelectorAll("nav.toc a[data-ziel]").forEach(a => a.addEventListener("click", ev => {
+    ev.preventDefault();
+    document.getElementById(a.dataset.ziel)?.scrollIntoView({behavior: "smooth"});
+    history.replaceState(null, "", a.getAttribute("href"));
+  }));
+  const links = [...app.querySelectorAll("nav.toc a[data-ziel]")];
+  const obs = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) links.forEach(l => l.classList.toggle("aktiv", l.dataset.ziel === e.target.id));
+  }), {rootMargin: "0px 0px -70% 0px"});
+  app.querySelectorAll("article h2[id]").forEach(h => obs.observe(h));
+  return s;
+}
+
+async function route(){
+  try {
+    KATALOG = KATALOG || await json("strategien/katalog.json");
+    const [id, anker] = decodeURIComponent(location.hash.slice(1)).split("/");
+    const e = KATALOG.strategien.find(x => x.id === id);
+    if (!e) return uebersicht();
+    await detail(e);
+    if (anker) document.getElementById(anker)?.scrollIntoView();
+    else window.scrollTo(0, 0);
+  } catch (err) {
+    app.innerHTML = `<div class="box warnung"><span class="lbl">Fehler</span>Inhalte konnten nicht geladen werden (${esc(err.message)}). Die Seite muss über einen Webserver (z. B. GitHub Pages) aufgerufen werden.</div>`;
+  }
+}
+addEventListener("hashchange", () => { if (!location.hash.includes("/") || !app.querySelector("article")) route(); });
+route();
+</script>
+</body>
+</html>

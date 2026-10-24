@@ -1,0 +1,6 @@
+{
+  "titel": "Trading-Strategien – Handbuch",
+  "strategien": [
+    { "datei": "strategien/01-pullback-luk.json", "id": "01-pullback-luk", "titel": "Pullback-Kauf in starken Aktien", "kurz": "Rücksetzer an Unterstützung abwarten, auf Signal im Minutenchart kaufen, Stop eng, Gewinne in R sichern.", "tags": ["Aktien", "Swing", "Long", "Momentum"] }
+  ]
+}

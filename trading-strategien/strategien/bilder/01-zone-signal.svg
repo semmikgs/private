@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480" role="img" aria-label="Unterstützungszone im Tageschart und Einstiegssignal im 5-Minuten-Chart">
+<title>Unterstützungszone im Tageschart und Einstiegssignal im 5-Minuten-Chart</title>
+<rect x="0" y="0" width="800" height="480" fill="#ffffff"/>
+<defs><marker id="pfeil" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1f2937"/></marker><marker id="pfeilg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0f766e"/></marker></defs>
+<text x="30.0" y="30.0" font-family="Helvetica, Arial, sans-serif" font-size="17" fill="#1f2937" font-weight="bold" text-anchor="start">Schritt 2: Unterstützungszone (Tag) + Einstiegssignal (5 Min.)</text>
+<line x1="30" y1="54" x2="52" y2="54" stroke="#2563eb" stroke-width="3"/>
+<text x="58.0" y="58.0" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">EMA 9</text>
+<line x1="111" y1="54" x2="133" y2="54" stroke="#f59e0b" stroke-width="3"/>
+<text x="139.0" y="58.0" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">EMA 21</text>
+<line x1="199" y1="54" x2="221" y2="54" stroke="#0891b2" stroke-width="3" stroke-dasharray="7 4"/>
+<text x="227.0" y="58.0" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">AVWAP</text>
+<line x1="280" y1="54" x2="302" y2="54" stroke="#f2c94c" stroke-width="3"/>
+<text x="308.0" y="58.0" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start">Zone</text>
+<rect x="30" y="214.4" width="350" height="25.6" fill="#fde68a" opacity="0.65"/>
+<line x1="30" y1="357.3" x2="380" y2="357.3" stroke="#e5e7eb" stroke-width="1"/>
+<text x="386.0" y="361.3" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">17</text>
+<line x1="30" y1="314.7" x2="380" y2="314.7" stroke="#e5e7eb" stroke-width="1"/>
+<text x="386.0" y="318.7" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">18</text>
+<line x1="30" y1="272.0" x2="380" y2="272.0" stroke="#e5e7eb" stroke-width="1"/>
+<text x="386.0" y="276.0" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">19</text>
+<line x1="30" y1="229.3" x2="380" y2="229.3" stroke="#e5e7eb" stroke-width="1"/>
+<text x="386.0" y="233.3" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">20</text>
+<line x1="30" y1="186.7" x2="380" y2="186.7" stroke="#e5e7eb" stroke-width="1"/>
+<text x="386.0" y="190.7" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">21</text>
+<line x1="30" y1="144.0" x2="380" y2="144.0" stroke="#e5e7eb" stroke-width="1"/>
+<text x="386.0" y="148.0" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">22</text>
+<line x1="30" y1="101.3" x2="380" y2="101.3" stroke="#e5e7eb" stroke-width="1"/>
+<text x="386.0" y="105.3" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">23</text>
+<rect x="30" y="80" width="350" height="320" fill="none" stroke="#e5e7eb"/>
+<polyline points="36.5,377.5 49.4,374.5 62.4,369.5 75.4,362.1 88.3,352.4 101.3,341.6 114.3,333.3 127.2,328.1 140.2,325.8 153.1,322.0 166.1,316.3 179.1,309.2 192.0,304.3 205.0,302.1 218.0,298.6 230.9,293.5 243.9,285.3 256.9,274.8 269.8,262.5 282.8,249.4 295.7,239.0 308.7,232.3 321.7,228.6 334.6,227.1 347.6,226.7 360.6,224.6 373.5,220.0" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="36.5,393.2 49.4,383.4 62.4,370.5 75.4,354.2 88.3,334.4 101.3,314.2 114.3,301.5 127.2,296.5 140.2,297.5 153.1,295.0 166.1,287.8 179.1,277.8 192.0,273.3 205.0,274.7 218.0,272.5 230.9,266.4 243.9,253.9 256.9,237.0 269.8,217.6 282.8,197.7 295.7,185.3 308.7,181.3 321.7,183.2 334.6,189.0 347.6,195.8 360.6,197.4 373.5,192.7" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="101.3,242.6 114.3,244.0 127.2,251.7 140.2,262.2 153.1,267.9 166.1,267.8 179.1,264.7 192.0,262.8 205.0,263.8 218.0,264.3 230.9,263.0 243.9,259.1 256.9,253.1 269.8,245.7 282.8,237.7 295.7,231.0 308.7,226.5 321.7,224.1 334.6,223.1 347.6,222.9 360.6,222.3 373.5,220.6" fill="none" stroke="#0891b2" stroke-width="2.2" stroke-dasharray="7 4" stroke-linejoin="round"/>
+<line x1="36.5" y1="353.1" x2="36.5" y2="378.7" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="32.5" y="365.9" width="8.0" height="1.2" fill="#16a34a"/>
+<line x1="49.4" y1="331.7" x2="49.4" y2="376.6" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="45.4" y="344.5" width="8.0" height="19.3" fill="#16a34a"/>
+<line x1="62.4" y1="306.1" x2="62.4" y2="358.6" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="58.4" y="318.9" width="8.0" height="26.9" fill="#16a34a"/>
+<line x1="75.4" y1="276.3" x2="75.4" y2="333.0" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="71.4" y="289.1" width="8.0" height="31.1" fill="#16a34a"/>
+<line x1="88.3" y1="242.1" x2="88.3" y2="299.8" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="84.3" y="254.9" width="8.0" height="32.1" fill="#16a34a"/>
+<line x1="101.3" y1="225.1" x2="101.3" y2="269.0" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="97.3" y="233.6" width="8.0" height="22.6" fill="#16a34a"/>
+<line x1="114.3" y1="222.1" x2="114.3" y2="263.5" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="110.2" y="234.9" width="8.0" height="15.8" fill="#dc2626"/>
+<line x1="127.2" y1="235.8" x2="127.2" y2="289.1" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="123.2" y="248.6" width="8.0" height="27.6" fill="#dc2626"/>
+<line x1="140.2" y1="264.7" x2="140.2" y2="314.7" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="136.2" y="277.5" width="8.0" height="24.3" fill="#dc2626"/>
+<line x1="153.1" y1="272.0" x2="153.1" y2="315.9" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="149.1" y="284.8" width="8.0" height="18.3" fill="#16a34a"/>
+<line x1="166.1" y1="246.4" x2="166.1" y2="295.6" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="162.1" y="259.2" width="8.0" height="23.6" fill="#16a34a"/>
+<line x1="179.1" y1="227.2" x2="179.1" y2="273.3" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="175.1" y="237.9" width="8.0" height="22.6" fill="#16a34a"/>
+<line x1="192.0" y1="226.3" x2="192.0" y2="267.7" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="188.0" y="239.1" width="8.0" height="15.8" fill="#dc2626"/>
+<line x1="205.0" y1="240.1" x2="205.0" y2="293.3" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="201.0" y="252.9" width="8.0" height="27.6" fill="#dc2626"/>
+<line x1="218.0" y1="250.7" x2="218.0" y2="294.6" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="213.9" y="263.5" width="8.0" height="18.3" fill="#16a34a"/>
+<line x1="230.9" y1="229.3" x2="230.9" y2="277.5" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="226.9" y="242.1" width="8.0" height="22.6" fill="#16a34a"/>
+<line x1="243.9" y1="190.9" x2="243.9" y2="252.9" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="239.9" y="203.7" width="8.0" height="36.4" fill="#16a34a"/>
+<line x1="256.9" y1="156.8" x2="256.9" y2="217.8" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="252.8" y="169.6" width="8.0" height="35.4" fill="#16a34a"/>
+<line x1="269.8" y1="126.9" x2="269.8" y2="183.7" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="265.8" y="139.7" width="8.0" height="31.1" fill="#16a34a"/>
+<line x1="282.8" y1="105.6" x2="282.8" y2="150.5" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="278.8" y="118.4" width="8.0" height="19.3" fill="#16a34a"/>
+<line x1="295.7" y1="106.9" x2="295.7" y2="148.3" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="291.7" y="119.7" width="8.0" height="15.8" fill="#dc2626"/>
+<line x1="308.7" y1="123.9" x2="308.7" y2="178.1" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="304.7" y="136.7" width="8.0" height="28.6" fill="#dc2626"/>
+<line x1="321.7" y1="150.5" x2="321.7" y2="203.7" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="317.6" y="163.3" width="8.0" height="27.6" fill="#dc2626"/>
+<line x1="334.6" y1="179.4" x2="334.6" y2="225.1" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="330.6" y="192.2" width="8.0" height="20.1" fill="#dc2626"/>
+<line x1="347.6" y1="200.7" x2="347.6" y2="235.7" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="343.6" y="213.5" width="8.0" height="9.4" fill="#dc2626"/>
+<line x1="360.6" y1="190.9" x2="360.6" y2="233.7" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="356.5" y="203.7" width="8.0" height="17.2" fill="#16a34a"/>
+<line x1="373.5" y1="161.1" x2="373.5" y2="217.8" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="369.5" y="173.9" width="8.0" height="31.1" fill="#16a34a"/>
+<text x="101.3" y="213.1" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#0891b2" font-weight="bold" text-anchor="middle">Anker</text>
+<circle cx="101.3" cy="225.1" r="4" fill="#0891b2"/>
+<rect x="36.0" y="84.3" width="137.2" height="53" rx="6" fill="#ffffff" stroke="#1f2937" stroke-width="1.3"/>
+<text x="43.0" y="101.3" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#1f2937" font-weight="bold" text-anchor="start">Tageschart</text>
+<text x="43.0" y="116.3" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#1f2937" font-weight="normal" text-anchor="start">altes Hoch + EMA 21</text>
+<text x="43.0" y="131.3" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#1f2937" font-weight="normal" text-anchor="start">+ AVWAP treffen sich</text>
+<circle cx="347.6" cy="231.5" r="12" fill="none" stroke="#0f766e" stroke-width="2.4"/>
+<text x="331.6" y="282.7" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#0f766e" font-weight="bold" text-anchor="end">1. Rücktest</text>
+<text x="331.6" y="297.7" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#0f766e" font-weight="bold" text-anchor="end">der Zone</text>
+<path d="M355.6,243.5 C 367.6,321.5 420,321.5 452,271.5" fill="none" stroke="#0f766e" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#pfeilg)"/>
+<text x="424.0" y="329.5" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#0f766e" font-weight="bold" text-anchor="middle">Zoom</text>
+<line x1="460" y1="364.4" x2="735" y2="364.4" stroke="#e5e7eb" stroke-width="1"/>
+<text x="741.0" y="368.4" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">19,50</text>
+<line x1="460" y1="320.0" x2="735" y2="320.0" stroke="#e5e7eb" stroke-width="1"/>
+<text x="741.0" y="324.0" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">19,75</text>
+<line x1="460" y1="275.6" x2="735" y2="275.6" stroke="#e5e7eb" stroke-width="1"/>
+<text x="741.0" y="279.6" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">20,00</text>
+<line x1="460" y1="231.1" x2="735" y2="231.1" stroke="#e5e7eb" stroke-width="1"/>
+<text x="741.0" y="235.1" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">20,25</text>
+<line x1="460" y1="186.7" x2="735" y2="186.7" stroke="#e5e7eb" stroke-width="1"/>
+<text x="741.0" y="190.7" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">20,50</text>
+<line x1="460" y1="142.2" x2="735" y2="142.2" stroke="#e5e7eb" stroke-width="1"/>
+<text x="741.0" y="146.2" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">20,75</text>
+<line x1="460" y1="97.8" x2="735" y2="97.8" stroke="#e5e7eb" stroke-width="1"/>
+<text x="741.0" y="101.8" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="start">21,00</text>
+<rect x="460" y="80" width="275" height="320" fill="none" stroke="#e5e7eb"/>
+<rect x="460" y="213.3" width="275" height="106.7" fill="#fde68a" opacity="0.45"/>
+<line x1="472.5" y1="151.1" x2="472.5" y2="190.2" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="464.8" y="165.3" width="15.5" height="17.8" fill="#dc2626"/>
+<line x1="497.5" y1="172.4" x2="497.5" y2="211.6" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="489.8" y="183.1" width="15.5" height="21.3" fill="#dc2626"/>
+<line x1="522.5" y1="195.6" x2="522.5" y2="236.4" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="514.8" y="204.4" width="15.5" height="24.9" fill="#dc2626"/>
+<line x1="547.5" y1="220.4" x2="547.5" y2="261.3" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="539.8" y="229.3" width="15.5" height="24.9" fill="#dc2626"/>
+<line x1="572.5" y1="247.1" x2="572.5" y2="289.8" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="564.8" y="254.2" width="15.5" height="24.9" fill="#dc2626"/>
+<line x1="597.5" y1="272.0" x2="597.5" y2="355.6" stroke="#dc2626" stroke-width="1.4"/>
+<rect x="589.8" y="279.1" width="15.5" height="35.6" fill="#dc2626"/>
+<line x1="622.5" y1="275.6" x2="622.5" y2="325.3" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="614.8" y="286.2" width="15.5" height="28.4" fill="#16a34a"/>
+<line x1="647.5" y1="208.0" x2="647.5" y2="293.3" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="639.8" y="218.7" width="15.5" height="67.6" fill="#16a34a"/>
+<line x1="672.5" y1="172.4" x2="672.5" y2="229.3" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="664.8" y="183.1" width="15.5" height="35.6" fill="#16a34a"/>
+<line x1="697.5" y1="133.3" x2="697.5" y2="193.8" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="689.8" y="144.0" width="15.5" height="39.1" fill="#16a34a"/>
+<line x1="722.5" y1="104.9" x2="722.5" y2="158.2" stroke="#16a34a" stroke-width="1.4"/>
+<rect x="714.8" y="115.6" width="15.5" height="28.4" fill="#16a34a"/>
+<line x1="614.5" y1="275.6" x2="672.5" y2="275.6" stroke="#1f2937" stroke-width="1.6" stroke-dasharray="4 3"/>
+<text x="497.5" y="133.3" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#1f2937" font-weight="bold" text-anchor="start">Hoch der Vorkerze: 20,00</text>
+<line x1="572.5" y1="137.3" x2="620.5" y2="272.6" stroke="#1f2937" stroke-width="1.2" marker-end="url(#pfeil)"/>
+<line x1="673.5" y1="309.6" x2="653.5" y2="278.6" stroke="#16a34a" stroke-width="2.2" marker-end="url(#pfeil)"/>
+<text x="675.5" y="323.6" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#16a34a" font-weight="bold" text-anchor="start">Kauf bei</text>
+<text x="675.5" y="338.6" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#16a34a" font-weight="bold" text-anchor="start">Bruch > 20,00</text>
+<line x1="460" y1="364.4" x2="735" y2="364.4" stroke="#dc2626" stroke-width="2"/>
+<text x="464.0" y="380.4" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#dc2626" font-weight="bold" text-anchor="start">Stop 19,50 (unter Tagestief 19,55)</text>
+<text x="585.5" y="332.4" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="end">Rücksetzer,</text>
+<text x="585.5" y="345.4" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#6b7280" font-weight="normal" text-anchor="end">dann Erholung</text>
+<rect x="464.0" y="84.0" width="106.4" height="23" rx="6" fill="#ffffff" stroke="#1f2937" stroke-width="1.3"/>
+<text x="471.0" y="101.0" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#1f2937" font-weight="bold" text-anchor="start">5-Minuten-Chart</text>
+<text x="30.0" y="440.0" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1f2937" font-weight="bold" text-anchor="start">Nur handeln, wenn beides passt: Tageschart an der Zone UND Signal im Minutenchart.</text>
+<text x="30.0" y="460.0" font-family="Helvetica, Arial, sans-serif" font-size="12" fill="#6b7280" font-weight="normal" text-anchor="start">Fällt der Kurs ohne Erholung durch die Zone: kein Signal – weiter warten.</text>
+</svg>

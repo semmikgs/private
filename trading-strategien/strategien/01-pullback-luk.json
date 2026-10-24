@@ -1,0 +1,153 @@
+{
+  "id": "01-pullback-luk",
+  "nr": 1,
+  "titel": "Pullback-Kauf in starken Aktien",
+  "untertitel": "Rücksetzer an eine Unterstützung abwarten, auf Signal kaufen, eng absichern",
+  "stand": "2026-10-24",
+  "kurz": "Man sucht Aktien, die zuletzt stark gestiegen sind und sich nun ruhig seitwärts bewegen. Läuft der Kurs an eine Unterstützungszone zurück und dreht dort wieder nach oben, wird gekauft – mit einem Stop direkt unter dem Tief, sodass ein Fehlversuch wenig kostet.",
+  "quelle": {
+    "person": "Martin Luk",
+    "text": "Thread von @OtherSideBJ auf X (chinesisch, 5 Beiträge mit Grafiken), sinngemäß übersetzt und neu formuliert.",
+    "url": "https://x.com/OtherSideBJ/status/2109475443929972794",
+    "beleg": "Laut Veranstalter-Pressemitteilung gewann Martin Luk 2025 die Aktien-Division (Konten 20.000–1.000.000 $) der United States Investing Championship mit +969,8 %.",
+    "beleg_url": "https://www.mexc.com/news/616112"
+  },
+  "steckbrief": [
+    ["Markt", "US-Aktien, bevorzugt Momentum- und Themenwerte"],
+    ["Richtung", "nur Long (Kauf)"],
+    ["Zeitebenen", "Wochen- und Tageschart für die Auswahl, 1-/5-/15-Minuten-Chart für den Einstieg"],
+    ["Haltedauer", "Tage bis wenige Wochen (Swing-Trading)"],
+    ["Indikatoren", "EMA 9, 21, 50 · AVWAP · alte Hochs/Tiefs · offene Kurslücken"],
+    ["Risiko je Trade", "ca. 0,5 % des Kontos, Stop meist 2,5–3 % unter Einstieg"],
+    ["Ausstieg", "Teilverkäufe bei 3R und 5R, Rest am EMA 9 nachziehen"],
+    ["Eignung", "auch kleine Konten; erfordert Zeit vor dem Bildschirm zur Markteröffnung"]
+  ],
+  "abschnitte": [
+    {
+      "titel": "Kernidee",
+      "bloecke": [
+        { "typ": "absatz", "text": "Starke Aktien steigen selten in einem Zug. Nach einem kräftigen Anstieg folgt meist eine Verschnaufpause. Die Strategie wartet, bis der Kurs in dieser Pause an eine **Unterstützungszone** zurückläuft, und kauft erst, wenn er dort **sichtbar wieder dreht**." },
+        { "typ": "absatz", "text": "Weil der Einstieg direkt über dem frischen Tief liegt, sitzt der Stop sehr nah. Ein Fehlversuch kostet daher nur wenig. Gelingt der Trade, kann die nächste Aufwärtswelle ein Vielfaches des eingesetzten Risikos bringen." },
+        { "typ": "bild", "src": "strategien/bilder/01-ablauf.svg", "unterschrift": "Abb. 1: Die vier Schritte im Überblick", "breite_cm": 16 }
+      ]
+    },
+    {
+      "titel": "Schritt 1: Starke Aktien finden und Konsolidierung beobachten",
+      "bloecke": [
+        { "typ": "absatz", "text": "**Ziel:** eine kurze Beobachtungsliste mit Aktien, die stark gelaufen sind und jetzt Kraft sammeln." },
+        { "typ": "aufzaehlung", "punkte": [
+          "Im Aktien-Screener nach Kursplus über **1, 3 und 6 Monate** sortieren.",
+          "Bevorzugt Werte mit **mehr als 30 % Plus**, die zu den **oberen 20–30 %** der Rangliste gehören.",
+          "Aktien mit **geringem Handelsvolumen** aussortieren.",
+          "Besonders interessant: schnelle Werte aus **gerade gefragten Themen**. Steigen mehrere Aktien derselben Branche gleichzeitig, sucht man dort nach Kandidaten.",
+          "Erst den **Wochenchart** ansehen (vorheriger Anstieg und Rücksetzer), dann im **Tageschart** die Seitwärtsphase prüfen."
+        ] },
+        { "typ": "checkliste", "titel": "Drei Merkmale einer guten Konsolidierung", "punkte": [
+          "Die Rücksetzer-Tiefs liegen **zunehmend höher**.",
+          "Die Schwankungen werden **kleiner** (die Kerzen werden kürzer).",
+          "Der Kurs steht wieder **über EMA 9 und EMA 21**, die flach verlaufen oder steigen."
+        ] },
+        { "typ": "beispiel", "text": "Beim letzten Rücksetzer fiel die Aktie bis 18 $, diesmal stoppt sie schon bei etwa 19 $. Gleichzeitig werden die Tagesbewegungen kleiner. → Auf die Beobachtungsliste." },
+        { "typ": "hinweis", "art": "warnung", "text": "**Kein Kandidat:** fallende Hochs und fallende Tiefs, Kurs unter abwärts gerichteten Durchschnitten." },
+        { "typ": "bild", "src": "strategien/bilder/01-konsolidierung.svg", "unterschrift": "Abb. 2: Konsolidierung mit höheren Tiefs und enger werdender Schwankung (schematisch)", "breite_cm": 16 }
+      ]
+    },
+    {
+      "titel": "Schritt 2: Unterstützungszone einzeichnen und auf das Signal warten",
+      "bloecke": [
+        { "typ": "absatz", "text": "Im Tageschart werden alle Linien eingezeichnet, an denen der Kurs Halt finden könnte:" },
+        { "typ": "aufzaehlung", "punkte": [
+          "**EMA 9, EMA 21 und EMA 50** (exponentielle gleitende Durchschnitte)",
+          "**frühere Hochs und Tiefs**",
+          "**offene Kurslücken** (Gaps, die noch nicht geschlossen wurden)",
+          "**AVWAP** – volumengewichteter Durchschnittspreis ab einem selbst gewählten Startpunkt. Luk setzt diesen Anker oft auf das Hoch der Seitwärtsphase."
+        ] },
+        { "typ": "absatz", "text": "Liegen **AVWAP, EMA 21 und ein altes Hoch dicht beieinander**, entsteht eine starke Zone. Am interessantesten ist der **erste Rücktest**, nachdem der Kurs eine solche wichtige Marke überwunden hat." },
+        { "typ": "absatz", "text": "Nähert sich der Kurs der Zone, wird in den **1-, 5- oder 15-Minuten-Chart** gewechselt. Gewartet wird auf zwei Dinge in dieser Reihenfolge:" },
+        { "typ": "nummeriert", "punkte": [
+          "Der Kurs taucht in die Zone ein und **erholt sich** wieder.",
+          "Eine Kerze **übersteigt das Hoch der vorherigen Kerze** – das ist das Kaufsignal."
+        ] },
+        { "typ": "beispiel", "text": "Nach dem Rücksetzer erholt sich die Aktie. Die letzte 5-Minuten-Kerze hatte ihr Hoch bei 20,00 $. Steigt der Kurs nun über 20,00 $, ist das Signal da – aber nur, weil auch der Tageschart an der Zone steht." },
+        { "typ": "hinweis", "art": "warnung", "text": "Fällt der Kurs **ohne Gegenbewegung durch die Zone**, gibt es kein Signal. Weiter warten." },
+        { "typ": "bild", "src": "strategien/bilder/01-zone-signal.svg", "unterschrift": "Abb. 3: Zone im Tageschart, Einstiegssignal im 5-Minuten-Chart (schematisch)", "breite_cm": 16 }
+      ]
+    },
+    {
+      "titel": "Schritt 3: Erst Stop und Positionsgröße, dann die Order",
+      "bloecke": [
+        { "typ": "absatz", "text": "**Stop-Loss** wahlweise unter das Tagestief, unter die Signalkerze oder unter die Kerze davor. Ziel: bei den meisten Trades **höchstens 2,5–3 %** Abstand zum Einstieg. Das geplante **Risiko je Trade liegt bei etwa 0,5 % des Kontos**." },
+        { "typ": "formel", "text": "Stückzahl = erlaubter Verlust ÷ (Einstieg − Stop)" },
+        { "typ": "tabelle", "titel": "Rechenbeispiel", "kopf": ["Größe", "Wert", "Rechnung"], "zeilen": [
+          ["Konto", "10.000 $", ""],
+          ["Erlaubter Verlust (0,5 %)", "50 $", "10.000 × 0,005"],
+          ["Einstieg", "20,00 $", ""],
+          ["Stop", "19,50 $", ""],
+          ["Risiko je Aktie (= 1R)", "0,50 $", "20,00 − 19,50"],
+          ["Stückzahl", "100 Aktien", "50 ÷ 0,50"],
+          ["Kapitaleinsatz", "2.000 $ (20 % des Kontos)", "100 × 20,00"]
+        ] },
+        { "typ": "rechner" },
+        { "typ": "aufzaehlung", "punkte": [
+          "Order erst platzieren, **wenn das Signal tatsächlich auslöst**.",
+          "Den **Stop sofort nach dem Kauf** setzen. Wird 19,50 $ erreicht, wird planmäßig verkauft."
+        ] },
+        { "typ": "hinweis", "art": "warnung", "text": "Bei **Kurslücken oder Slippage** kann die Ausführung schlechter sein – der Verlust kann dann **größer als die geplanten 50 $** werden." }
+      ]
+    },
+    {
+      "titel": "Schritt 4: Gewinne in Teilen sichern, Rest laufen lassen",
+      "bloecke": [
+        { "typ": "absatz", "text": "**R** ist das ursprünglich geplante Risiko je Aktie. Im Beispiel ist 1R = 0,50 $. Kursziele werden in Vielfachen davon gemessen (jeweils ohne Gebühren):" },
+        { "typ": "tabelle", "titel": "R-Leiter zum Beispiel", "kopf": ["Stufe", "Kurs", "Gewinn je Aktie", "Aktion"], "zeilen": [
+          ["−1R", "19,50 $", "−0,50 $", "Stop: komplett raus"],
+          ["0R", "20,00 $", "0", "Einstieg"],
+          ["+3R", "21,50 $", "+1,50 $", "ersten Teil verkaufen"],
+          ["+5R", "22,50 $", "+2,50 $", "weiteren Teil verkaufen"],
+          ["Rest", "–", "–", "am EMA 9 und am Kursverlauf nachziehen"]
+        ] },
+        { "typ": "aufzaehlung", "punkte": [
+          "**Rest-Position** wird am **EMA 9** und am Kursverlauf geführt.",
+          "Steigt der Kurs in kurzer Zeit **sehr steil** und entfernt sich weit von den Durchschnitten, wird zusätzlich in die Stärke hinein reduziert.",
+          "Ist der Gesamtmarkt stark und haben andere Positionen schon Gewinnpuffer, kann die Position auch **ganz gehalten** werden."
+        ] },
+        { "typ": "bild", "src": "strategien/bilder/01-r-leiter.svg", "unterschrift": "Abb. 4: R-Leiter mit Stop, zwei Teilverkäufen und nachgezogenem Rest (schematisch)", "breite_cm": 16 }
+      ]
+    },
+    {
+      "titel": "Praxisbeispiel AMPX (aus der Quelle)",
+      "bloecke": [
+        { "typ": "absatz", "text": "AMPX war von Juli bis Oktober 2025 im Tageschart zunächst gestiegen, lief dann an eine Unterstützung zurück und zog anschließend wieder an. Vor Börsenbeginn hatte Luk die Zone um **7,45–7,50 $** markiert; dort lagen auch Durchschnitte und AVWAP. Die Aktie eröffnete höher, fiel in die Zone zurück, und er kaufte, als der **1-Minuten-Chart nach oben ausbrach**. Den Gewinn nahm er in den folgenden Anstieg hinein mit." }
+      ]
+    },
+    {
+      "titel": "Einordnung: Lücken und Risiken",
+      "bloecke": [
+        { "typ": "absatz", "text": "Die Regeln sind klar strukturiert, enthalten aber Ermessensspielraum. Vor einem Einsatz mit echtem Geld sollten diese Punkte bedacht werden:" },
+        { "typ": "aufzaehlung", "punkte": [
+          "**Ermessen statt Mechanik:** „gefragtes Thema“, „Schwankung wird kleiner“ oder „Zone“ sind nicht exakt definiert. Zwei Personen können denselben Chart unterschiedlich lesen.",
+          "**Teilverkauf-Mengen fehlen:** Die Quelle nennt nicht, welcher Anteil bei 3R und 5R verkauft wird, und auch keine feste Ausstiegsregel für den Rest.",
+          "**Trefferquote unbekannt:** Ein enger Stop wird häufig ausgelöst. Die Strategie lebt von wenigen großen Gewinnern; lange Verlustserien sind normal.",
+          "**Ausnahmerendite:** +969,8 % in einem Wettbewerbsjahr ist ein Spitzenergebnis unter vielen Teilnehmern (Survivorship Bias). Daraus folgt keine erwartbare Rendite.",
+          "**Zeitaufwand:** Einstiege im Minutenchart erfordern, zur US-Markteröffnung (15:30 Uhr MEZ) vor dem Bildschirm zu sitzen.",
+          "**Kosten und Steuern:** Gebühren, Spreads, Währungsumrechnung und Steuern sind in den R-Rechnungen nicht enthalten.",
+          "**Marktumfeld:** Momentum-Strategien funktionieren in starken Märkten am besten und leiden in fallenden oder trendlosen Phasen."
+        ] },
+        { "typ": "hinweis", "art": "info", "text": "Vor dem Einsatz mit echtem Geld: Regeln schriftlich fixieren, im Demokonto oder per Rückblick auf historische Charts mindestens 30–50 Fälle durchspielen und Ergebnisse in R protokollieren." }
+      ]
+    },
+    {
+      "titel": "Kurzfassung",
+      "bloecke": [
+        { "typ": "checkliste", "titel": "Checkliste vor jedem Trade", "punkte": [
+          "Aktie gehört zu den stärksten 20–30 % (über 30 % Plus in 1/3/6 Monaten) und ist liquide.",
+          "Tageschart: höhere Tiefs, engere Schwankung, Kurs über flachem/steigendem EMA 9/21.",
+          "Unterstützungszone markiert (EMA, AVWAP, altes Hoch, Gap) – idealerweise erster Rücktest.",
+          "Minutenchart: Rücksetzer, Erholung, Bruch des Vorkerzen-Hochs.",
+          "Stop gesetzt, Abstand ≤ 3 %, Risiko ≈ 0,5 % des Kontos, Stückzahl berechnet.",
+          "Plan für Teilverkäufe bei 3R / 5R und für den Rest am EMA 9 steht."
+        ] }
+      ]
+    }
+  ]
+}
