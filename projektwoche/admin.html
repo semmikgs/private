@@ -1529,21 +1529,31 @@ function renderRaeume(ziel) {
       }
 
       const tdGr = el("td");
-      if (!r.ist_exkursion) {
+      if (!r.ist_exkursion && daten.gruppen.length) {
         const ids = gruppenVon(r.nummer);
         const reiheG = el("div", "filterreihe");
-        reiheG.style.margin = "0"; reiheG.style.gap = "5px";
-        daten.gruppen.forEach((g) => {
-          const b = el("button", "filter klein", g.name);
+        reiheG.style.margin = "0"; reiheG.style.gap = "5px"; reiheG.style.alignItems = "center";
+        daten.gruppen.filter((g) => ids.includes(g.id)).forEach((g) => {
+          const b = el("button", "filter klein", g.name + "  ×");
           b.type = "button";
-          b.setAttribute("aria-pressed", String(ids.includes(g.id)));
-          b.onclick = () => {
-            const neu = ids.includes(g.id) ? ids.filter((x) => x !== g.id) : ids.concat(g.id);
-            aktion("pw_admin_room_groups_set", { p_room: r.nummer, p_group_ids: neu });
-          };
+          b.setAttribute("aria-pressed", "true");
+          b.title = "Aus der Gruppe „" + g.name + "“ entfernen";
+          b.onclick = () => aktion("pw_admin_room_groups_set", { p_room: r.nummer, p_group_ids: ids.filter((x) => x !== g.id) });
           reiheG.appendChild(b);
         });
-        if (!daten.gruppen.length) reiheG.appendChild(el("span", "leise", "keine Gruppen angelegt"));
+        const frei = daten.gruppen.filter((g) => !ids.includes(g.id));
+        if (frei.length) {
+          const sel = auswahl([["", "＋ Gruppe"]].concat(frei.map((g) => [g.id, g.name])), "");
+          sel.style.width = "auto";
+          sel.style.padding = "3px 6px";
+          sel.style.fontSize = "12.5px";
+          sel.setAttribute("aria-label", "Raum " + r.nummer + " einer Gruppe zuordnen");
+          sel.onchange = () => {
+            if (!sel.value) return;
+            aktion("pw_admin_room_groups_set", { p_room: r.nummer, p_group_ids: ids.concat(Number(sel.value)) });
+          };
+          reiheG.appendChild(sel);
+        }
         tdGr.appendChild(reiheG);
       }
 
