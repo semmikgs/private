@@ -390,6 +390,20 @@ dialog.breit[open] { display: flex; flex-direction: column; }
         <input class="feld" id="fMit" type="text" maxlength="120" placeholder="Kürzel, z. B. KRA, MÜL">
       </div>
 
+      <div class="feldgruppe nebeneinander">
+        <div class="schmal" style="flex-basis:150px">
+          <label class="label" for="fKosten">Kosten pro Schüler</label>
+          <div style="position:relative">
+            <input class="feld" id="fKosten" type="text" inputmode="decimal" maxlength="7" placeholder="0" style="padding-right:30px">
+            <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--tinte-leise)">€</span>
+          </div>
+        </div>
+        <div>
+          <label class="label" for="fKostenInfo">wofür? (optional)</label>
+          <input class="feld" id="fKostenInfo" type="text" maxlength="80" placeholder="z. B. Material, Eintritt, Busfahrt">
+        </div>
+      </div>
+
       <div class="feldgruppe">
         <span class="label">Klassenstufen <span class="pflicht">*</span></span>
         <div class="filterreihe" id="klassenChips" style="margin-top:0"></div>
@@ -508,7 +522,7 @@ const picker = { tag: 1, trakt: "alle", gruppe: null, suche: "", nurFrei: false 
 function leeresFormular() {
   const tage = {};
   for (let t = 1; t <= 5; t++) tage[t] = { aktiv: true, raum: null, ort: "", ganz: true, von: 1, bis: 6 };
-  return { thema: "", kuerzel: "", name: "", mitwirkende: "", kVon: 5, kBis: 10, code: false, tage };
+  return { thema: "", kuerzel: "", name: "", mitwirkende: "", kosten: "", kostenInfo: "", kVon: 5, kBis: 10, code: false, tage };
 }
 
 const $ = (id) => document.getElementById(id);
@@ -565,7 +579,7 @@ async function laden() {
     lesen("pw_rooms?select=*&order=nummer"),
     lesen("pw_groups?select=*&order=name"),
     lesen("pw_room_groups?select=*"),
-    lesen("pw_projects?select=id,thema,kuerzel,name,mitwirkende,klasse_von,klasse_bis"),
+    lesen("pw_projects?select=*"),
     lesen("pw_bookings?select=id,project_id,room,tag,std_von,std_bis,ort"),
     rpc("pw_get_status")
   ]);
@@ -601,6 +615,19 @@ function belegungen(raum, tag) {
 function konflikt(raum, tag, von, bis) {
   if (istExkursion(raum)) return null;
   return belegungen(raum, tag).find((b) => b.std_von <= bis && b.std_bis >= von) || null;
+}
+
+function kostenZahl(text) {
+  const t = String(text || "").trim().replace(",", ".");
+  if (!t) return 0;
+  const n = Number(t);
+  return isNaN(n) ? NaN : Math.round(n * 100) / 100;
+}
+
+function kostenText(betrag, info) {
+  const n = Number(betrag) || 0;
+  if (!n) return "kostenlos";
+  return n.toLocaleString("de-DE", { style: "currency", currency: "EUR" }) + (info ? " (" + info + ")" : "");
 }
 
 function stundenText(von, bis) {
@@ -689,6 +716,8 @@ function formularFuellen() {
   $("fKuerzel").value = form.kuerzel;
   $("fName").value = form.name;
   $("fMit").value = form.mitwirkende;
+  $("fKosten").value = form.kosten;
+  $("fKostenInfo").value = form.kostenInfo;
   $("fVon").value = form.kVon;
   $("fBis").value = form.kBis;
   $("cbCode").checked = form.code;
@@ -826,6 +855,11 @@ function renderAbschluss() {
     li.appendChild(el("span", leise ? "leise" : "", text));
     liste.appendChild(li);
   }
+  const k = kostenZahl(form.kosten);
+  const lk = el("li");
+  lk.appendChild(el("span", "t", "€"));
+  lk.appendChild(el("span", isNaN(k) ? "leise" : "", isNaN(k) ? "Betrag prüfen" : kostenText(k, form.kostenInfo.trim()) + (k ? " pro Schüler" : "")));
+  liste.appendChild(lk);
   renderKopf();
 }
 
@@ -962,6 +996,8 @@ function pruefen() {
   if (!kz) f.push("Dein Kürzel fehlt.");
   else if (kz < 2 || kz > 5) f.push("Das Kürzel muss 2 bis 5 Zeichen lang sein.");
   if (!form.name.trim()) f.push("Dein Name fehlt.");
+  if (form.kosten.trim() && isNaN(kostenZahl(form.kosten))) f.push("Bei den Kosten bitte nur einen Betrag eingeben, z. B. 2,50.");
+  else if (kostenZahl(form.kosten) > 500) f.push("Die Kosten wirken zu hoch – bitte prüfen (max. 500 €).");
   if (form.kVon > form.kBis) f.push("Bei den Klassenstufen ist „von“ größer als „bis“.");
   const tage = aktiveTage();
   if (!tage.length) f.push("Bitte mindestens einen Tag auswählen.");
@@ -1003,6 +1039,8 @@ async function absenden() {
     p_kuerzel: form.kuerzel.trim(),
     p_name: form.name.trim(),
     p_mitwirkende: form.mitwirkende.trim() || null,
+    p_kosten: kostenZahl(form.kosten),
+    p_kosten_info: form.kostenInfo.trim() || null,
     p_klasse_von: form.kVon,
     p_klasse_bis: form.kBis,
     p_buchungen: buchungsDaten()
@@ -1041,6 +1079,10 @@ function erfolgZeigen(code, geaendert) {
       " · " + stundenText(vonStd(d), bisStd(d))));
     liste.appendChild(li);
   });
+  const lk = el("li");
+  lk.appendChild(el("span", "t", "€"));
+  lk.appendChild(el("span", "", kostenText(kostenZahl(form.kosten), form.kostenInfo.trim())));
+  liste.appendChild(lk);
   box.appendChild(liste);
 
   if (code) {
@@ -1087,6 +1129,7 @@ async function codeLaden() {
     form = leeresFormular();
     Object.assign(form, {
       thema: p.thema, kuerzel: p.kuerzel, name: p.name, mitwirkende: p.mitwirkende || "",
+      kosten: Number(p.kosten) ? String(p.kosten).replace(".", ",") : "", kostenInfo: p.kosten_info || "",
       kVon: p.klasse_von, kBis: p.klasse_bis
     });
     for (let t = 1; t <= 5; t++) form.tage[t].aktiv = false;
@@ -1148,6 +1191,8 @@ function bedienungEinrichten() {
   feld("fKuerzel", "kuerzel", (v) => v.replace(/\s/g, ""));
   feld("fName", "name");
   feld("fMit", "mitwirkende");
+  feld("fKosten", "kosten", (v) => v.replace(/[^0-9,.]/g, ""));
+  feld("fKostenInfo", "kostenInfo");
 
   ["fVon", "fBis"].forEach((id) => {
     const s = $(id);
