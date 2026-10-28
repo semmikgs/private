@@ -499,7 +499,7 @@ let PW = "";
 let reiter = "planung";
 const ansicht = {
   plan: { modus: "raster", suche: "", alleRaeume: false },
-  raeume: { suche: "", versteckte: true },
+  raeume: { suche: "", versteckte: true, zuordnung: null },
   export: { art: "liste", klasse: "alle", gruppe: "", trakt: "", tag: 0, suche: "", sort: "thema" }
 };
 let offenesProjekt = null;
@@ -1364,6 +1364,7 @@ function renderRaeume(ziel) {
   });
   const reihe = el("div", "buttonreihe");
   reihe.appendChild(imp);
+  reihe.appendChild(knopf("Aktuelle Liste als CSV exportieren", "zurueck", raeumeExportieren));
   kImp.append(ta, datei, modus, erkl, reihe);
   if (importHinweis) {
     const [a, b] = importHinweis.split("|");
@@ -1372,7 +1373,7 @@ function renderRaeume(ziel) {
   }
   oben.appendChild(kImp);
 
-  /* Neuer Raum */
+  /* Neuer Raum + neue Gruppe */
   const kNeu = karte("Raum anlegen", "Vierstellige Nummer (Gebäude, Etage, Raum) – Gebäude und Etage ergeben sich daraus.");
   const fNr = input("", "z. B. 3208");
   fNr.maxLength = 20;
@@ -1381,16 +1382,106 @@ function renderRaeume(ziel) {
   const z = el("div", "zeile");
   const a = feldMitLabel("Nummer", fNr); a.className = "schmal";
   z.append(a, feldMitLabel("Beschreibung (optional)", fBes));
+  kNeu.appendChild(z);
+
+  const neueGruppen = [];
+  if (daten.gruppen.length) {
+    const gl = el("div", "feldgruppe");
+    gl.appendChild(el("span", "label", "Raumgruppen (optional)"));
+    const reiheG = el("div", "filterreihe");
+    reiheG.style.marginTop = "0";
+    daten.gruppen.forEach((g) => {
+      const b = el("button", "filter klein", g.name);
+      b.type = "button";
+      b.setAttribute("aria-pressed", "false");
+      b.onclick = () => {
+        const i = neueGruppen.indexOf(g.id);
+        if (i >= 0) neueGruppen.splice(i, 1); else neueGruppen.push(g.id);
+        b.setAttribute("aria-pressed", String(i < 0));
+      };
+      reiheG.appendChild(b);
+    });
+    gl.appendChild(reiheG);
+    kNeu.appendChild(gl);
+  }
+
   const r2 = el("div", "buttonreihe");
-  r2.appendChild(knopf("Anlegen", "", async () => {
+  r2.appendChild(knopf("Raum anlegen", "", async () => {
     const nr = fNr.value.trim();
     if (!nr) { meldung("Bitte eine Raumnummer eingeben.", true); return; }
-    if (raumInfo(nr)) { meldung("Raum " + nr + " gibt es schon – unten in der Liste bearbeiten.", true); return; }
-    await aktion("pw_admin_room_save", { p_nummer: nr, p_beschreibung: fBes.value.trim() || null, p_versteckt: false }, "Raum " + nr + " angelegt.");
+    if (raumInfo(nr)) { meldung("Raum " + nr + " gibt es schon – unten zuordnen oder in der Liste bearbeiten.", true); return; }
+    try {
+      await admin("pw_admin_room_save", { p_nummer: nr, p_beschreibung: fBes.value.trim() || null, p_versteckt: false });
+      if (neueGruppen.length) await admin("pw_admin_room_groups_set", { p_room: nr, p_group_ids: neueGruppen });
+      await laden();
+      renderAlles();
+      meldung("Raum " + nr + " angelegt.");
+    } catch (e) { meldung(e.message, true); }
   }));
-  kNeu.append(z, r2);
+  kNeu.appendChild(r2);
+
+  kNeu.appendChild(el("hr", "trenner"));
+  kNeu.appendChild(el("h3", "abschnitt", "Raumgruppe anlegen"));
+  kNeu.appendChild(el("p", "abschnitt-hinweis", "Ein Merkmal wie „Musikräume“ oder „Fachräume NW“, das du danach Räumen zuordnest."));
+  const zG = el("div", "zeile");
+  const fG = input("", "z. B. Musikräume");
+  fG.maxLength = 60;
+  const wG = el("div"); wG.appendChild(fG);
+  const bG = knopf("Gruppe anlegen", "", async () => {
+    const name = fG.value.trim();
+    if (!name) { meldung("Bitte einen Namen für die Gruppe eingeben.", true); return; }
+    if (daten.gruppen.some((g) => g.name.toLowerCase() === name.toLowerCase())) { meldung("Diese Gruppe gibt es schon.", true); return; }
+    const id = await aktion("pw_admin_group_save", { p_name: name }, "Gruppe „" + name + "“ angelegt – jetzt unten Räume zuordnen.");
+    if (id !== undefined && typeof id === "number") { ansicht.raeume.zuordnung = id; renderAlles(); }
+  });
+  bG.style.flex = "0 0 auto";
+  fG.onkeydown = (e) => { if (e.key === "Enter") bG.click(); };
+  zG.append(wG, bG);
+  kNeu.appendChild(zG);
   oben.appendChild(kNeu);
   ziel.appendChild(oben);
+
+  /* Räume einer Gruppe zuordnen */
+  if (daten.gruppen.length) {
+    const vz = ansicht.raeume;
+    if (!daten.gruppen.some((g) => g.id === vz.zuordnung)) vz.zuordnung = daten.gruppen[0].id;
+    const kZ = karte("Räume einer Gruppe zuordnen", "Gruppe wählen, dann Räume anklicken. Markierte Räume gehören zur Gruppe – ein zweiter Klick nimmt sie wieder heraus.");
+    const sG = auswahl(daten.gruppen.map((g) => [g.id, g.name]), vz.zuordnung);
+    sG.style.maxWidth = "360px";
+    sG.onchange = () => { vz.zuordnung = Number(sG.value); renderAlles(); };
+    kZ.appendChild(feldMitLabel("Gruppe", sG));
+
+    const mitglieder = new Set(daten.raumGruppen.filter((x) => x.group_id === vz.zuordnung).map((x) => x.room));
+    const nachGebaeude = new Map();
+    daten.raeume.filter((r) => !r.ist_exkursion).sort(vergleichRaum).forEach((r) => {
+      const s2 = r.trakt === null ? "9" : String(r.trakt);
+      if (!nachGebaeude.has(s2)) nachGebaeude.set(s2, []);
+      nachGebaeude.get(s2).push(r);
+    });
+    [...nachGebaeude.keys()].sort().forEach((s2) => {
+      const blk = el("div", "feldgruppe");
+      blk.appendChild(el("span", "label", s2 === "9" ? "Weitere Räume" : "Gebäude " + s2));
+      const reiheR = el("div", "filterreihe");
+      reiheR.style.marginTop = "0";
+      reiheR.style.gap = "6px";
+      nachGebaeude.get(s2).forEach((r) => {
+        const b = el("button", "filter klein", r.nummer + (r.beschreibung ? " · " + r.beschreibung : ""));
+        b.type = "button";
+        b.setAttribute("aria-pressed", String(mitglieder.has(r.nummer)));
+        if (r.versteckt) { b.style.opacity = ".55"; b.title = "ausgeblendet"; }
+        b.onclick = () => {
+          const ids = gruppenVon(r.nummer);
+          const neu = ids.includes(vz.zuordnung) ? ids.filter((x) => x !== vz.zuordnung) : ids.concat(vz.zuordnung);
+          aktion("pw_admin_room_groups_set", { p_room: r.nummer, p_group_ids: neu });
+        };
+        reiheR.appendChild(b);
+      });
+      blk.appendChild(reiheR);
+      kZ.appendChild(blk);
+    });
+    kZ.appendChild(el("p", "abschnitt-hinweis", mitglieder.size + (mitglieder.size === 1 ? " Raum" : " Räume") + " in dieser Gruppe."));
+    ziel.appendChild(kZ);
+  }
 
   /* Liste */
   const v = ansicht.raeume;
@@ -1494,6 +1585,25 @@ function renderRaeume(ziel) {
   suche.oninput = () => { v.suche = suche.value; zeichne(); };
   cb.onchange = () => { v.versteckte = cb.checked; zeichne(); };
   zeichne();
+}
+
+function raeumeExportieren() {
+  const zeilen = ["Nummer;Beschreibung;Gruppen;Ausgeblendet"];
+  daten.raeume.filter((r) => !r.ist_exkursion).sort(vergleichRaum).forEach((r) => {
+    const gruppen = gruppenVon(r.nummer)
+      .map((id) => (daten.gruppen.find((g) => g.id === id) || {}).name).filter(Boolean).join(", ");
+    zeilen.push([r.nummer, r.beschreibung || "", gruppen, r.versteckt ? "ja" : ""]
+      .map((x) => String(x).replace(/[;\r\n]/g, " ")).join(";"));
+  });
+  const blob = new Blob(["\uFEFF" + zeilen.join("\r\n") + "\r\n"], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "raumliste_projektwoche_" + new Date().toISOString().slice(0, 10) + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  meldung((zeilen.length - 1) + " Räume exportiert.");
 }
 
 /* =========================================================
