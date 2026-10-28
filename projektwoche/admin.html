@@ -436,6 +436,29 @@ dialog::backdrop { background: rgba(15, 20, 60, .55); }
   </div>
 </dialog>
 
+<!-- Löschen -->
+<dialog id="loeschDialog" aria-labelledby="ldTitel">
+  <div class="fenster-kopf">
+    <h2><span id="ldTitel">Löschen</span>
+      <button class="schliessen" type="button" data-schliessen aria-label="Schließen">×</button></h2>
+  </div>
+  <div class="fenster-inhalt">
+    <p class="hinweisbox warnung" id="ldText" style="margin-top:0"></p>
+    <label class="schalter" id="ldAbwZeile" style="margin:14px 0 4px">
+      <input type="checkbox" id="ldAbw" checked>
+      <span>Auch die eingetragenen Abwesenden zurücksetzen</span>
+    </label>
+    <div class="feldgruppe">
+      <label class="label" for="ldPw">Zur Bestätigung Admin-Passwort eingeben</label>
+      <input class="feld" id="ldPw" type="password" autocomplete="current-password">
+    </div>
+  </div>
+  <div class="fenster-fuss">
+    <button class="knopf zurueck" type="button" data-schliessen>Abbrechen</button>
+    <button class="knopf" id="ldOk" type="button" style="background:var(--rot)">Endgültig löschen</button>
+  </div>
+</dialog>
+
 <!-- Krankmeldung -->
 <dialog id="krankDialog" aria-labelledby="kdTitel">
   <div class="fenster-kopf">
@@ -1149,6 +1172,58 @@ function renderBuchungDialog() {
   }
 }
 
+/* ---------- Löschen mit Passwort ---------- */
+
+let loeschModus = "projekte";
+
+function loeschenOeffnen(modus) {
+  loeschModus = modus;
+  const mitBuchung = new Set(daten.buchungen.map((b) => b.room));
+  const raeume = daten.raeume.filter((r) => !r.ist_exkursion);
+  if (modus === "projekte") {
+    $("ldTitel").textContent = "Alle Projekte löschen";
+    $("ldText").textContent = "Gelöscht werden alle " + daten.projekte.length + " Projekte mit allen " + daten.buchungen.length +
+      " Tagesbuchungen, Krankmeldungen und Änderungscodes. Räume, Gruppen und Einstellungen bleiben erhalten. Das lässt sich nicht rückgängig machen.";
+    $("ldAbwZeile").hidden = false;
+  } else {
+    const gesperrt = raeume.filter((r) => mitBuchung.has(r.nummer)).length;
+    $("ldTitel").textContent = "Alle Räume löschen";
+    $("ldText").textContent = "Gelöscht werden alle Räume ohne Buchungen (" + (raeume.length - gesperrt) + " von " + raeume.length + ")" +
+      (gesperrt ? ". " + gesperrt + " Räume haben noch Buchungen und bleiben erhalten – vorher ggf. die Projekte löschen" : "") +
+      ". Gruppen bleiben bestehen, ihre Zuordnungen entfallen. Das lässt sich nicht rückgängig machen.";
+    $("ldAbwZeile").hidden = true;
+  }
+  $("ldPw").value = "";
+  $("loeschDialog").showModal();
+  $("ldPw").focus();
+}
+
+async function loeschenAusfuehren() {
+  const pw = $("ldPw").value;
+  if (!pw) { meldung("Bitte das Admin-Passwort eingeben.", true); return; }
+  const k = $("ldOk");
+  k.disabled = true;
+  try {
+    let text;
+    if (loeschModus === "projekte") {
+      const n = await rpc("pw_admin_reset_projekte", { p_pw: pw, p_abwesend: $("ldAbw").checked });
+      text = n + " Projekte gelöscht.";
+    } else {
+      const erg = await rpc("pw_admin_rooms_delete_all", { p_pw: pw });
+      text = erg.geloescht + " Räume gelöscht" + (erg.behalten ? ", " + erg.behalten + " mit Buchungen behalten." : ".");
+    }
+    $("loeschDialog").close();
+    importHinweis = "";
+    await laden();
+    renderAlles();
+    meldung(text);
+  } catch (e) {
+    meldung(/Kein Admin-Zugriff/.test(e.message) ? "Passwort falsch – nichts gelöscht." : e.message, true);
+  } finally {
+    k.disabled = false;
+  }
+}
+
 /* ---------- Krankmeldung (Schnellzugriff) ---------- */
 
 let krankId = null;
@@ -1324,12 +1399,22 @@ function renderRaeume(ziel) {
   const datei = input(null, null, "file");
   datei.accept = ".csv,.txt,text/csv,text/plain";
   datei.style.marginTop = "10px";
-  datei.onchange = () => {
+  const erkannt = el("p", "abschnitt-hinweis");
+  erkannt.style.margin = "8px 0 0";
+  const zeigeErkannt = () => {
+    const n = raumZeilen(ta.value).length;
+    erkannt.textContent = ta.value.trim() ? n + (n === 1 ? " Raum" : " Räume") + " erkannt." : "";
+  };
+  ta.oninput = zeigeErkannt;
+  datei.onchange = async () => {
     const f = datei.files[0];
     if (!f) return;
-    const leser = new FileReader();
-    leser.onload = () => { ta.value = String(leser.result).replace(/^﻿/, ""); };
-    leser.readAsText(f, "utf-8");
+    const roh = await f.arrayBuffer();
+    let text;
+    try { text = new TextDecoder("utf-8", { fatal: true }).decode(roh); }
+    catch (e) { text = new TextDecoder("windows-1252").decode(roh); }   /* Excel-CSV unter Windows */
+    ta.value = text.replace(/^\uFEFF/, "");
+    zeigeErkannt();
   };
   const modus = el("div", "filterreihe");
   let ersetzen = false;
@@ -1350,8 +1435,9 @@ function renderRaeume(ziel) {
   erkl.style.margin = "8px 0 0";
   zeichneModus();
   const imp = knopf("Importieren", "", async () => {
-    const text = ta.value.trim();
-    if (!text) { meldung("Die Liste ist leer.", true); return; }
+    const zeilen = raumZeilen(ta.value);
+    if (!zeilen.length) { meldung("In der Liste wurde kein Raum erkannt.", true); return; }
+    const text = zeilen.map(([n, b]) => n + ";" + b).join("\n");
     if (ersetzen && !confirm("Alle Räume, die nicht in der Liste stehen, werden ausgeblendet. Fortfahren?")) return;
     const erg = await aktion("pw_admin_import_rooms", { p_csv: text, p_ersetzen: ersetzen });
     if (erg === undefined) return;
@@ -1365,7 +1451,9 @@ function renderRaeume(ziel) {
   const reihe = el("div", "buttonreihe");
   reihe.appendChild(imp);
   reihe.appendChild(knopf("Aktuelle Liste als CSV exportieren", "zurueck", raeumeExportieren));
-  kImp.append(ta, datei, modus, erkl, reihe);
+  const reihe2 = el("div", "buttonreihe");
+  reihe2.appendChild(knopf("Alle Räume löschen …", "gefahr", () => loeschenOeffnen("raeume")));
+  kImp.append(ta, erkannt, datei, modus, erkl, reihe, reihe2);
   if (importHinweis) {
     const [a, b] = importHinweis.split("|");
     kImp.appendChild(el("p", "hinweisbox info", a));
@@ -1595,6 +1683,33 @@ function renderRaeume(ziel) {
   suche.oninput = () => { v.suche = suche.value; zeichne(); };
   cb.onchange = () => { v.versteckte = cb.checked; zeichne(); };
   zeichne();
+}
+
+/* Liest Raumlisten in vielen Formen: Nummer;Beschreibung, Tab (aus Excel kopiert),
+   Komma, mit Anführungszeichen, mit Kopfzeile, oder „NW1 3117“ bzw. „3117 NW1“. */
+function raumZeilen(text) {
+  const ergebnis = [];
+  const gesehen = new Set();
+  String(text || "").replace(/^\uFEFF/, "").split(/\r?\n/).forEach((zeile) => {
+    zeile = zeile.trim();
+    if (!zeile) return;
+    let teile = zeile.includes(";") ? zeile.split(";")
+      : zeile.includes("\t") ? zeile.split("\t")
+      : zeile.includes(",") ? zeile.split(",") : [zeile];
+    teile = teile.map((t) => t.trim().replace(/^"(.*)"$/, "$1").replace(/""/g, '"').trim());
+    let nr = teile[0] || "", bes = (teile[1] || "").replace(/;/g, ",");
+    if (!nr || /^(raum|raumnummer|nummer|nr\.?)$/i.test(nr)) return;
+    nr = nr.replace(/^(\d+)[.,]0+$/, "$1");                 /* 3105.0 aus Excel */
+    if (teile.length === 1) {
+      let m = nr.match(/^(\d{4})\s+(.+)$/);
+      if (m) { nr = m[1]; bes = m[2]; }
+      else if ((m = nr.match(/^(.+?)\s+(\d{4})$/))) { nr = m[2]; bes = m[1]; }
+    }
+    if (gesehen.has(nr)) return;
+    gesehen.add(nr);
+    ergebnis.push([nr, bes]);
+  });
+  return ergebnis;
 }
 
 function raeumeExportieren() {
@@ -2020,6 +2135,13 @@ function renderEinstellungen(ziel) {
   kP.append(sch1, sch2, rP);
   raster.appendChild(kP);
 
+  /* Zurücksetzen */
+  const kR = karte("Daten zurücksetzen", "Zum Beispiel nach der Projektwoche oder für einen neuen Durchgang. Räume und Gruppen bleiben erhalten.");
+  const rR = el("div", "buttonreihe");
+  rR.appendChild(knopf("Alle Projekte löschen …", "gefahr", () => loeschenOeffnen("projekte")));
+  kR.appendChild(rR);
+  raster.appendChild(kR);
+
   /* Passwort */
   const kPw = karte("Admin-Passwort", "Mindestens 8 Zeichen. Der Benutzername bleibt „admin“.");
   const p1 = input("", null, "password"); p1.autocomplete = "new-password";
@@ -2104,6 +2226,8 @@ function bedienung() {
 
   $("bdSpeichern").onclick = buchungSpeichern;
   $("abwSpeichern").onclick = abwSpeichern;
+  $("ldOk").onclick = loeschenAusfuehren;
+  $("ldPw").onkeydown = (e) => { if (e.key === "Enter") loeschenAusfuehren(); };
   $("abwAnzahl").onkeydown = (e) => { if (e.key === "Enter") abwSpeichern(); };
   $("rdSuche").oninput = (e) => { rw.suche = e.target.value; renderRaumwahl(); };
   $("rdNurFrei").onchange = (e) => { rw.nurFrei = e.target.checked; renderRaumwahl(); };
