@@ -495,7 +495,7 @@ let reiter = "planung";
 const ansicht = {
   plan: { modus: "raster", suche: "", alleRaeume: false },
   raeume: { suche: "", versteckte: true },
-  export: { art: "liste", klasse: "alle", gruppe: "", trakt: "", tag: 0, suche: "" }
+  export: { art: "liste", klasse: "alle", gruppe: "", trakt: "", tag: 0, suche: "", sort: "thema" }
 };
 let offenesProjekt = null;
 let bd = null;                  // Zustand des Buchungsdialogs
@@ -1551,6 +1551,7 @@ function renderGruppen(ziel) {
 function renderExport(ziel) {
   const v = ansicht.export;
   if (v.art === "tag" && !v.tag) v.tag = 1;
+  if (v.art === "schild" && v.tag === -1) v.tag = 0;
 
   const k = karte("Aushang erstellen", "Filter wählen, Vorschau prüfen, dann drucken oder im Druckdialog „Als PDF speichern“ wählen.");
 
@@ -1560,7 +1561,7 @@ function renderExport(ziel) {
     const b = el("button", "filter", t);
     b.type = "button";
     b.setAttribute("aria-pressed", String(v.art === w));
-    b.onclick = () => { v.art = w; if (w === "tag" && !v.tag) v.tag = 1; renderAlles(); };
+    b.onclick = () => { v.art = w; renderAlles(); };
     arten.appendChild(b);
   });
   k.appendChild(arten);
@@ -1578,15 +1579,22 @@ function renderExport(ziel) {
   const sT = auswahl([["", "Alle Gebäude"]].concat(trakte.map((t) => [t, "Gebäude " + t])), v.trakt);
   sT.onchange = () => { v.trakt = sT.value; vorschau(); };
 
-  const tagOpt = (v.art === "tag" ? [] : [[0, "Alle Tage"]]).concat([1, 2, 3, 4, 5].map((t) => [t, TAGE[t]]));
+  const tagOpt = (v.art === "tag" ? [] : [[0, "Ganze Woche"]])
+    .concat(v.art === "schild" ? [] : [[-1, "Jeder Tag einzeln (5 Seiten)"]])
+    .concat([1, 2, 3, 4, 5].map((t) => [t, TAGE[t] + (datum(t) ? ", " + datum(t) : "")]));
   const sD = auswahl(tagOpt, v.tag);
   sD.onchange = () => { v.tag = Number(sD.value); vorschau(); };
+
+  const sS = auswahl([["thema", "Thema"], ["raum", "Raum"], ["kuerzel", "Kürzel"], ["klasse", "Klassenstufe"]], v.sort);
+  sS.onchange = () => { v.sort = sS.value; vorschau(); };
 
   const fS = input(v.suche, "Thema, Kürzel, Raum …", "search");
   fS.oninput = () => { v.suche = fS.value; vorschau(); };
 
   z.append(feldMitLabel("Klassenstufe", sK), feldMitLabel("Raumgruppe", sG), feldMitLabel("Gebäude", sT),
-    feldMitLabel("Tag", sD), feldMitLabel("Textsuche", fS));
+    feldMitLabel("Tag", sD));
+  if (v.art !== "schild") z.appendChild(feldMitLabel("Sortieren nach", sS));
+  z.appendChild(feldMitLabel("Textsuche", fS));
   k.appendChild(z);
 
   const reihe = el("div", "buttonreihe");
@@ -1634,7 +1642,7 @@ function filterText() {
   if (v.klasse !== "alle") teile.push(v.klasse === "sek1" ? "Sek I" : v.klasse === "sek2" ? "Sek II" : "Klasse " + v.klasse);
   if (v.gruppe) { const g = daten.gruppen.find((x) => String(x.id) === String(v.gruppe)); if (g) teile.push(g.name); }
   if (v.trakt !== "") teile.push("Gebäude " + v.trakt);
-  if (v.tag && v.art !== "tag") teile.push(TAGE[v.tag]);
+  if (v.tag > 0 && v.art === "schild") teile.push(TAGE[v.tag]);
   if (v.suche.trim()) teile.push("Suche „" + v.suche.trim() + "“");
   return teile.join(" · ");
 }
@@ -1649,20 +1657,57 @@ function vertretungHtml(b) {
   return '<small class="d-krank">' + (b.vertretung ? "Vertretung: " + esc(b.vertretung) : "Lehrkraft erkrankt") + "</small>";
 }
 
+/* --- Sortierung --- */
+function sortiere(liste) {
+  const s = ansicht.export.sort;
+  const ex = (b) => (!b ? 2 : istExkursion(b.room) ? 1 : 0);
+  liste.sort((x, y) => {
+    let c = 0;
+    if (s === "raum") c = ex(x.b) - ex(y.b) || (x.b && y.b ? x.b.room.localeCompare(y.b.room, "de", { numeric: true }) : 0);
+    else if (s === "kuerzel") c = x.p.kuerzel.localeCompare(y.p.kuerzel, "de");
+    else if (s === "klasse") c = x.p.klasse_von - y.p.klasse_von || x.p.klasse_bis - y.p.klasse_bis;
+    return c || x.p.thema.localeCompare(y.p.thema, "de") || (x.b && y.b ? x.b.std_von - y.b.std_von : 0);
+  });
+  return liste;
+}
+
+function sortText() {
+  return { thema: "Thema", raum: "Raum", kuerzel: "Kürzel", klasse: "Klassenstufe" }[ansicht.export.sort];
+}
+
+function tageAuswahl() {
+  const t = ansicht.export.tag;
+  return t === -1 ? [1, 2, 3, 4, 5] : [t];
+}
+
+/* Buchungen eines Tages nach allen Filtern */
+function tagesBuchungen(t) {
+  const v = ansicht.export;
+  const q = v.suche.trim().toLowerCase();
+  return sortiere(daten.buchungen.filter((b) => {
+    if (b.tag !== t || !raumPasst(b.room)) return false;
+    const p = projektVon(b.project_id);
+    return p && klassePasst(p, v.klasse) && projektTreffer(p, q);
+  }).map((b) => ({ b, p: projektVon(b.project_id) })));
+}
+
 /* --- Gesamtliste --- */
 function htmlListe() {
   const v = ansicht.export;
+  if (v.tag !== 0) {
+    const seiten = tageAuswahl().map(htmlListeTag);
+    return { html: seiten.map((x) => x.html).join(""), anzahl: seiten.reduce((n, x) => n + x.n, 0) + " Einträge auf " + seiten.length + (seiten.length === 1 ? " Seite" : " Seiten"), quer: false };
+  }
   const q = v.suche.trim().toLowerCase();
-  const raumFilter = v.gruppe || v.trakt !== "" || v.tag;
-  const projekte = daten.projekte.filter((p) => {
+  const raumFilter = v.gruppe || v.trakt !== "";
+  const projekte = sortiere(daten.projekte.filter((p) => {
     if (!klassePasst(p, v.klasse) || !projektTreffer(p, q)) return false;
-    const bs = buchungenVon(p.id);
-    if (!raumFilter) return true;
-    return bs.some((b) => raumPasst(b.room) && (!v.tag || b.tag === v.tag));
-  }).sort((a, b) => a.thema.localeCompare(b.thema, "de"));
+    return !raumFilter || buchungenVon(p.id).some((b) => raumPasst(b.room));
+  }).map((p) => ({ p, b: buchungenVon(p.id)[0] || null }))).map((x) => x.p);
 
   let h = '<div class="d-seite"><h1>Projektwoche ' + esc(wochenText()) + "</h1>" +
-    '<p class="d-unter">Übersicht aller Projekte' + (filterText() ? " · " + esc(filterText()) : "") + " · " + stand() + "</p>";
+    '<p class="d-unter">Übersicht aller Projekte · sortiert nach ' + sortText() +
+    (filterText() ? " · " + esc(filterText()) : "") + " · " + stand() + "</p>";
   h += '<table class="d-tabelle"><thead><tr><th>Projekt</th><th>Klassen</th><th>Lehrkräfte</th>';
   for (let t = 1; t <= 5; t++) h += "<th>" + TAGE[t] + (datum(t) ? "<br>" + datum(t) : "") + "</th>";
   h += "</tr></thead><tbody>";
@@ -1686,6 +1731,25 @@ function htmlListe() {
   if (!projekte.length) h += '<tr><td colspan="8" class="d-leer">Keine Projekte für diese Auswahl.</td></tr>';
   h += "</tbody></table></div>";
   return { html: h, anzahl: projekte.length + " Projekte", quer: true };
+}
+
+/* Tagesversion der Schülerliste */
+function htmlListeTag(t) {
+  const liste = tagesBuchungen(t);
+  let h = '<div class="d-seite"><h1>Projekte am ' + TAGE[t] + (datum(t) ? ", " + datum(t, true) : "") + "</h1>" +
+    '<p class="d-unter">Sortiert nach ' + sortText() + (filterText() ? " · " + esc(filterText()) : "") + " · " + stand() + "</p>";
+  h += '<table class="d-tabelle"><thead><tr><th>Raum / Ort</th><th>Projekt</th><th>Klassen</th><th>Lehrkräfte</th><th>Zeit</th></tr></thead><tbody>';
+  liste.forEach(({ b, p }) => {
+    const r = raumInfo(b.room);
+    h += "<tr><td><b>" + esc(istExkursion(b.room) ? "Exkursion" : b.room) + "</b>" +
+      (istExkursion(b.room) ? (b.ort ? "<small>" + esc(b.ort) + "</small>" : "")
+        : (r && r.beschreibung ? "<small>" + esc(r.beschreibung) + "</small>" : "")) +
+      '</td><td class="thema">' + esc(p.thema) + "</td><td>" + esc(klassenText(p).replace("Kl. ", "")) +
+      "</td><td>" + esc(lehrkraefte(p)) + vertretungHtml(b) + "</td><td>" + esc(stundenText(b.std_von, b.std_bis)) + "</td></tr>";
+  });
+  if (!liste.length) h += '<tr><td colspan="5" class="d-leer">Keine Projekte für diese Auswahl.</td></tr>';
+  h += "</tbody></table></div>";
+  return { html: h, n: liste.length };
 }
 
 /* --- Türschilder --- */
@@ -1731,29 +1795,25 @@ function htmlSchilder() {
 
 /* --- Tagesplan --- */
 function htmlTag() {
-  const v = ansicht.export;
-  const q = v.suche.trim().toLowerCase();
-  const t = v.tag || 1;
-  const bs = daten.buchungen.filter((b) => {
-    if (b.tag !== t || !raumPasst(b.room)) return false;
-    const p = projektVon(b.project_id);
-    return p && klassePasst(p, v.klasse) && projektTreffer(p, q);
-  }).sort((a, b) => projektVon(a.project_id).kuerzel.localeCompare(projektVon(b.project_id).kuerzel, "de"));
+  const seiten = tageAuswahl().map(htmlTagSeite);
+  return { html: seiten.map((x) => x.html).join(""), anzahl: seiten.reduce((n, x) => n + x.n, 0) + " Einsätze auf " + seiten.length + (seiten.length === 1 ? " Seite" : " Seiten"), quer: true };
+}
 
+function htmlTagSeite(t) {
+  const liste = tagesBuchungen(t);
   let h = '<div class="d-seite"><h1>Tagesplan ' + TAGE[t] + (datum(t) ? ", " + datum(t, true) : "") + "</h1>" +
-    '<p class="d-unter">Wer ist wo eingesetzt' + (filterText() ? " · " + esc(filterText()) : "") + " · " + stand() + "</p>";
+    '<p class="d-unter">Wer ist wo eingesetzt · sortiert nach ' + sortText() + (filterText() ? " · " + esc(filterText()) : "") + " · " + stand() + "</p>";
   h += '<table class="d-tabelle"><thead><tr><th>Lehrkraft</th><th>Weitere</th><th>Projekt</th><th>Klassen</th><th>Raum / Ort</th><th>Zeit</th><th>Bemerkung</th></tr></thead><tbody>';
-  bs.forEach((b) => {
-    const p = projektVon(b.project_id);
+  liste.forEach(({ b, p }) => {
     h += "<tr><td><b>" + esc(p.kuerzel) + "</b><small>" + esc(p.name) + "</small></td><td>" + esc(p.mitwirkende || "–") +
       '</td><td class="thema">' + esc(p.thema) + "</td><td>" + esc(klassenText(p).replace("Kl. ", "")) + "</td><td>" +
       esc(ortText(b, true)) + "</td><td>" + esc(stundenText(b.std_von, b.std_bis)) + "</td><td>" +
       (b.krank ? '<span class="d-krank">krank' + (b.vertretung ? " – Vertretung: " + esc(b.vertretung) : " – Vertretung offen") + "</span>" : "") +
       "</td></tr>";
   });
-  if (!bs.length) h += '<tr><td colspan="7" class="d-leer">Keine Einsätze für diese Auswahl.</td></tr>';
+  if (!liste.length) h += '<tr><td colspan="7" class="d-leer">Keine Einsätze für diese Auswahl.</td></tr>';
   h += "</tbody></table></div>";
-  return { html: h, anzahl: bs.length + " Einsätze", quer: true };
+  return { html: h, n: liste.length };
 }
 
 function vorschau() {
