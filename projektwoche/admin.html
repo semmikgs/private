@@ -761,7 +761,8 @@ function renderAlles() {
   const st = daten.status;
   $("untertitel").textContent = "Projektwoche " + wochenText() + " · Buchung " +
     (st.buchung_offen === false ? "geschlossen" : "offen") + " · Änderungscodes " +
-    (st.aenderung_offen === false ? "deaktiviert" : "aktiv");
+    (st.aenderung_offen === false ? "deaktiviert" : "aktiv") +
+    (st.buchung_offen === false && st.plan_sichtbar ? " · Projektplan öffentlich" : "");
 
   const leiste = $("reiter");
   leiste.innerHTML = "";
@@ -2166,10 +2167,21 @@ function renderEinstellungen(ziel) {
   c2.checked = daten.status.aenderung_offen !== false;
   sch2.append(c2, el("span", "", "Änderungscodes aktiv"));
   sch2.querySelector("span").appendChild(el("small", "", "Kollegen können ihr Projekt per Code ändern oder löschen."));
+  const sch3 = el("label", "schalter");
+  sch3.style.marginTop = "14px";
+  const c3 = input(null, null, "checkbox");
+  c3.checked = daten.status.plan_sichtbar === true;
+  sch3.append(c3, el("span", "", "Projektplan auf der Buchungsseite anzeigen"));
+  sch3.querySelector("span").appendChild(el("small", "", "Wirkt, sobald die Buchung geschlossen ist: Statt des Formulars erscheinen Tagesplan, Wochenübersicht und Raumbelegung."));
   const rP = el("div", "buttonreihe");
   rP.appendChild(knopf("Speichern", "", () =>
-    aktion("pw_admin_set_phasen", { p_buchung: c1.checked, p_aenderung: c2.checked }, "Phasen gespeichert.")));
-  kP.append(sch1, sch2, rP);
+    aktion("pw_admin_set_phasen", { p_buchung: c1.checked, p_aenderung: c2.checked, p_plan: c3.checked }, "Phasen gespeichert.")));
+  const zeigeHinweis = () => { hinw.hidden = !(c3.checked && c1.checked); };
+  const hinw = el("p", "hinweisbox info", "Hinweis: Der Plan erscheint erst, wenn „Buchung offen“ ausgeschaltet ist.");
+  c1.addEventListener("change", zeigeHinweis);
+  c3.addEventListener("change", zeigeHinweis);
+  zeigeHinweis();
+  kP.append(sch1, sch2, sch3, hinw, rP);
   raster.appendChild(kP);
 
   /* Zurücksetzen */

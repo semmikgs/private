@@ -162,6 +162,30 @@ select.feld { padding-right: 8px; }
 .zkachel .r { font-size: 12.5px; color: var(--tinte-leise); }
 .zkachel.erreicht .r { color: var(--gruen); font-weight: 700; }
 
+/* ---------- Projektplan (Lese-Ansicht) ---------- */
+.plan-steuer { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 16px; }
+.plan-steuer > div { flex: 1 1 160px; min-width: 0; }
+.plan-steuer > .breit { flex: 2 1 260px; }
+.ptab-huelle { overflow-x: auto; border: 1.5px solid var(--linie); border-radius: 12px; margin-top: 18px; }
+.ptab { width: 100%; border-collapse: collapse; font-size: 15px; }
+.ptab th {
+  position: sticky; top: 0; background: #f6f7fb; text-align: left; padding: 10px 12px;
+  font-size: 13px; font-weight: 700; color: var(--tinte-leise); border-bottom: 1.5px solid var(--linie); white-space: nowrap;
+}
+.ptab th.heute { color: var(--indigo); background: var(--badge-bg); }
+.ptab td { padding: 10px 12px; border-bottom: 1px solid var(--linie); vertical-align: top; }
+.ptab tr:last-child td { border-bottom: 0; }
+.ptab td.heute { background: #f7f8ff; }
+.ptab .raumnr { font-weight: 700; color: var(--indigo); white-space: nowrap; }
+.ptab .thema { font-weight: 700; }
+.ptab small { display: block; color: var(--tinte-leise); font-size: 13px; }
+.ptab .vertretung { color: var(--orange); font-weight: 700; }
+.belegung { padding: 6px 9px; margin-bottom: 6px; background: var(--badge-bg); border-radius: 8px; font-size: 13.5px; line-height: 1.35; }
+.belegung:last-child { margin-bottom: 0; }
+.belegung b { color: var(--indigo); }
+.plan-leer { color: var(--tinte-leise); text-align: center; padding: 30px 0; }
+.plan-stand { margin: 10px 0 0; font-size: 13px; color: var(--tinte-leise); }
+
 /* ---------- Werkbank ---------- */
 .werkbank {
   display: grid;
@@ -333,7 +357,7 @@ dialog.breit[open] { display: flex; flex-direction: column; }
   <div class="karte">
     <h1 class="kopf-titel"><span class="symbol">🗓️</span> Projektwoche · Raumbuchung</h1>
     <p class="kopf-untertitel" id="untertitel">Projekt anlegen, Tage wählen, Raum buchen.</p>
-    <div class="schrittreihe">
+    <div class="schrittreihe" id="schrittreihe">
       <span><b>1</b>Projekt beschreiben</span>
       <span><b>2</b>Tage und Räume wählen</span>
       <span><b>3</b>Verbindlich buchen</span>
@@ -355,6 +379,15 @@ dialog.breit[open] { display: flex; flex-direction: column; }
   </div>
 
   <div class="karte" id="startfehler" hidden></div>
+
+  <!-- Projektplan (nach der Buchungsphase) -->
+  <section class="karte" id="plan" hidden>
+    <h2 class="abschnitt">Projektplan</h2>
+    <div class="filterreihe" id="planReiter" style="margin-top:8px"></div>
+    <div class="plan-steuer" id="planSteuer"></div>
+    <div id="planInhalt"></div>
+    <p class="plan-stand" id="planStand"></p>
+  </section>
 
   <div class="karte" id="geschlossen" hidden>
     <h2 class="abschnitt">Die Buchungsphase ist beendet</h2>
@@ -580,7 +613,7 @@ async function laden() {
     lesen("pw_groups?select=*&order=name"),
     lesen("pw_room_groups?select=*"),
     lesen("pw_projects?select=*"),
-    lesen("pw_bookings?select=id,project_id,room,tag,std_von,std_bis,ort"),
+    lesen("pw_bookings?select=id,project_id,room,tag,std_von,std_bis,ort,krank,vertretung"),
     rpc("pw_get_status")
   ]);
   Object.assign(daten, { raeume, gruppen, raumGruppen, projekte, buchungen, status: status || {} });
@@ -702,8 +735,17 @@ function renderKopf() {
     ? "Projektwoche vom " + datum(1) + " bis " + datum(5)
     : "Projekt anlegen, Tage wählen, Raum buchen.";
 
+  const planAn = !offen && !bearbeiten && daten.status.plan_sichtbar === true;
   $("werkbank").hidden = !(offen || bearbeiten);
-  $("geschlossen").hidden = offen || !!bearbeiten;
+  $("geschlossen").hidden = offen || !!bearbeiten || planAn;
+  $("plan").hidden = !planAn;
+  $("zaehler").hidden = planAn;
+  $("schrittreihe").hidden = planAn;
+  if (planAn) {
+    $("untertitel").textContent = daten.status.woche_start
+      ? "Projektplan · " + datum(1) + " bis " + datum(5) : "Projektplan";
+    renderPlan();
+  }
   $("btnCode").hidden = !aenderbar || !!bearbeiten;
   $("codeZeile").hidden = !aenderbar || !!bearbeiten;
   $("leiste").hidden = !bearbeiten;
@@ -862,6 +904,205 @@ function renderAbschluss() {
   liste.appendChild(lk);
   renderKopf();
 }
+
+/* =========================================================
+   4b · Projektplan (Lese-Ansicht nach der Buchungsphase)
+   ========================================================= */
+
+const plan = { ansicht: "tag", tag: null, suche: "", klasse: "alle", kosten: "alle", sort: "raum" };
+
+function heuteTag() {
+  const s = daten.status.woche_start;
+  if (!s) return null;
+  const start = new Date(s + "T00:00:00");
+  const heute = new Date();
+  heute.setHours(0, 0, 0, 0);
+  const d = Math.round((heute - start) / 86400000);
+  return d >= 0 && d <= 4 ? d + 1 : null;
+}
+
+const projektVon = (id) => daten.projekte.find((p) => p.id === id);
+
+function klassenKurz(p) {
+  return p.klasse_von === p.klasse_bis ? String(p.klasse_von) : p.klasse_von + "–" + p.klasse_bis;
+}
+
+function lehrkraftHtml(p, b) {
+  let h = esc(p.kuerzel + (p.mitwirkende ? ", " + p.mitwirkende : ""));
+  if (b && b.krank && b.vertretung) h += '<small class="vertretung">Vertretung: ' + esc(b.vertretung) + "</small>";
+  return h;
+}
+
+function ortHtml(b) {
+  if (istExkursion(b.room)) return '<span class="raumnr">Exkursion</span>' + (b.ort ? "<small>" + esc(b.ort) + "</small>" : "");
+  const r = raumInfo(b.room);
+  return '<span class="raumnr">' + esc(b.room) + "</span>" + (r && r.beschreibung ? "<small>" + esc(r.beschreibung) + "</small>" : "");
+}
+
+function planPasst(p) {
+  if (!p) return false;
+  const k = plan.klasse;
+  if (k === "sek1" && !(p.klasse_von <= 10 && p.klasse_bis >= 5)) return false;
+  if (k === "sek2" && !(p.klasse_bis >= 11)) return false;
+  if (/^\d+$/.test(k) && !(p.klasse_von <= +k && p.klasse_bis >= +k)) return false;
+  const n = Number(p.kosten) || 0;
+  if (plan.kosten === "frei" && n) return false;
+  if (plan.kosten === "mit" && !n) return false;
+  const q = plan.suche.trim().toLowerCase();
+  if (!q) return true;
+  const orte = daten.buchungen.filter((b) => b.project_id === p.id).map((b) => b.room + " " + (b.ort || "") + " " + (b.vertretung || "")).join(" ");
+  return (p.thema + " " + p.kuerzel + " " + (p.mitwirkende || "") + " " + (p.kosten_info || "") + " " + orte).toLowerCase().includes(q);
+}
+
+function planSortieren(liste) {
+  const ex = (b) => (!b ? 2 : istExkursion(b.room) ? 1 : 0);
+  return liste.sort((x, y) => {
+    let c = 0;
+    if (plan.sort === "raum") c = ex(x.b) - ex(y.b) || (x.b && y.b ? x.b.room.localeCompare(y.b.room, "de", { numeric: true }) : 0);
+    else if (plan.sort === "kuerzel") c = x.p.kuerzel.localeCompare(y.p.kuerzel, "de");
+    else if (plan.sort === "klasse") c = x.p.klasse_von - y.p.klasse_von || x.p.klasse_bis - y.p.klasse_bis;
+    return c || x.p.thema.localeCompare(y.p.thema, "de");
+  });
+}
+
+function planAuswahl(werte, wert, beiAenderung, label) {
+  const box = el("div");
+  const l = el("label", "label", label);
+  const sel = el("select", "feld");
+  sel.id = "plan" + label.replace(/\W/g, "");
+  l.htmlFor = sel.id;
+  werte.forEach(([w, t]) => {
+    const o = el("option", "", t);
+    o.value = w;
+    if (String(w) === String(wert)) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.onchange = () => { beiAenderung(sel.value); planInhalt(); };
+  box.append(l, sel);
+  return box;
+}
+
+function renderPlan() {
+  if (plan.tag === null) plan.tag = heuteTag() || 1;
+
+  const reiter = $("planReiter");
+  reiter.innerHTML = "";
+  [["tag", "Tagesplan"], ["woche", "Wochenübersicht"], ["raeume", "Raumbelegung"]].forEach(([w, t]) => {
+    const b = el("button", "filter", t);
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(plan.ansicht === w));
+    b.onclick = () => { plan.ansicht = w; renderPlan(); };
+    reiter.appendChild(b);
+  });
+
+  const steuer = $("planSteuer");
+  steuer.innerHTML = "";
+  const heute = heuteTag();
+  if (plan.ansicht === "tag") {
+    steuer.appendChild(planAuswahl([1, 2, 3, 4, 5].map((t) => [t, TAGE[t] + (datum(t) ? ", " + datum(t).slice(0, 6) : "") + (t === heute ? " (heute)" : "")]),
+      plan.tag, (v) => { plan.tag = Number(v); }, "Tag"));
+  }
+  const klassen = [["alle", "Alle Klassen"], ["sek1", "Sek I (5–10)"], ["sek2", "Sek II (11–13)"]];
+  for (let i = 5; i <= 13; i++) klassen.push([String(i), "Klasse " + i]);
+  steuer.appendChild(planAuswahl(klassen, plan.klasse, (v) => { plan.klasse = v; }, "Klassenstufe"));
+  steuer.appendChild(planAuswahl([["alle", "Alle"], ["frei", "Nur kostenlose"], ["mit", "Nur mit Kosten"]], plan.kosten, (v) => { plan.kosten = v; }, "Kosten"));
+  if (plan.ansicht !== "raeume") {
+    steuer.appendChild(planAuswahl([["raum", "Raum"], ["thema", "Thema"], ["kuerzel", "Kürzel"], ["klasse", "Klassenstufe"]], plan.sort, (v) => { plan.sort = v; }, "Sortieren nach"));
+  }
+  const sb = el("div", "breit");
+  const sl = el("label", "label", "Suche");
+  const si = el("input", "feld");
+  si.type = "search"; si.id = "planSuche"; si.placeholder = "Thema, Kürzel, Raum …"; si.value = plan.suche;
+  sl.htmlFor = si.id;
+  si.oninput = () => { plan.suche = si.value; planInhalt(); };
+  sb.append(sl, si);
+  steuer.appendChild(sb);
+
+  planInhalt();
+}
+
+function planInhalt() {
+  const box = $("planInhalt");
+  box.innerHTML = "";
+  const huelle = el("div", "ptab-huelle");
+  const t = el("table", "ptab");
+  const heute = heuteTag();
+  let h = "", anzahl = 0;
+
+  if (plan.ansicht === "tag") {
+    const liste = planSortieren(daten.buchungen.filter((b) => b.tag === plan.tag)
+      .map((b) => ({ b, p: projektVon(b.project_id) })).filter((x) => planPasst(x.p)));
+    anzahl = liste.length;
+    h = "<thead><tr><th>Raum / Ort</th><th>Projekt</th><th>Klassen</th><th>Kosten</th><th>Lehrkräfte</th><th>Zeit</th></tr></thead><tbody>";
+    liste.forEach(({ b, p }) => {
+      h += "<tr><td>" + ortHtml(b) + '</td><td class="thema">' + esc(p.thema) + "</td><td>" + klassenKurz(p) + "</td><td>" +
+        esc(kostenText(p.kosten, p.kosten_info)) + "</td><td>" + lehrkraftHtml(p, b) + "</td><td>" + esc(stundenText(b.std_von, b.std_bis)) + "</td></tr>";
+    });
+    if (!anzahl) h += '<tr><td colspan="6" class="plan-leer">Keine Projekte für diese Auswahl.</td></tr>';
+  }
+
+  if (plan.ansicht === "woche") {
+    const liste = planSortieren(daten.projekte.filter(planPasst).map((p) => ({
+      p, b: daten.buchungen.filter((b) => b.project_id === p.id).sort((a, c) => a.tag - c.tag)[0] || null })));
+    anzahl = liste.length;
+    h = "<thead><tr><th>Projekt</th><th>Klassen</th><th>Kosten</th><th>Lehrkräfte</th>";
+    for (let d = 1; d <= 5; d++) h += '<th class="' + (d === heute ? "heute" : "") + '">' + TAGE[d] + (datum(d) ? "<br>" + datum(d).slice(0, 6) : "") + "</th>";
+    h += "</tr></thead><tbody>";
+    liste.forEach(({ p }) => {
+      h += '<tr><td class="thema">' + esc(p.thema) + "</td><td>" + klassenKurz(p) + "</td><td>" + esc(kostenText(p.kosten, p.kosten_info)) +
+        "</td><td>" + lehrkraftHtml(p) + "</td>";
+      for (let d = 1; d <= 5; d++) {
+        const bs = daten.buchungen.filter((b) => b.project_id === p.id && b.tag === d);
+        h += '<td class="' + (d === heute ? "heute" : "") + '">' + (bs.length ? bs.map((b) => ortHtml(b) +
+          (b.std_von === 1 && b.std_bis === 6 ? "" : "<small>" + esc(stundenText(b.std_von, b.std_bis)) + "</small>") +
+          (b.krank && b.vertretung ? '<small class="vertretung">Vertretung: ' + esc(b.vertretung) + "</small>" : "")).join("<br>")
+          : '<span class="plan-leer" style="padding:0">–</span>') + "</td>";
+      }
+      h += "</tr>";
+    });
+    if (!anzahl) h += '<tr><td colspan="9" class="plan-leer">Keine Projekte für diese Auswahl.</td></tr>';
+  }
+
+  if (plan.ansicht === "raeume") {
+    const q = plan.suche.trim().toLowerCase();
+    const passend = daten.buchungen.filter((b) => planPasst(projektVon(b.project_id)));
+    const raeume = daten.raeume.filter((r) => passend.some((b) => b.room === r.nummer) ||
+      (q && !r.versteckt && (r.nummer + " " + (r.beschreibung || "")).toLowerCase().includes(q)))
+      .sort((a, c) => (a.ist_exkursion - c.ist_exkursion) || a.nummer.localeCompare(c.nummer, "de", { numeric: true }));
+    anzahl = raeume.length;
+    h = "<thead><tr><th>Raum</th>";
+    for (let d = 1; d <= 5; d++) h += '<th class="' + (d === heute ? "heute" : "") + '">' + TAGE[d] + (datum(d) ? "<br>" + datum(d).slice(0, 6) : "") + "</th>";
+    h += "</tr></thead><tbody>";
+    raeume.forEach((r) => {
+      h += "<tr><td>" + (r.ist_exkursion ? '<span class="raumnr">Exkursion</span>' :
+        '<span class="raumnr">' + esc(r.nummer) + "</span>" + (r.beschreibung ? "<small>" + esc(r.beschreibung) + "</small>" : "")) + "</td>";
+      for (let d = 1; d <= 5; d++) {
+        const bs = passend.filter((b) => b.room === r.nummer && b.tag === d).sort((a, c) => a.std_von - c.std_von);
+        h += '<td class="' + (d === heute ? "heute" : "") + '">' + bs.map((b) => {
+          const p = projektVon(b.project_id);
+          return '<div class="belegung"><b>' + esc(p.kuerzel) + "</b> " + esc(p.thema) +
+            ((b.std_von === 1 && b.std_bis === 6) && !b.ort && !(b.krank && b.vertretung) ? "" : "<small>" + esc([
+              b.std_von === 1 && b.std_bis === 6 ? "" : stundenText(b.std_von, b.std_bis),
+              b.ort || "", b.krank && b.vertretung ? "Vertretung: " + b.vertretung : ""].filter(Boolean).join(" · ")) + "</small>") + "</div>";
+        }).join("") + "</td>";
+      }
+      h += "</tr>";
+    });
+    if (!anzahl) h += '<tr><td colspan="6" class="plan-leer">Keine Belegungen für diese Auswahl.</td></tr>';
+  }
+
+  t.innerHTML = h + "</tbody>";
+  huelle.appendChild(t);
+  box.appendChild(huelle);
+  $("planStand").textContent = (plan.ansicht === "raeume" ? anzahl + (anzahl === 1 ? " Raum" : " Räume") : anzahl + (anzahl === 1 ? " Eintrag" : " Einträge")) +
+    " · Stand " + new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr · aktualisiert sich automatisch";
+}
+
+/* Plan alle 2 Minuten aktualisieren, wenn er angezeigt wird */
+setInterval(async () => {
+  if ($("plan").hidden) return;
+  try { await laden(); renderKopf(); } catch (e) { /* nächster Versuch */ }
+}, 120000);
 
 /* =========================================================
    5 · Raumauswahl
