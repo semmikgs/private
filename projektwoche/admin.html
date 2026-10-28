@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projektwoche · Admin</title>
+<meta name="description" content="Verwaltung der Projektwoche: Planung, Räume, Gruppen, Aushänge und Einstellungen.">
+<meta name="robots" content="noindex">
+
+<!-- =========================================================
+     PROJEKTWOCHE · ADMIN · KGS - Digital
+     Eigenständige Datei, kein CDN, kein Framework.
+     Alle Änderungen laufen über geschützte Datenbankfunktionen,
+     die das Admin-Passwort serverseitig prüfen.
+     ========================================================= -->
+
+<style id="seitenstil">@page { size: A4 portrait; margin: 12mm; }</style>
+<style>
+/* ---------- KGS-Basis ---------- */
+:root {
+  --bg:            #2a2c8e;
+  --karte:         #ffffff;
+  --tinte:         #1f2430;
+  --tinte-leise:   #6b7280;
+  --indigo:        #312e91;
+  --navy:          #1e2a78;
+  --navy-hover:    #16205c;
+  --linie:         #e3e6ee;
+  --chip:          #eef0f5;
+  --badge-bg:      #e6e8fb;
+  --radius-karte:  16px;
+  --radius-klein:  8px;
+  --schatten:      0 1px 3px rgba(15, 20, 60, .12);
+  --gruen:         #1b7a4b;
+  --orange:        #c2670c;
+  --rot:           #b3261e;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  padding: 20px 16px 56px;
+  background: var(--bg);
+  color: var(--tinte);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.huelle { max-width: 1280px; margin: 0 auto; }
+
+.karte {
+  background: var(--karte);
+  border-radius: var(--radius-karte);
+  padding: 26px 28px;
+  margin-bottom: 22px;
+  box-shadow: var(--schatten);
+}
+
+.kopf-titel {
+  display: flex; align-items: center; gap: 12px;
+  margin: 0; font-size: 30px; font-weight: 700;
+  color: var(--indigo); letter-spacing: -.01em;
+}
+.kopf-titel .symbol { font-size: 28px; line-height: 1; }
+.kopf-untertitel { margin: 6px 0 0; color: var(--tinte-leise); font-size: 15px; }
+
+.buttonreihe { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+
+.knopf {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 18px;
+  background: var(--navy); color: #fff;
+  border: 0; border-radius: var(--radius-klein);
+  font-family: inherit; font-size: 14.5px; font-weight: 600;
+  text-decoration: none; cursor: pointer;
+  transition: background .15s ease;
+}
+.knopf:hover { background: var(--navy-hover); }
+.knopf:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.knopf:disabled { opacity: .55; cursor: not-allowed; }
+.knopf.zurueck { background: transparent; color: var(--navy); border: 1.5px solid var(--linie); }
+.knopf.zurueck:hover { background: var(--chip); }
+.knopf.gefahr { background: transparent; color: var(--rot); border: 1.5px solid #f1c9c6; }
+.knopf.gefahr:hover { background: #fdf0ef; }
+.knopf.mini { padding: 6px 12px; font-size: 13.5px; }
+
+.trenner { height: 1px; background: var(--linie); border: 0; margin: 22px 0; }
+
+.filterreihe { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; }
+.filter {
+  padding: 8px 16px;
+  background: var(--chip); color: #4b5563;
+  border: 1.5px solid transparent; border-radius: 999px;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: background .15s ease;
+}
+.filter:hover { background: #e2e6ee; }
+.filter[aria-pressed="true"] { background: #fff; color: var(--indigo); border-color: var(--indigo); }
+.filter:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.filter.klein { padding: 3px 10px; font-size: 12.5px; }
+
+.fusszeile { margin-top: 10px; color: #b9bce0; font-size: 13.5px; text-align: center; }
+
+/* ---------- Formular ---------- */
+.abschnitt { margin: 0 0 4px; font-size: 19px; font-weight: 700; color: var(--indigo); }
+.abschnitt-hinweis { margin: 0 0 16px; font-size: 14px; color: var(--tinte-leise); }
+
+.feld {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: inherit; font-size: 15px; color: var(--tinte);
+  background: #fff;
+  border: 1.5px solid var(--linie); border-radius: var(--radius-klein);
+}
+.feld:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(30, 42, 120, .12); }
+textarea.feld { min-height: 140px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; }
+
+.label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 700; color: var(--tinte-leise); }
+.feldgruppe { margin-top: 14px; }
+.zeile { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+.zeile > div { flex: 1 1 160px; min-width: 0; }
+.zeile > .schmal { flex: 0 1 120px; }
+
+.schalter { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; cursor: pointer; }
+.schalter input { width: 20px; height: 20px; accent-color: var(--navy); margin: 2px 0 0; flex: none; }
+.schalter small { display: block; color: var(--tinte-leise); font-size: 13.5px; }
+
+.raster2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 22px; }
+.raster2 > .karte { margin: 0; }
+
+.hinweisbox { padding: 12px 14px; border-radius: var(--radius-klein); font-size: 14px; margin-top: 14px; }
+.hinweisbox.warnung { background: #fdf0ef; color: var(--rot); }
+.hinweisbox.info { background: var(--badge-bg); color: var(--indigo); }
+.hinweisbox ul { margin: 6px 0 0; padding-left: 20px; }
+
+/* ---------- Kennzahlen ---------- */
+.zahlen { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.zahl { background: var(--chip); border-radius: 12px; padding: 12px 16px; }
+.zahl b { display: block; font-size: 26px; color: var(--indigo); line-height: 1.2; }
+.zahl span { font-size: 13px; color: var(--tinte-leise); }
+.zahl.rot b { color: var(--rot); }
+
+/* ---------- Tabellen ---------- */
+.tabellenhuelle { overflow-x: auto; border: 1.5px solid var(--linie); border-radius: 12px; }
+.tabelle { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tabelle th {
+  position: sticky; top: 0;
+  background: #f6f7fb; text-align: left; padding: 10px 12px;
+  font-size: 12.5px; font-weight: 700; color: var(--tinte-leise);
+  border-bottom: 1.5px solid var(--linie); white-space: nowrap;
+}
+.tabelle td { padding: 9px 12px; border-bottom: 1px solid var(--linie); vertical-align: top; }
+.tabelle tr:last-child td { border-bottom: 0; }
+.tabelle tr.klickbar { cursor: pointer; }
+.tabelle tr.klickbar:hover td { background: #f8f9fd; }
+.tabelle .nr { font-weight: 700; color: var(--indigo); white-space: nowrap; }
+.tabelle .leise { color: var(--tinte-leise); font-size: 13px; }
+.tabelle .feld { padding: 6px 8px; font-size: 14px; }
+.tabelle tr.versteckt td { background: #fafafa; color: var(--tinte-leise); }
+
+/* Wochenraster */
+.wochenraster td { min-width: 150px; }
+.wochenraster td:first-child { min-width: 120px; background: #fbfbfe; }
+.buchungschip {
+  display: block; width: 100%; margin-bottom: 6px; padding: 6px 9px;
+  background: var(--badge-bg); color: var(--tinte);
+  border: 1.5px solid transparent; border-radius: 8px;
+  font-family: inherit; font-size: 13px; text-align: left; cursor: pointer; line-height: 1.35;
+}
+.buchungschip:last-child { margin-bottom: 0; }
+.buchungschip:hover { border-color: var(--indigo); }
+.buchungschip b { color: var(--indigo); }
+.buchungschip small { display: block; color: var(--tinte-leise); }
+.buchungschip.krank { background: #fdf0ef; border-color: #f1c9c6; }
+.buchungschip.krank b { color: var(--rot); }
+.tagkurz { display: inline-block; min-width: 40px; }
+.krankmarke { color: var(--rot); font-weight: 700; }
+
+/* ---------- Dialoge ---------- */
+dialog {
+  border: 0; padding: 0;
+  border-radius: var(--radius-karte);
+  box-shadow: 0 20px 60px rgba(15, 20, 60, .35);
+  color: var(--tinte);
+  width: min(680px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+}
+dialog[open] { display: flex; flex-direction: column; }
+dialog::backdrop { background: rgba(15, 20, 60, .55); }
+.fenster-kopf { padding: 20px 24px 14px; border-bottom: 1px solid var(--linie); }
+.fenster-kopf h2 { margin: 0; font-size: 20px; color: var(--indigo); display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.fenster-inhalt { padding: 18px 24px; overflow: auto; flex: 1; }
+.fenster-fuss { padding: 14px 24px 20px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; border-top: 1px solid var(--linie); }
+.fenster-fuss .links { margin-right: auto; display: flex; gap: 10px; flex-wrap: wrap; }
+.schliessen {
+  width: 36px; height: 36px; flex: none;
+  background: var(--chip); border: 0; border-radius: 999px;
+  font-size: 20px; line-height: 1; cursor: pointer; color: #4b5563;
+}
+.schliessen:hover { background: #e2e6ee; }
+
+.buchungsliste { list-style: none; margin: 0; padding: 0; }
+.buchungsliste li {
+  display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--linie); font-size: 14.5px;
+}
+.buchungsliste li:last-child { border-bottom: 0; }
+.buchungsliste .text { flex: 1 1 240px; }
+.buchungsliste .t { font-weight: 700; color: var(--indigo); margin-right: 6px; }
+
+.codeanzeige {
+  margin: 12px 0 0; padding: 14px;
+  background: var(--badge-bg); color: var(--indigo); border-radius: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 30px; font-weight: 700; letter-spacing: .25em; text-align: center;
+}
+
+/* ---------- Vorschau ---------- */
+.vorschau {
+  border: 1.5px solid var(--linie); border-radius: 12px;
+  padding: 24px; background: #fff; overflow: auto; max-height: 75vh;
+}
+
+/* ---------- Druckinhalt (gilt für Vorschau und Druck) ---------- */
+.d-seite { color: #000; font-size: 12.5px; }
+.d-seite + .d-seite { margin-top: 40px; padding-top: 30px; border-top: 2px dashed var(--linie); }
+.d-seite h1 { font-size: 22px; margin: 0 0 2px; color: var(--indigo); }
+.d-unter { margin: 0 0 14px; color: #555; font-size: 12px; }
+.d-tabelle { width: 100%; border-collapse: collapse; }
+.d-tabelle th, .d-tabelle td { border: 1px solid #b9bdc9; padding: 5px 7px; text-align: left; vertical-align: top; }
+.d-tabelle th { background: #eceef6; font-size: 11.5px; }
+.d-tabelle td small { display: block; color: #555; }
+.d-tabelle .thema { font-weight: 700; }
+.d-krank { color: var(--rot); font-weight: 700; }
+.d-schild { text-align: center; padding: 10px 0 18px; }
+.d-schild .raumnr { font-size: 80px; font-weight: 800; color: var(--indigo); line-height: 1; letter-spacing: -.02em; }
+.d-schild .raumbes { font-size: 22px; margin-top: 6px; }
+.d-schild .woche { font-size: 14px; color: #555; margin-top: 10px; }
+.d-schild-tabelle td { font-size: 14px; padding: 9px 10px; }
+.d-schild-tabelle .tagzelle { width: 110px; font-weight: 700; }
+.d-leer { color: #888; }
+
+#druck { display: none; }
+
+/* ---------- Login ---------- */
+.login { max-width: 420px; margin: 8vh auto 0; }
+
+/* ---------- Meldung ---------- */
+.meldung {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  padding: 12px 20px; border-radius: 12px;
+  background: var(--tinte); color: #fff; font-size: 15px; font-weight: 600;
+  box-shadow: 0 10px 30px rgba(15, 20, 60, .35);
+  z-index: 50;
+}
+.meldung.fehler { background: var(--rot); }
+
+/* ---------- Mobil ---------- */
+@media (max-width: 640px) {
+  body { padding: 14px 12px 40px; }
+  .karte { padding: 20px 18px; }
+  .kopf-titel { font-size: 23px; }
+  .raster2 { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---------- Druck ---------- */
+@media print {
+  body { background: #fff; padding: 0; }
+  .huelle, dialog, .meldung { display: none !important; }
+  #druck { display: block; }
+  .d-seite { break-after: page; }
+  .d-seite:last-child { break-after: auto; }
+  .d-seite + .d-seite { margin-top: 0; padding-top: 0; border-top: 0; }
+  .d-tabelle tr { break-inside: avoid; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+
+<body>
+<div class="huelle">
+
+  <!-- Login -->
+  <div class="karte login" id="loginKarte" hidden>
+    <h1 class="kopf-titel"><span class="symbol">🔐</span> Admin</h1>
+    <p class="kopf-untertitel">Projektwoche · Verwaltung</p>
+    <hr class="trenner">
+    <div class="feldgruppe" style="margin-top:0">
+      <label class="label" for="lName">Benutzer</label>
+      <input class="feld" id="lName" type="text" autocomplete="username" value="admin">
+    </div>
+    <div class="feldgruppe">
+      <label class="label" for="lPw">Passwort</label>
+      <input class="feld" id="lPw" type="password" autocomplete="current-password">
+    </div>
+    <p class="hinweisbox warnung" id="loginFehler" hidden></p>
+    <div class="buttonreihe">
+      <button class="knopf" id="btnLogin" type="button">Anmelden</button>
+      <a class="knopf zurueck" href="index.html">Zur Buchungsseite</a>
+    </div>
+  </div>
+
+  <div class="karte" id="startfehler" hidden></div>
+
+  <!-- Anwendung -->
+  <div id="app" hidden>
+    <div class="karte">
+      <h1 class="kopf-titel"><span class="symbol">🗓️</span> Projektwoche · Admin</h1>
+      <p class="kopf-untertitel" id="untertitel"></p>
+      <div class="buttonreihe">
+        <a class="knopf zurueck" href="index.html">Zur Buchungsseite</a>
+        <button class="knopf zurueck" id="btnNeuLaden" type="button">Neu laden</button>
+        <button class="knopf zurueck" id="btnAbmelden" type="button">Abmelden</button>
+      </div>
+      <div class="filterreihe" id="reiter" role="tablist" style="margin-top:20px"></div>
+    </div>
+
+    <div id="inhalt"></div>
+  </div>
+
+  <p class="fusszeile">KGS Schwarmstedt · Projektwoche</p>
+</div>
+
+<!-- Projekt -->
+<dialog id="projektDialog" aria-labelledby="pdTitel">
+  <div class="fenster-kopf">
+    <h2><span id="pdTitel">Projekt</span>
+      <button class="schliessen" type="button" data-schliessen aria-label="Schließen">×</button></h2>
+  </div>
+  <div class="fenster-inhalt" id="pdInhalt"></div>
+  <div class="fenster-fuss">
+    <div class="links">
+      <button class="knopf gefahr" id="pdLoeschen" type="button">Projekt löschen</button>
+      <button class="knopf zurueck" id="pdCode" type="button">Neuer Änderungscode</button>
+    </div>
+    <button class="knopf" id="pdSpeichern" type="button">Angaben speichern</button>
+  </div>
+</dialog>
+
+<!-- Buchung -->
+<dialog id="buchungDialog" aria-labelledby="bdTitel">
+  <div class="fenster-kopf">
+    <h2><span id="bdTitel">Buchung</span>
+      <button class="schliessen" type="button" data-schliessen aria-label="Schließen">×</button></h2>
+  </div>
+  <div class="fenster-inhalt" id="bdInhalt"></div>
+  <div class="fenster-fuss">
+    <button class="knopf zurueck" type="button" data-schliessen>Abbrechen</button>
+    <button class="knopf" id="bdSpeichern" type="button">Speichern</button>
+  </div>
+</dialog>
+
+<div id="druck"></div>
+<div class="meldung" id="meldung" role="status" hidden></div>
+
+<script>
+/* =========================================================
+   0 · Verbindung
+   ========================================================= */
+
+const SUPABASE_URL = "https://xzhxqbyobdlyqkyyjcxc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_TlasNLd2Yxq8nxrkgHMnlA_J5-IezYg";
+
+/* =========================================================
+   1 · Zustand
+   ========================================================= */
+
+const TAGE = ["", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
+const TAGE_KURZ = ["", "Mo", "Di", "Mi", "Do", "Fr"];
+const REITER = [
+  ["planung", "Planung"], ["raeume", "Räume"], ["gruppen", "Gruppen"],
+  ["export", "Aushänge"], ["einstellungen", "Einstellungen"]
+];
+
+const daten = { raeume: [], gruppen: [], raumGruppen: [], projekte: [], buchungen: [], status: {} };
+let PW = "";
+let reiter = "planung";
+const ansicht = {
+  plan: { modus: "raster", suche: "", alleRaeume: false },
+  raeume: { suche: "", versteckte: true },
+  export: { art: "liste", klasse: "alle", gruppe: "", trakt: "", tag: 0, suche: "" }
+};
+let offenesProjekt = null;
+let bd = null;                  // Zustand des Buchungsdialogs
+let importHinweis = "";
+
+const $ = (id) => document.getElementById(id);
+
+function el(tag, klasse, text) {
+  const e = document.createElement(tag);
+  if (klasse) e.className = klasse;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function speicher(aktion, wert) {
+  try {
+    if (aktion === "lesen") return sessionStorage.getItem("pw_admin") || "";
+    if (aktion === "setzen") sessionStorage.setItem("pw_admin", wert);
+    if (aktion === "loeschen") sessionStorage.removeItem("pw_admin");
+  } catch (e) { /* privater Modus: dann eben neu anmelden */ }
+  return "";
+}
+
+/* =========================================================
+   2 · Datenbank
+   ========================================================= */
+
+function kopfzeilen() {
+  const kopf = { apikey: SUPABASE_KEY, "Content-Type": "application/json" };
+  if (SUPABASE_KEY.startsWith("eyJ")) kopf.Authorization = "Bearer " + SUPABASE_KEY;
+  return kopf;
+}
+
+async function fehlertext(antwort) {
+  try {
+    const j = await antwort.json();
+    return j.message || j.error || "Fehler " + antwort.status;
+  } catch (e) {
+    return "Fehler " + antwort.status;
+  }
+}
+
+async function lesen(pfad) {
+  const r = await fetch(SUPABASE_URL + "/rest/v1/" + pfad, { headers: kopfzeilen() });
+  if (!r.ok) throw new Error(await fehlertext(r));
+  return r.json();
+}
+
+async function rpc(funktion, parameter) {
+  const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/" + funktion, {
+    method: "POST", headers: kopfzeilen(), body: JSON.stringify(parameter || {})
+  });
+  if (!r.ok) throw new Error(await fehlertext(r));
+  const text = await r.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function admin(funktion, parameter) {
+  try {
+    return await rpc(funktion, Object.assign({ p_pw: PW }, parameter || {}));
+  } catch (e) {
+    if (/Kein Admin-Zugriff/.test(e.message)) { abmelden(); throw new Error("Sitzung abgelaufen – bitte neu anmelden."); }
+    throw e;
+  }
+}
+
+async function laden() {
+  const [raeume, gruppen, raumGruppen, projekte, buchungen, status] = await Promise.all([
+    lesen("pw_rooms?select=*&order=nummer"),
+    lesen("pw_groups?select=*&order=name"),
+    lesen("pw_room_groups?select=*"),
+    lesen("pw_projects?select=*&order=thema"),
+    lesen("pw_bookings?select=*&order=tag,std_von"),
+    rpc("pw_get_status")
+  ]);
+  Object.assign(daten, { raeume, gruppen, raumGruppen, projekte, buchungen, status: status || {} });
+}
+
+/* Admin-Aktion: ausführen, neu laden, alles neu zeichnen */
+async function aktion(funktion, parameter, erfolgstext) {
+  try {
+    const ergebnis = await admin(funktion, parameter);
+    await laden();
+    renderAlles();
+    if (erfolgstext) meldung(erfolgstext);
+    return ergebnis === null ? true : ergebnis;
+  } catch (e) {
+    meldung(e.message, true);
+    return undefined;
+  }
+}
+
+/* =========================================================
+   3 · Hilfen
+   ========================================================= */
+
+const raumInfo = (nr) => daten.raeume.find((r) => r.nummer === nr);
+const istExkursion = (nr) => !!(raumInfo(nr) || {}).ist_exkursion;
+const projektVon = (id) => daten.projekte.find((p) => p.id === id);
+const buchungenVon = (pid) => daten.buchungen.filter((b) => b.project_id === pid).sort((a, b) => a.tag - b.tag || a.std_von - b.std_von);
+const gruppenVon = (nr) => daten.raumGruppen.filter((x) => x.room === nr).map((x) => x.group_id);
+
+function stundenText(von, bis) {
+  return von === 1 && bis === 6 ? "ganztägig" : von === bis ? von + ". Std." : von + ".–" + bis + ". Std.";
+}
+
+function klassenText(p) {
+  if (p.klasse_von === p.klasse_bis) return "Kl. " + p.klasse_von;
+  return "Kl. " + p.klasse_von + "–" + p.klasse_bis;
+}
+
+function lehrkraefte(p) {
+  return p.kuerzel + (p.mitwirkende ? ", " + p.mitwirkende : "");
+}
+
+function ortText(b, mitBeschreibung) {
+  if (istExkursion(b.room)) return "Exkursion" + (b.ort ? ": " + b.ort : "");
+  const r = raumInfo(b.room);
+  return b.room + (mitBeschreibung && r && r.beschreibung ? " · " + r.beschreibung : "");
+}
+
+function datum(tag, mitJahr) {
+  const s = daten.status.woche_start;
+  if (!s) return "";
+  const d = new Date(s + "T12:00:00");
+  d.setDate(d.getDate() + tag - 1);
+  return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: mitJahr ? "numeric" : undefined });
+}
+
+function wochenText() {
+  return daten.status.woche_start ? datum(1) + " bis " + datum(5, true) : "Datum noch nicht festgelegt";
+}
+
+function konflikt(raum, tag, von, bis, ohneId) {
+  if (!raum || istExkursion(raum)) return null;
+  return daten.buchungen.find((b) => b.room === raum && b.tag === tag && b.id !== ohneId &&
+    b.std_von <= bis && b.std_bis >= von) || null;
+}
+
+function etageText(e) {
+  if (e === 1) return "Erdgeschoss";
+  if (e === 0) return "Untergeschoss";
+  return (e - 1) + ". Obergeschoss";
+}
+
+function vergleichRaum(a, b) {
+  if (a.ist_exkursion !== b.ist_exkursion) return a.ist_exkursion ? 1 : -1;
+  return a.nummer.localeCompare(b.nummer, "de", { numeric: true });
+}
+
+let meldungsUhr;
+function meldung(text, fehler) {
+  const m = $("meldung");
+  m.textContent = text;
+  m.className = "meldung" + (fehler ? " fehler" : "");
+  m.hidden = false;
+  clearTimeout(meldungsUhr);
+  meldungsUhr = setTimeout(() => { m.hidden = true; }, fehler ? 6000 : 3500);
+}
+
+function knopf(text, klasse, klick) {
+  const b = el("button", "knopf " + (klasse || ""), text);
+  b.type = "button";
+  if (klick) b.onclick = klick;
+  return b;
+}
+
+function karte(titel, hinweis) {
+  const k = el("section", "karte");
+  if (titel) k.appendChild(el("h2", "abschnitt", titel));
+  if (hinweis) k.appendChild(el("p", "abschnitt-hinweis", hinweis));
+  return k;
+}
+
+function feldMitLabel(label, element) {
+  const g = el("div");
+  const l = el("label", "label", label);
+  if (!element.id) element.id = "f" + Math.random().toString(36).slice(2, 8);
+  l.htmlFor = element.id;
+  g.append(l, element);
+  return g;
+}
+
+function input(wert, platzhalter, typ) {
+  const i = el("input", typ === "checkbox" || typ === "file" ? "" : "feld");
+  i.type = typ || "text";
+  if (wert !== undefined && wert !== null) i.value = wert;
+  if (platzhalter) i.placeholder = platzhalter;
+  return i;
+}
+
+function auswahl(optionen, wert) {
+  const s = el("select", "feld");
+  optionen.forEach(([w, t]) => {
+    const o = el("option", "", t);
+    o.value = w;
+    if (String(w) === String(wert)) o.selected = true;
+    s.appendChild(o);
+  });
+  return s;
+}
+
+/* =========================================================
+   4 · Rahmen
+   ========================================================= */
+
+function renderAlles() {
+  const st = daten.status;
+  $("untertitel").textContent = "Projektwoche " + wochenText() + " · Buchung " +
+    (st.buchung_offen === false ? "geschlossen" : "offen") + " · Änderungscodes " +
+    (st.aenderung_offen === false ? "deaktiviert" : "aktiv");
+
+  const leiste = $("reiter");
+  leiste.innerHTML = "";
+  REITER.forEach(([id, name]) => {
+    const b = el("button", "filter", name);
+    b.type = "button";
+    b.setAttribute("role", "tab");
+    b.setAttribute("aria-pressed", String(reiter === id));
+    b.onclick = () => { reiter = id; renderAlles(); };
+    leiste.appendChild(b);
+  });
+
+  const inhalt = $("inhalt");
+  inhalt.innerHTML = "";
+  ({ planung: renderPlanung, raeume: renderRaeume, gruppen: renderGruppen,
+     export: renderExport, einstellungen: renderEinstellungen })[reiter](inhalt);
+
+  if (offenesProjekt !== null && $("projektDialog").open) renderProjektDialog();
+}
+
+/* =========================================================
+   5 · Planung
+   ========================================================= */
+
+function renderPlanung(ziel) {
+  const v = ansicht.plan;
+  const k = karte();
+
+  /* Kennzahlen */
+  const zahlen = el("div", "zahlen");
+  const kranke = daten.buchungen.filter((b) => b.krank).length;
+  const ohneVertretung = daten.buchungen.filter((b) => b.krank && !b.vertretung).length;
+  const belegteRaeume = new Set(daten.buchungen.filter((b) => !istExkursion(b.room)).map((b) => b.room)).size;
+  [
+    [daten.projekte.length, "Projekte"],
+    [daten.buchungen.length, "Tagesbuchungen"],
+    [belegteRaeume, "genutzte Räume"],
+    [kranke, "Krankmeldungen" + (ohneVertretung ? " · " + ohneVertretung + " ohne Vertretung" : ""), ohneVertretung > 0]
+  ].forEach(([wert, text, rot]) => {
+    const z = el("div", "zahl" + (rot ? " rot" : ""));
+    z.append(el("b", "", String(wert)), el("span", "", text));
+    zahlen.appendChild(z);
+  });
+  k.appendChild(zahlen);
+
+  /* Steuerung */
+  const steuer = el("div", "zeile");
+  const modi = el("div", "filterreihe");
+  modi.style.margin = "0";
+  modi.style.flex = "0 0 auto";
+  [["raster", "Wochenraster"], ["projekte", "Projektliste"]].forEach(([m, t]) => {
+    const b = el("button", "filter", t);
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(v.modus === m));
+    b.onclick = () => { v.modus = m; renderAlles(); };
+    modi.appendChild(b);
+  });
+  const suche = input(v.suche, "Suche: Thema, Kürzel, Raum …", "search");
+  suche.oninput = () => { v.suche = suche.value; zeichneListe(); };
+  const sucheBox = el("div");
+  sucheBox.appendChild(suche);
+  steuer.append(modi, sucheBox);
+
+  if (v.modus === "raster") {
+    const sch = el("label", "schalter");
+    sch.style.flex = "0 0 auto";
+    sch.style.alignItems = "center";
+    const cb = input(null, null, "checkbox");
+    cb.checked = v.alleRaeume;
+    cb.onchange = () => { v.alleRaeume = cb.checked; zeichneListe(); };
+    sch.append(cb, document.createTextNode("Auch freie Räume zeigen"));
+    steuer.appendChild(sch);
+  }
+  k.appendChild(steuer);
+
+  const liste = el("div", "tabellenhuelle");
+  liste.style.marginTop = "16px";
+  k.appendChild(liste);
+  ziel.appendChild(k);
+
+  function zeichneListe() {
+    liste.innerHTML = "";
+    liste.appendChild(v.modus === "raster" ? wochenraster() : projektliste());
+  }
+  zeichneListe();
+}
+
+function projektTreffer(p, q) {
+  if (!q) return true;
+  const raeume = buchungenVon(p.id).map((b) => b.room + " " + (b.ort || "") + " " + (b.vertretung || "")).join(" ");
+  return (p.thema + " " + p.kuerzel + " " + p.name + " " + (p.mitwirkende || "") + " " + raeume)
+    .toLowerCase().includes(q);
+}
+
+function wochenraster() {
+  const v = ansicht.plan;
+  const q = v.suche.trim().toLowerCase();
+  const tabelle = el("table", "tabelle wochenraster");
+  let kopf = "<thead><tr><th>Raum</th>";
+  for (let t = 1; t <= 5; t++) kopf += "<th>" + TAGE[t] + (datum(t) ? " · " + datum(t) : "") + "</th>";
+  tabelle.innerHTML = kopf + "</tr></thead>";
+  const koerper = el("tbody");
+
+  const treffer = (b) => !q || projektTreffer(projektVon(b.project_id) || { thema: "", kuerzel: "", name: "", id: -1 }, q);
+  let raeume = daten.raeume.slice().sort(vergleichRaum);
+  raeume = raeume.filter((r) => {
+    const hat = daten.buchungen.some((b) => b.room === r.nummer && treffer(b));
+    if (q) return hat || r.nummer.toLowerCase().includes(q);
+    return hat || (v.alleRaeume && !r.versteckt && !r.ist_exkursion);
+  });
+
+  raeume.forEach((r) => {
+    const tr = el("tr");
+    const erste = el("td");
+    erste.innerHTML = '<span class="nr">' + (r.ist_exkursion ? "🚌 Exkursion" : esc(r.nummer)) + "</span>" +
+      (r.beschreibung && !r.ist_exkursion ? '<div class="leise">' + esc(r.beschreibung) + "</div>" : "") +
+      (r.versteckt ? '<div class="leise">ausgeblendet</div>' : "");
+    tr.appendChild(erste);
+    for (let t = 1; t <= 5; t++) {
+      const td = el("td");
+      daten.buchungen.filter((b) => b.room === r.nummer && b.tag === t && treffer(b)).forEach((b) => {
+        const p = projektVon(b.project_id);
+        if (!p) return;
+        const chip = el("button", "buchungschip" + (b.krank ? " krank" : ""));
+        chip.type = "button";
+        let html = "<b>" + esc(p.kuerzel) + "</b> " + esc(p.thema);
+        const zusatz = [];
+        if (!(b.std_von === 1 && b.std_bis === 6)) zusatz.push(stundenText(b.std_von, b.std_bis));
+        if (b.ort) zusatz.push(b.ort);
+        if (b.krank) zusatz.push("krank" + (b.vertretung ? " → " + b.vertretung : " · keine Vertretung"));
+        if (zusatz.length) html += "<small>" + esc(zusatz.join(" · ")) + "</small>";
+        chip.innerHTML = html;
+        chip.onclick = () => projektOeffnen(p.id);
+        td.appendChild(chip);
+      });
+      tr.appendChild(td);
+    }
+    koerper.appendChild(tr);
+  });
+
+  if (!raeume.length) {
+    const tr = el("tr");
+    const td = el("td", "leise", q ? "Keine Treffer." : "Noch keine Buchungen.");
+    td.colSpan = 6;
+    tr.appendChild(td);
+    koerper.appendChild(tr);
+  }
+  tabelle.appendChild(koerper);
+  return tabelle;
+}
+
+function projektliste() {
+  const q = ansicht.plan.suche.trim().toLowerCase();
+  const tabelle = el("table", "tabelle");
+  let kopf = "<thead><tr><th>Projekt</th><th>Lehrkräfte</th><th>Klassen</th>";
+  for (let t = 1; t <= 5; t++) kopf += "<th>" + TAGE_KURZ[t] + "</th>";
+  tabelle.innerHTML = kopf + "</tr></thead>";
+  const koerper = el("tbody");
+
+  const liste = daten.projekte.filter((p) => projektTreffer(p, q))
+    .sort((a, b) => a.thema.localeCompare(b.thema, "de"));
+
+  liste.forEach((p) => {
+    const tr = el("tr", "klickbar");
+    tr.onclick = () => projektOeffnen(p.id);
+    let html = "<td><b>" + esc(p.thema) + "</b></td><td>" + esc(lehrkraefte(p)) +
+      '<div class="leise">' + esc(p.name) + "</div></td><td>" + esc(klassenText(p)) + "</td>";
+    const bs = buchungenVon(p.id);
+    for (let t = 1; t <= 5; t++) {
+      const tagB = bs.filter((b) => b.tag === t);
+      html += "<td>" + (tagB.length ? tagB.map((b) =>
+        (b.krank ? '<span class="krankmarke">' : "<span>") +
+        esc(istExkursion(b.room) ? "Exk." : b.room) + "</span>").join("<br>") : '<span class="leise">–</span>') + "</td>";
+    }
+    tr.innerHTML = html;
+    koerper.appendChild(tr);
+  });
+
+  if (!liste.length) {
+    const tr = el("tr");
+    const td = el("td", "leise", q ? "Keine Treffer." : "Noch keine Projekte.");
+    td.colSpan = 8;
+    tr.appendChild(td);
+    koerper.appendChild(tr);
+  }
+  tabelle.appendChild(koerper);
+  return tabelle;
+}
+
+/* ---------- Projektdialog ---------- */
+
+function projektOeffnen(id) {
+  offenesProjekt = id;
+  renderProjektDialog();
+  if (!$("projektDialog").open) $("projektDialog").showModal();
+}
+
+function renderProjektDialog() {
+  const p = projektVon(offenesProjekt);
+  const box = $("pdInhalt");
+  box.innerHTML = "";
+  if (!p) { $("projektDialog").close(); offenesProjekt = null; return; }
+
+  $("pdTitel").textContent = p.thema;
+
+  const z1 = el("div", "zeile");
+  const fThema = input(p.thema); fThema.id = "pdThema"; fThema.maxLength = 120;
+  z1.appendChild(feldMitLabel("Thema", fThema));
+  box.appendChild(z1);
+
+  const z2 = el("div", "zeile feldgruppe");
+  const fK = input(p.kuerzel); fK.id = "pdKuerzel"; fK.maxLength = 5;
+  const fN = input(p.name); fN.id = "pdName";
+  const fM = input(p.mitwirkende || "", "Kürzel weiterer Lehrkräfte"); fM.id = "pdMit";
+  const k1 = feldMitLabel("Kürzel", fK); k1.className = "schmal";
+  z2.append(k1, feldMitLabel("Name", fN), feldMitLabel("Weitere Lehrkräfte", fM));
+  box.appendChild(z2);
+
+  const klassen = [];
+  for (let i = 5; i <= 13; i++) klassen.push([i, "Klasse " + i]);
+  const z3 = el("div", "zeile feldgruppe");
+  const fV = auswahl(klassen, p.klasse_von); fV.id = "pdVon";
+  const fB = auswahl(klassen, p.klasse_bis); fB.id = "pdBis";
+  z3.append(feldMitLabel("von", fV), feldMitLabel("bis", fB));
+  box.appendChild(z3);
+
+  box.appendChild(el("hr", "trenner"));
+  const kopf = el("div", "zeile");
+  kopf.style.alignItems = "center";
+  const h = el("h3", "abschnitt", "Tage und Räume");
+  h.style.flex = "1";
+  const bs = buchungenVon(p.id);
+  const plus = knopf("＋ Tag hinzufügen", "zurueck mini", () => buchungOeffnen(null, p.id));
+  plus.disabled = bs.length >= 5;
+  kopf.append(h, plus);
+  box.appendChild(kopf);
+
+  const ul = el("ul", "buchungsliste");
+  bs.forEach((b) => {
+    const li = el("li");
+    const text = el("div", "text");
+    text.innerHTML = '<span class="t">' + TAGE_KURZ[b.tag] + "</span>" + esc(ortText(b, true)) +
+      ' <span class="leise">· ' + esc(stundenText(b.std_von, b.std_bis)) + "</span>" +
+      (b.krank ? '<div class="krankmarke">krank' + (b.vertretung ? " · Vertretung: " + esc(b.vertretung) : " · noch keine Vertretung") + "</div>" : "");
+    li.append(
+      text,
+      knopf("Bearbeiten", "zurueck mini", () => buchungOeffnen(b.id, p.id)),
+      knopf("Entfernen", "gefahr mini", async () => {
+        if (!confirm(TAGE[b.tag] + " aus dem Projekt entfernen?")) return;
+        await aktion("pw_admin_booking_delete", { p_id: b.id }, "Tag entfernt.");
+      })
+    );
+    ul.appendChild(li);
+  });
+  if (!bs.length) ul.appendChild(el("li", "leise", "Keine Tage gebucht."));
+  box.appendChild(ul);
+
+  const codeBox = el("div");
+  codeBox.id = "pdCodeBox";
+  box.appendChild(codeBox);
+}
+
+async function projektSpeichern() {
+  const p = projektVon(offenesProjekt);
+  if (!p) return;
+  const werte = {
+    p_id: p.id,
+    p_thema: $("pdThema").value.trim(),
+    p_kuerzel: $("pdKuerzel").value.trim(),
+    p_name: $("pdName").value.trim(),
+    p_mitwirkende: $("pdMit").value.trim() || null,
+    p_klasse_von: Number($("pdVon").value),
+    p_klasse_bis: Number($("pdBis").value)
+  };
+  if (!werte.p_thema || !werte.p_name) { meldung("Thema und Name dürfen nicht leer sein.", true); return; }
+  if (werte.p_kuerzel.length < 2 || werte.p_kuerzel.length > 5) { meldung("Das Kürzel muss 2 bis 5 Zeichen haben.", true); return; }
+  if (werte.p_klasse_von > werte.p_klasse_bis) { meldung("Klassenstufe „von“ ist größer als „bis“.", true); return; }
+  await aktion("pw_admin_project_update", werte, "Projekt gespeichert.");
+}
+
+/* ---------- Buchungsdialog ---------- */
+
+function buchungOeffnen(buchungId, projektId) {
+  const p = projektVon(projektId);
+  if (buchungId) {
+    const b = daten.buchungen.find((x) => x.id === buchungId);
+    bd = {
+      id: b.id, pid: projektId, tag: b.tag, raum: b.room, ort: b.ort || "",
+      ganz: b.std_von === 1 && b.std_bis === 6, von: b.std_von, bis: b.std_bis,
+      krank: b.krank, vertretung: b.vertretung || "", original: b
+    };
+    $("bdTitel").textContent = TAGE[b.tag] + " · " + p.thema;
+  } else {
+    const belegt = buchungenVon(projektId).map((b) => b.tag);
+    const frei = [1, 2, 3, 4, 5].find((t) => !belegt.includes(t)) || 1;
+    bd = { id: null, pid: projektId, tag: frei, raum: "", ort: "", ganz: true, von: 1, bis: 6, krank: false, vertretung: "" };
+    $("bdTitel").textContent = "Tag hinzufügen · " + p.thema;
+  }
+  renderBuchungDialog();
+  $("buchungDialog").showModal();
+}
+
+function renderBuchungDialog() {
+  const box = $("bdInhalt");
+  box.innerHTML = "";
+  const von = bd.ganz ? 1 : bd.von, bis = bd.ganz ? 6 : bd.bis;
+  const andereTage = buchungenVon(bd.pid).filter((b) => b.id !== bd.id).map((b) => b.tag);
+
+  /* Tag */
+  const z1 = el("div", "zeile");
+  const sTag = el("select", "feld");
+  for (let t = 1; t <= 5; t++) {
+    const o = el("option", "", TAGE[t] + (datum(t) ? ", " + datum(t) : "") + (andereTage.includes(t) ? " (schon gebucht)" : ""));
+    o.value = t;
+    o.disabled = andereTage.includes(t);
+    if (t === bd.tag) o.selected = true;
+    sTag.appendChild(o);
+  }
+  sTag.onchange = () => { bd.tag = Number(sTag.value); renderBuchungDialog(); };
+  z1.appendChild(feldMitLabel("Tag", sTag));
+
+  /* Stunden */
+  const sStd = auswahl([["ganz", "Ganztägig (1.–6. Std.)"], ["teil", "Einzelne Stunden"]], bd.ganz ? "ganz" : "teil");
+  sStd.onchange = () => { bd.ganz = sStd.value === "ganz"; renderBuchungDialog(); };
+  z1.appendChild(feldMitLabel("Zeit", sStd));
+
+  if (!bd.ganz) {
+    const stunden = [1, 2, 3, 4, 5, 6].map((i) => [i, i + ". Std."]);
+    const sV = auswahl(stunden, bd.von);
+    const sB = auswahl(stunden, bd.bis);
+    sV.onchange = () => { bd.von = Number(sV.value); if (bd.bis < bd.von) bd.bis = bd.von; renderBuchungDialog(); };
+    sB.onchange = () => { bd.bis = Number(sB.value); if (bd.von > bd.bis) bd.von = bd.bis; renderBuchungDialog(); };
+    const a = feldMitLabel("von", sV); a.className = "schmal";
+    const b = feldMitLabel("bis", sB); b.className = "schmal";
+    z1.append(a, b);
+  }
+  box.appendChild(z1);
+
+  /* Raum */
+  const sRaum = el("select", "feld");
+  sRaum.appendChild(Object.assign(el("option", "", "Raum wählen …"), { value: "" }));
+  const gruppen = new Map();
+  daten.raeume.slice().sort(vergleichRaum).forEach((r) => {
+    if (r.versteckt && r.nummer !== bd.raum) return;
+    const titel = r.ist_exkursion ? "Außerhalb der Schule" : r.trakt === null ? "Weitere Räume" : "Trakt " + r.trakt + " · " + etageText(r.etage);
+    if (!gruppen.has(titel)) gruppen.set(titel, []);
+    gruppen.get(titel).push(r);
+  });
+  gruppen.forEach((raeume, titel) => {
+    const og = el("optgroup");
+    og.label = titel;
+    raeume.forEach((r) => {
+      const k = konflikt(r.nummer, bd.tag, von, bis, bd.id);
+      const p = k ? projektVon(k.project_id) : null;
+      const o = el("option", "", (r.ist_exkursion ? "Exkursion" : r.nummer) +
+        (r.beschreibung && !r.ist_exkursion ? " · " + r.beschreibung : "") +
+        (r.versteckt ? " (ausgeblendet)" : "") +
+        (k ? " – belegt (" + (p ? p.kuerzel : "?") + ", " + stundenText(k.std_von, k.std_bis) + ")" : ""));
+      o.value = r.nummer;
+      o.disabled = !!k && r.nummer !== bd.raum;
+      if (r.nummer === bd.raum) o.selected = true;
+      og.appendChild(o);
+    });
+    sRaum.appendChild(og);
+  });
+  sRaum.onchange = () => { bd.raum = sRaum.value; if (!istExkursion(bd.raum)) bd.ort = ""; renderBuchungDialog(); };
+  const zr = el("div", "feldgruppe");
+  zr.appendChild(feldMitLabel("Raum", sRaum));
+  box.appendChild(zr);
+
+  if (bd.raum && istExkursion(bd.raum)) {
+    const fOrt = input(bd.ort, "Ziel der Exkursion");
+    fOrt.oninput = () => { bd.ort = fOrt.value; };
+    const zo = el("div", "feldgruppe");
+    zo.appendChild(feldMitLabel("Ziel", fOrt));
+    box.appendChild(zo);
+  }
+
+  const k = konflikt(bd.raum, bd.tag, von, bis, bd.id);
+  if (k) {
+    const p = projektVon(k.project_id);
+    box.appendChild(el("p", "hinweisbox warnung", "Der Raum ist zu dieser Zeit belegt durch " +
+      (p ? p.kuerzel + " („" + p.thema + "“)" : "ein anderes Projekt") + ". Bitte anderen Raum, Tag oder andere Stunden wählen."));
+  }
+
+  /* Krankmeldung nur bei bestehender Buchung */
+  if (bd.id) {
+    box.appendChild(el("hr", "trenner"));
+    box.appendChild(el("h3", "abschnitt", "Krankmeldung"));
+    const sch = el("label", "schalter");
+    sch.style.marginTop = "8px";
+    const cb = input(null, null, "checkbox");
+    cb.checked = bd.krank;
+    cb.onchange = () => { bd.krank = cb.checked; renderBuchungDialog(); };
+    sch.append(cb, el("span", "", "Lehrkraft ist an diesem Tag krank"));
+    box.appendChild(sch);
+    if (bd.krank) {
+      const fV = input(bd.vertretung, "Kürzel oder Name der Vertretung");
+      fV.oninput = () => { bd.vertretung = fV.value; };
+      const zv = el("div", "feldgruppe");
+      zv.appendChild(feldMitLabel("Vertretung", fV));
+      box.appendChild(zv);
+    }
+  }
+}
+
+async function buchungSpeichern() {
+  const von = bd.ganz ? 1 : bd.von, bis = bd.ganz ? 6 : bd.bis;
+  if (!bd.raum) { meldung("Bitte einen Raum wählen.", true); return; }
+  if (istExkursion(bd.raum) && !bd.ort.trim()) { meldung("Bitte das Ziel der Exkursion eintragen.", true); return; }
+  if (konflikt(bd.raum, bd.tag, von, bis, bd.id)) { meldung("Der Raum ist zu dieser Zeit belegt.", true); return; }
+
+  const knopfS = $("bdSpeichern");
+  knopfS.disabled = true;
+  try {
+    const ort = istExkursion(bd.raum) ? bd.ort.trim() : null;
+    if (!bd.id) {
+      await admin("pw_admin_booking_add", { p_project: bd.pid, p_room: bd.raum, p_tag: bd.tag, p_von: von, p_bis: bis, p_ort: ort });
+    } else {
+      const o = bd.original;
+      if (o.room !== bd.raum || o.tag !== bd.tag || o.std_von !== von || o.std_bis !== bis || (o.ort || null) !== ort) {
+        await admin("pw_admin_booking_move", { p_id: bd.id, p_room: bd.raum, p_tag: bd.tag, p_von: von, p_bis: bis, p_ort: ort });
+      }
+      const vertretung = bd.krank ? bd.vertretung.trim() : "";
+      if (o.krank !== bd.krank || (o.vertretung || "") !== vertretung) {
+        await admin("pw_admin_set_krank", { p_booking: bd.id, p_krank: bd.krank, p_vertretung: vertretung || null });
+      }
+    }
+    $("buchungDialog").close();
+    await laden();
+    renderAlles();
+    meldung("Gespeichert.");
+  } catch (e) {
+    meldung(e.message, true);
+    try { await laden(); renderAlles(); renderBuchungDialog(); } catch (x) { /* ignorieren */ }
+  } finally {
+    knopfS.disabled = false;
+  }
+}
+
+/* =========================================================
+   6 · Räume
+   ========================================================= */
+
+function renderRaeume(ziel) {
+  const oben = el("div", "raster2");
+  oben.style.marginBottom = "22px";
+
+  /* Import */
+  const kImp = karte("Raumliste importieren", "Eine Zeile pro Raum: Raumnummer;Beschreibung – die Beschreibung darf fehlen.");
+  const ta = el("textarea", "feld");
+  ta.placeholder = "3105;Computerraum\n3106\n1104;Mensa";
+  const datei = input(null, null, "file");
+  datei.accept = ".csv,.txt,text/csv,text/plain";
+  datei.style.marginTop = "10px";
+  datei.onchange = () => {
+    const f = datei.files[0];
+    if (!f) return;
+    const leser = new FileReader();
+    leser.onload = () => { ta.value = String(leser.result).replace(/^﻿/, ""); };
+    leser.readAsText(f, "utf-8");
+  };
+  const modus = el("div", "filterreihe");
+  let ersetzen = false;
+  const zeichneModus = () => {
+    modus.innerHTML = "";
+    [[false, "Ergänzen"], [true, "Ersetzen"]].forEach(([w, t]) => {
+      const b = el("button", "filter", t);
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(ersetzen === w));
+      b.onclick = () => { ersetzen = w; zeichneModus(); };
+      modus.appendChild(b);
+    });
+    erkl.textContent = ersetzen
+      ? "Ersetzen: Räume, die nicht in der Liste stehen, werden ausgeblendet (nicht gelöscht)."
+      : "Ergänzen: Neue Räume kommen hinzu, vorhandene behalten ihre Buchungen; Beschreibungen werden aktualisiert.";
+  };
+  const erkl = el("p", "abschnitt-hinweis");
+  erkl.style.margin = "8px 0 0";
+  zeichneModus();
+  const imp = knopf("Importieren", "", async () => {
+    const text = ta.value.trim();
+    if (!text) { meldung("Die Liste ist leer.", true); return; }
+    if (ersetzen && !confirm("Alle Räume, die nicht in der Liste stehen, werden ausgeblendet. Fortfahren?")) return;
+    const erg = await aktion("pw_admin_import_rooms", { p_csv: text, p_ersetzen: ersetzen });
+    if (erg === undefined) return;
+    const mitBuchung = daten.raeume.filter((r) => r.versteckt && daten.buchungen.some((b) => b.room === r.nummer));
+    importHinweis = erg.importiert + " Räume übernommen" + (ersetzen ? ", " + erg.ausgeblendet + " ausgeblendet." : ".") +
+      (mitBuchung.length ? "|Ausgeblendet, aber mit Buchungen: " + mitBuchung.map((r) => r.nummer).join(", ") +
+        " – bitte in der Planung umbuchen oder wieder einblenden." : "");
+    meldung(erg.importiert + " Räume übernommen.");
+    renderAlles();
+  });
+  const reihe = el("div", "buttonreihe");
+  reihe.appendChild(imp);
+  kImp.append(ta, datei, modus, erkl, reihe);
+  if (importHinweis) {
+    const [a, b] = importHinweis.split("|");
+    kImp.appendChild(el("p", "hinweisbox info", a));
+    if (b) kImp.appendChild(el("p", "hinweisbox warnung", b));
+  }
+  oben.appendChild(kImp);
+
+  /* Neuer Raum */
+  const kNeu = karte("Raum anlegen", "Vierstellige Nummer (Trakt, Etage, Raum) – Trakt und Etage ergeben sich daraus.");
+  const fNr = input("", "z. B. 3208");
+  fNr.maxLength = 20;
+  const fBes = input("", "z. B. Computerraum");
+  fBes.maxLength = 80;
+  const z = el("div", "zeile");
+  const a = feldMitLabel("Nummer", fNr); a.className = "schmal";
+  z.append(a, feldMitLabel("Beschreibung (optional)", fBes));
+  const r2 = el("div", "buttonreihe");
+  r2.appendChild(knopf("Anlegen", "", async () => {
+    const nr = fNr.value.trim();
+    if (!nr) { meldung("Bitte eine Raumnummer eingeben.", true); return; }
+    if (raumInfo(nr)) { meldung("Raum " + nr + " gibt es schon – unten in der Liste bearbeiten.", true); return; }
+    await aktion("pw_admin_room_save", { p_nummer: nr, p_beschreibung: fBes.value.trim() || null, p_versteckt: false }, "Raum " + nr + " angelegt.");
+  }));
+  kNeu.append(z, r2);
+  oben.appendChild(kNeu);
+  ziel.appendChild(oben);
+
+  /* Liste */
+  const v = ansicht.raeume;
+  const kL = karte("Alle Räume");
+  const steuer = el("div", "zeile");
+  const suche = input(v.suche, "Raum suchen …", "search");
+  const sb = el("div"); sb.appendChild(suche);
+  const sch = el("label", "schalter");
+  sch.style.flex = "0 0 auto"; sch.style.alignItems = "center";
+  const cb = input(null, null, "checkbox");
+  cb.checked = v.versteckte;
+  sch.append(cb, document.createTextNode("Ausgeblendete zeigen"));
+  steuer.append(sb, sch);
+  kL.appendChild(steuer);
+
+  const huelle = el("div", "tabellenhuelle");
+  huelle.style.marginTop = "16px";
+  kL.appendChild(huelle);
+  ziel.appendChild(kL);
+
+  const zeichne = () => {
+    const q = v.suche.trim().toLowerCase();
+    const liste = daten.raeume.slice().sort(vergleichRaum).filter((r) =>
+      (v.versteckte || !r.versteckt) &&
+      (!q || (r.nummer + " " + (r.beschreibung || "")).toLowerCase().includes(q)));
+    const t = el("table", "tabelle");
+    t.innerHTML = "<thead><tr><th>Nr.</th><th>Lage</th><th>Beschreibung</th><th>Gruppen</th><th>Buchungen</th><th>Sichtbar</th><th></th></tr></thead>";
+    const tb = el("tbody");
+    liste.forEach((r) => {
+      const tr = el("tr", r.versteckt ? "versteckt" : "");
+      const anz = daten.buchungen.filter((b) => b.room === r.nummer).length;
+
+      const tdNr = el("td", "nr", r.ist_exkursion ? "Exkursion" : r.nummer);
+      const tdLage = el("td", "leise", r.ist_exkursion ? "–" : r.trakt === null ? "–" : "Trakt " + r.trakt + ", " + etageText(r.etage));
+
+      const tdBes = el("td");
+      if (r.ist_exkursion) tdBes.appendChild(el("span", "leise", "für Projekte außer Haus"));
+      else {
+        const f = input(r.beschreibung || "", "–");
+        f.maxLength = 80;
+        f.setAttribute("aria-label", "Beschreibung von Raum " + r.nummer);
+        f.onchange = () => aktion("pw_admin_room_save",
+          { p_nummer: r.nummer, p_beschreibung: f.value.trim() || null, p_versteckt: r.versteckt }, "Beschreibung gespeichert.");
+        tdBes.appendChild(f);
+      }
+
+      const tdGr = el("td");
+      if (!r.ist_exkursion) {
+        const ids = gruppenVon(r.nummer);
+        const reiheG = el("div", "filterreihe");
+        reiheG.style.margin = "0"; reiheG.style.gap = "5px";
+        daten.gruppen.forEach((g) => {
+          const b = el("button", "filter klein", g.name);
+          b.type = "button";
+          b.setAttribute("aria-pressed", String(ids.includes(g.id)));
+          b.onclick = () => {
+            const neu = ids.includes(g.id) ? ids.filter((x) => x !== g.id) : ids.concat(g.id);
+            aktion("pw_admin_room_groups_set", { p_room: r.nummer, p_group_ids: neu });
+          };
+          reiheG.appendChild(b);
+        });
+        if (!daten.gruppen.length) reiheG.appendChild(el("span", "leise", "keine Gruppen angelegt"));
+        tdGr.appendChild(reiheG);
+      }
+
+      const tdAnz = el("td", "", anz ? String(anz) : "–");
+
+      const tdSicht = el("td");
+      if (!r.ist_exkursion) {
+        const b = knopf(r.versteckt ? "ausgeblendet" : "sichtbar", "zurueck mini", () =>
+          aktion("pw_admin_room_hide", { p_nummer: r.nummer, p_versteckt: !r.versteckt },
+            r.versteckt ? "Raum eingeblendet." : "Raum ausgeblendet."));
+        if (r.versteckt) b.style.color = "var(--rot)";
+        tdSicht.appendChild(b);
+      }
+
+      const tdWeg = el("td");
+      if (!r.ist_exkursion) {
+        const b = knopf("Löschen", "gefahr mini", async () => {
+          if (!confirm("Raum " + r.nummer + " endgültig löschen?")) return;
+          await aktion("pw_admin_room_delete", { p_nummer: r.nummer }, "Raum gelöscht.");
+        });
+        if (anz) { b.disabled = true; b.title = "Raum hat noch Buchungen – erst umplanen"; }
+        tdWeg.appendChild(b);
+      }
+
+      tr.append(tdNr, tdLage, tdBes, tdGr, tdAnz, tdSicht, tdWeg);
+      tb.appendChild(tr);
+    });
+    if (!liste.length) {
+      const tr = el("tr");
+      const td = el("td", "leise", daten.raeume.length > 1 ? "Keine Treffer." : "Noch keine Räume – oben importieren oder anlegen.");
+      td.colSpan = 7;
+      tr.appendChild(td);
+      tb.appendChild(tr);
+    }
+    t.appendChild(tb);
+    huelle.innerHTML = "";
+    huelle.appendChild(t);
+  };
+  suche.oninput = () => { v.suche = suche.value; zeichne(); };
+  cb.onchange = () => { v.versteckte = cb.checked; zeichne(); };
+  zeichne();
+}
+
+/* =========================================================
+   7 · Gruppen
+   ========================================================= */
+
+function renderGruppen(ziel) {
+  const k = karte("Raumgruppen", "Gruppen fassen Räume zusammen, z. B. „Fachräume Naturwissenschaften“. Zuordnen kannst du sie im Reiter Räume. Sie dienen als Filter bei der Buchung und bei den Aushängen.");
+  const z = el("div", "zeile");
+  const f = input("", "Name der neuen Gruppe");
+  f.maxLength = 60;
+  const box = el("div"); box.appendChild(f);
+  const b = knopf("Gruppe anlegen", "", async () => {
+    const name = f.value.trim();
+    if (!name) { meldung("Bitte einen Namen eingeben.", true); return; }
+    await aktion("pw_admin_group_save", { p_name: name }, "Gruppe angelegt.");
+  });
+  b.style.flex = "0 0 auto";
+  f.onkeydown = (e) => { if (e.key === "Enter") b.click(); };
+  z.append(box, b);
+  k.appendChild(z);
+
+  const huelle = el("div", "tabellenhuelle");
+  huelle.style.marginTop = "18px";
+  const t = el("table", "tabelle");
+  t.innerHTML = "<thead><tr><th>Gruppe</th><th>Räume</th><th></th></tr></thead>";
+  const tb = el("tbody");
+  daten.gruppen.forEach((g) => {
+    const raeume = daten.raumGruppen.filter((x) => x.group_id === g.id).map((x) => x.room)
+      .sort((a, c) => a.localeCompare(c, "de", { numeric: true }));
+    const tr = el("tr");
+    const td1 = el("td"); td1.appendChild(el("b", "", g.name));
+    const td2 = el("td", raeume.length ? "" : "leise", raeume.length ? raeume.join(", ") : "noch keine Räume zugeordnet");
+    const td3 = el("td");
+    td3.style.width = "1%";
+    td3.appendChild(knopf("Löschen", "gefahr mini", async () => {
+      if (!confirm("Gruppe „" + g.name + "“ löschen? Die Räume selbst bleiben erhalten.")) return;
+      await aktion("pw_admin_group_delete", { p_id: g.id }, "Gruppe gelöscht.");
+    }));
+    tr.append(td1, td2, td3);
+    tb.appendChild(tr);
+  });
+  if (!daten.gruppen.length) {
+    const tr = el("tr");
+    const td = el("td", "leise", "Noch keine Gruppen angelegt.");
+    td.colSpan = 3;
+    tr.appendChild(td);
+    tb.appendChild(tr);
+  }
+  t.appendChild(tb);
+  huelle.appendChild(t);
+  k.appendChild(huelle);
+  ziel.appendChild(k);
+}
+
+/* =========================================================
+   8 · Aushänge
+   ========================================================= */
+
+function renderExport(ziel) {
+  const v = ansicht.export;
+  if (v.art === "tag" && !v.tag) v.tag = 1;
+
+  const k = karte("Aushang erstellen", "Filter wählen, Vorschau prüfen, dann drucken oder im Druckdialog „Als PDF speichern“ wählen.");
+
+  const arten = el("div", "filterreihe");
+  arten.style.marginTop = "0";
+  [["liste", "Gesamtliste für Schüler"], ["schild", "Türschilder pro Raum"], ["tag", "Tagesplan Lehrkräfte"]].forEach(([w, t]) => {
+    const b = el("button", "filter", t);
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(v.art === w));
+    b.onclick = () => { v.art = w; if (w === "tag" && !v.tag) v.tag = 1; renderAlles(); };
+    arten.appendChild(b);
+  });
+  k.appendChild(arten);
+
+  const z = el("div", "zeile feldgruppe");
+  const klassen = [["alle", "Alle Klassen"], ["sek1", "Sek I (5–10)"], ["sek2", "Sek II (11–13)"]];
+  for (let i = 5; i <= 13; i++) klassen.push([String(i), "Klasse " + i]);
+  const sK = auswahl(klassen, v.klasse);
+  sK.onchange = () => { v.klasse = sK.value; vorschau(); };
+
+  const sG = auswahl([["", "Alle Räume"]].concat(daten.gruppen.map((g) => [g.id, g.name])), v.gruppe);
+  sG.onchange = () => { v.gruppe = sG.value; vorschau(); };
+
+  const trakte = [...new Set(daten.raeume.filter((r) => r.trakt !== null).map((r) => r.trakt))].sort();
+  const sT = auswahl([["", "Alle Trakte"]].concat(trakte.map((t) => [t, "Trakt " + t])), v.trakt);
+  sT.onchange = () => { v.trakt = sT.value; vorschau(); };
+
+  const tagOpt = (v.art === "tag" ? [] : [[0, "Alle Tage"]]).concat([1, 2, 3, 4, 5].map((t) => [t, TAGE[t]]));
+  const sD = auswahl(tagOpt, v.tag);
+  sD.onchange = () => { v.tag = Number(sD.value); vorschau(); };
+
+  const fS = input(v.suche, "Thema, Kürzel, Raum …", "search");
+  fS.oninput = () => { v.suche = fS.value; vorschau(); };
+
+  z.append(feldMitLabel("Klassenstufe", sK), feldMitLabel("Raumgruppe", sG), feldMitLabel("Trakt", sT),
+    feldMitLabel("Tag", sD), feldMitLabel("Textsuche", fS));
+  k.appendChild(z);
+
+  const reihe = el("div", "buttonreihe");
+  reihe.appendChild(knopf("Drucken / Als PDF speichern", "", () => {
+    vorschau();
+    window.print();
+  }));
+  const info = el("span", "leise");
+  info.style.alignSelf = "center";
+  info.id = "exportInfo";
+  reihe.appendChild(info);
+  k.appendChild(reihe);
+  ziel.appendChild(k);
+
+  const kV = karte("Vorschau");
+  const box = el("div", "vorschau");
+  box.id = "vorschauBox";
+  kV.appendChild(box);
+  ziel.appendChild(kV);
+
+  vorschau();
+}
+
+/* --- Filter --- */
+
+function klassePasst(p, k) {
+  if (k === "alle") return true;
+  if (k === "sek1") return p.klasse_von <= 10 && p.klasse_bis >= 5;
+  if (k === "sek2") return p.klasse_bis >= 11;
+  const n = Number(k);
+  return p.klasse_von <= n && p.klasse_bis >= n;
+}
+
+function raumPasst(nr) {
+  const v = ansicht.export;
+  const r = raumInfo(nr);
+  if (v.gruppe && !gruppenVon(nr).includes(Number(v.gruppe))) return false;
+  if (v.trakt !== "" && (!r || String(r.trakt) !== String(v.trakt))) return false;
+  return true;
+}
+
+function filterText() {
+  const v = ansicht.export;
+  const teile = [];
+  if (v.klasse !== "alle") teile.push(v.klasse === "sek1" ? "Sek I" : v.klasse === "sek2" ? "Sek II" : "Klasse " + v.klasse);
+  if (v.gruppe) { const g = daten.gruppen.find((x) => String(x.id) === String(v.gruppe)); if (g) teile.push(g.name); }
+  if (v.trakt !== "") teile.push("Trakt " + v.trakt);
+  if (v.tag && v.art !== "tag") teile.push(TAGE[v.tag]);
+  if (v.suche.trim()) teile.push("Suche „" + v.suche.trim() + "“");
+  return teile.join(" · ");
+}
+
+function stand() {
+  return "Stand: " + new Date().toLocaleDateString("de-DE") + ", " +
+    new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr";
+}
+
+function vertretungHtml(b) {
+  if (!b.krank) return "";
+  return '<small class="d-krank">' + (b.vertretung ? "Vertretung: " + esc(b.vertretung) : "Lehrkraft erkrankt") + "</small>";
+}
+
+/* --- Gesamtliste --- */
+function htmlListe() {
+  const v = ansicht.export;
+  const q = v.suche.trim().toLowerCase();
+  const raumFilter = v.gruppe || v.trakt !== "" || v.tag;
+  const projekte = daten.projekte.filter((p) => {
+    if (!klassePasst(p, v.klasse) || !projektTreffer(p, q)) return false;
+    const bs = buchungenVon(p.id);
+    if (!raumFilter) return true;
+    return bs.some((b) => raumPasst(b.room) && (!v.tag || b.tag === v.tag));
+  }).sort((a, b) => a.thema.localeCompare(b.thema, "de"));
+
+  let h = '<div class="d-seite"><h1>Projektwoche ' + esc(wochenText()) + "</h1>" +
+    '<p class="d-unter">Übersicht aller Projekte' + (filterText() ? " · " + esc(filterText()) : "") + " · " + stand() + "</p>";
+  h += '<table class="d-tabelle"><thead><tr><th>Projekt</th><th>Klassen</th><th>Lehrkräfte</th>';
+  for (let t = 1; t <= 5; t++) h += "<th>" + TAGE[t] + (datum(t) ? "<br>" + datum(t) : "") + "</th>";
+  h += "</tr></thead><tbody>";
+  projekte.forEach((p) => {
+    const bs = buchungenVon(p.id);
+    h += '<tr><td class="thema">' + esc(p.thema) + "</td><td>" + esc(klassenText(p).replace("Kl. ", "")) +
+      "</td><td>" + esc(lehrkraefte(p)) + "</td>";
+    for (let t = 1; t <= 5; t++) {
+      const tb = bs.filter((b) => b.tag === t);
+      h += "<td>" + (tb.length ? tb.map((b) => {
+        const r = raumInfo(b.room);
+        return "<b>" + esc(istExkursion(b.room) ? "Exkursion" : b.room) + "</b>" +
+          (istExkursion(b.room) ? (b.ort ? "<small>" + esc(b.ort) + "</small>" : "")
+            : (r && r.beschreibung ? "<small>" + esc(r.beschreibung) + "</small>" : "")) +
+          (b.std_von === 1 && b.std_bis === 6 ? "" : "<small>" + esc(stundenText(b.std_von, b.std_bis)) + "</small>") +
+          vertretungHtml(b);
+      }).join("<br>") : '<span class="d-leer">–</span>') + "</td>";
+    }
+    h += "</tr>";
+  });
+  if (!projekte.length) h += '<tr><td colspan="8" class="d-leer">Keine Projekte für diese Auswahl.</td></tr>';
+  h += "</tbody></table></div>";
+  return { html: h, anzahl: projekte.length + " Projekte", quer: true };
+}
+
+/* --- Türschilder --- */
+function htmlSchilder() {
+  const v = ansicht.export;
+  const q = v.suche.trim().toLowerCase();
+  const raeume = daten.raeume.filter((r) => !r.ist_exkursion && raumPasst(r.nummer)).sort(vergleichRaum);
+  let h = "", anzahl = 0;
+  raeume.forEach((r) => {
+    const bs = daten.buchungen.filter((b) => {
+      if (b.room !== r.nummer || (v.tag && b.tag !== v.tag)) return false;
+      const p = projektVon(b.project_id);
+      if (!p || !klassePasst(p, v.klasse)) return false;
+      return !q || projektTreffer(p, q) || r.nummer.toLowerCase().includes(q) || (r.beschreibung || "").toLowerCase().includes(q);
+    });
+    if (!bs.length) return;
+    anzahl++;
+    h += '<div class="d-seite"><div class="d-schild"><div class="raumnr">' + esc(r.nummer) + "</div>" +
+      (r.beschreibung ? '<div class="raumbes">' + esc(r.beschreibung) + "</div>" : "") +
+      '<div class="woche">Projektwoche ' + esc(wochenText()) + "</div></div>" +
+      '<table class="d-tabelle d-schild-tabelle"><thead><tr><th>Tag</th><th>Projekt</th><th>Klassen</th><th>Lehrkräfte</th><th>Zeit</th></tr></thead><tbody>';
+    for (let t = 1; t <= 5; t++) {
+      if (v.tag && t !== v.tag) continue;
+      const tb = bs.filter((b) => b.tag === t).sort((a, c) => a.std_von - c.std_von);
+      if (!tb.length) {
+        h += '<tr><td class="tagzelle">' + TAGE[t] + (datum(t) ? "<small>" + datum(t) + "</small>" : "") +
+          '</td><td colspan="4" class="d-leer">kein Projekt</td></tr>';
+        continue;
+      }
+      tb.forEach((b, i) => {
+        const p = projektVon(b.project_id);
+        h += "<tr>" + (i === 0 ? '<td class="tagzelle" rowspan="' + tb.length + '">' + TAGE[t] +
+          (datum(t) ? "<small>" + datum(t) + "</small>" : "") + "</td>" : "") +
+          '<td class="thema">' + esc(p.thema) + "</td><td>" + esc(klassenText(p).replace("Kl. ", "")) + "</td><td>" +
+          esc(lehrkraefte(p)) + vertretungHtml(b) + "</td><td>" + esc(stundenText(b.std_von, b.std_bis)) + "</td></tr>";
+      });
+    }
+    h += "</tbody></table></div>";
+  });
+  if (!h) h = '<div class="d-seite"><p class="d-leer">Keine belegten Räume für diese Auswahl.</p></div>';
+  return { html: h, anzahl: anzahl + " Türschilder (je eine Seite)", quer: false };
+}
+
+/* --- Tagesplan --- */
+function htmlTag() {
+  const v = ansicht.export;
+  const q = v.suche.trim().toLowerCase();
+  const t = v.tag || 1;
+  const bs = daten.buchungen.filter((b) => {
+    if (b.tag !== t || !raumPasst(b.room)) return false;
+    const p = projektVon(b.project_id);
+    return p && klassePasst(p, v.klasse) && projektTreffer(p, q);
+  }).sort((a, b) => projektVon(a.project_id).kuerzel.localeCompare(projektVon(b.project_id).kuerzel, "de"));
+
+  let h = '<div class="d-seite"><h1>Tagesplan ' + TAGE[t] + (datum(t) ? ", " + datum(t, true) : "") + "</h1>" +
+    '<p class="d-unter">Wer ist wo eingesetzt' + (filterText() ? " · " + esc(filterText()) : "") + " · " + stand() + "</p>";
+  h += '<table class="d-tabelle"><thead><tr><th>Lehrkraft</th><th>Weitere</th><th>Projekt</th><th>Klassen</th><th>Raum / Ort</th><th>Zeit</th><th>Bemerkung</th></tr></thead><tbody>';
+  bs.forEach((b) => {
+    const p = projektVon(b.project_id);
+    h += "<tr><td><b>" + esc(p.kuerzel) + "</b><small>" + esc(p.name) + "</small></td><td>" + esc(p.mitwirkende || "–") +
+      '</td><td class="thema">' + esc(p.thema) + "</td><td>" + esc(klassenText(p).replace("Kl. ", "")) + "</td><td>" +
+      esc(ortText(b, true)) + "</td><td>" + esc(stundenText(b.std_von, b.std_bis)) + "</td><td>" +
+      (b.krank ? '<span class="d-krank">krank' + (b.vertretung ? " – Vertretung: " + esc(b.vertretung) : " – Vertretung offen") + "</span>" : "") +
+      "</td></tr>";
+  });
+  if (!bs.length) h += '<tr><td colspan="7" class="d-leer">Keine Einsätze für diese Auswahl.</td></tr>';
+  h += "</tbody></table></div>";
+  return { html: h, anzahl: bs.length + " Einsätze", quer: true };
+}
+
+function vorschau() {
+  const v = ansicht.export;
+  const erg = v.art === "schild" ? htmlSchilder() : v.art === "tag" ? htmlTag() : htmlListe();
+  const box = $("vorschauBox");
+  if (box) box.innerHTML = erg.html;
+  $("druck").innerHTML = erg.html;
+  $("seitenstil").textContent = "@page { size: A4 " + (erg.quer ? "landscape" : "portrait") + "; margin: 12mm; }";
+  const info = $("exportInfo");
+  if (info) info.textContent = erg.anzahl + " · " + (erg.quer ? "Querformat" : "Hochformat");
+}
+
+/* =========================================================
+   9 · Einstellungen
+   ========================================================= */
+
+function renderEinstellungen(ziel) {
+  const raster = el("div", "raster2");
+
+  /* Woche */
+  const kW = karte("Projektwoche", "Montag der Projektwoche. Die Daten erscheinen auf allen Seiten und Aushängen.");
+  const fD = input(daten.status.woche_start || "", null, "date");
+  const zW = el("div", "zeile");
+  zW.appendChild(feldMitLabel("Montag", fD));
+  const rW = el("div", "buttonreihe");
+  rW.appendChild(knopf("Speichern", "", async () => {
+    if (!fD.value) { meldung("Bitte ein Datum wählen.", true); return; }
+    if (new Date(fD.value + "T12:00:00").getDay() !== 1) { meldung("Das Datum ist kein Montag.", true); return; }
+    await aktion("pw_admin_set_woche", { p_montag: fD.value }, "Woche gespeichert.");
+  }));
+  kW.append(zW, rW);
+  raster.appendChild(kW);
+
+  /* Phasen */
+  const kP = karte("Phasen", "Nach der Planungsphase beides abschalten, dann kann niemand mehr etwas ändern – außer dir hier.");
+  const sch1 = el("label", "schalter");
+  const c1 = input(null, null, "checkbox");
+  c1.checked = daten.status.buchung_offen !== false;
+  sch1.append(c1, el("span", "", "Buchung offen"));
+  const s1 = sch1.querySelector("span");
+  s1.appendChild(el("small", "", "Kollegen können neue Projekte anlegen."));
+  const sch2 = el("label", "schalter");
+  sch2.style.marginTop = "14px";
+  const c2 = input(null, null, "checkbox");
+  c2.checked = daten.status.aenderung_offen !== false;
+  sch2.append(c2, el("span", "", "Änderungscodes aktiv"));
+  sch2.querySelector("span").appendChild(el("small", "", "Kollegen können ihr Projekt per Code ändern oder löschen."));
+  const rP = el("div", "buttonreihe");
+  rP.appendChild(knopf("Speichern", "", () =>
+    aktion("pw_admin_set_phasen", { p_buchung: c1.checked, p_aenderung: c2.checked }, "Phasen gespeichert.")));
+  kP.append(sch1, sch2, rP);
+  raster.appendChild(kP);
+
+  /* Passwort */
+  const kPw = karte("Admin-Passwort", "Mindestens 8 Zeichen. Der Benutzername bleibt „admin“.");
+  const p1 = input("", null, "password"); p1.autocomplete = "new-password";
+  const p2 = input("", null, "password"); p2.autocomplete = "new-password";
+  const zP = el("div", "zeile");
+  zP.append(feldMitLabel("Neues Passwort", p1), feldMitLabel("Wiederholen", p2));
+  const rPw = el("div", "buttonreihe");
+  rPw.appendChild(knopf("Passwort ändern", "", async () => {
+    if (p1.value.length < 8) { meldung("Mindestens 8 Zeichen.", true); return; }
+    if (p1.value !== p2.value) { meldung("Die Passwörter stimmen nicht überein.", true); return; }
+    const ok = await aktion("pw_admin_set_password", { p_neu: p1.value }, "Passwort geändert.");
+    if (ok !== undefined) { PW = p1.value; speicher("setzen", PW); }
+  }));
+  kPw.append(zP, rPw);
+  raster.appendChild(kPw);
+
+  ziel.appendChild(raster);
+}
+
+/* =========================================================
+   10 · Anmeldung und Start
+   ========================================================= */
+
+async function anmelden(name, pw, still) {
+  try {
+    const ok = await rpc("pw_admin_login", { p_user: name, p_pw: pw });
+    if (!ok) throw new Error("Benutzer oder Passwort falsch.");
+    PW = pw;
+    speicher("setzen", pw);
+    await laden();
+    $("loginKarte").hidden = true;
+    $("app").hidden = false;
+    renderAlles();
+  } catch (e) {
+    $("loginKarte").hidden = false;
+    $("app").hidden = true;
+    if (!still) {
+      $("loginFehler").textContent = e.message;
+      $("loginFehler").hidden = false;
+    }
+  }
+}
+
+function abmelden() {
+  PW = "";
+  speicher("loeschen");
+  document.querySelectorAll("dialog[open]").forEach((d) => d.close());
+  $("app").hidden = true;
+  $("loginKarte").hidden = false;
+  $("lPw").value = "";
+}
+
+function bedienung() {
+  $("btnLogin").onclick = () => anmelden($("lName").value.trim(), $("lPw").value);
+  $("lPw").onkeydown = (e) => { if (e.key === "Enter") $("btnLogin").click(); };
+  $("btnAbmelden").onclick = abmelden;
+  $("btnNeuLaden").onclick = async () => {
+    try { await laden(); renderAlles(); meldung("Aktualisiert."); } catch (e) { meldung(e.message, true); }
+  };
+
+  $("pdSpeichern").onclick = projektSpeichern;
+  $("pdLoeschen").onclick = async () => {
+    const p = projektVon(offenesProjekt);
+    if (!p || !confirm("Projekt „" + p.thema + "“ mit allen Tagen endgültig löschen?")) return;
+    $("projektDialog").close();
+    await aktion("pw_admin_project_delete", { p_id: p.id }, "Projekt gelöscht.");
+  };
+  $("pdCode").onclick = async () => {
+    const p = projektVon(offenesProjekt);
+    if (!p || !confirm("Neuen Änderungscode für „" + p.thema + "“ erzeugen? Ein alter Code wird damit ungültig.")) return;
+    try {
+      const code = await admin("pw_admin_project_new_code", { p_id: p.id });
+      const box = $("pdCodeBox");
+      box.innerHTML = "";
+      box.appendChild(el("hr", "trenner"));
+      box.appendChild(el("p", "", "Neuer Code für " + p.kuerzel + " – bitte weitergeben:"));
+      box.appendChild(el("div", "codeanzeige", code));
+      box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch (e) { meldung(e.message, true); }
+  };
+  $("projektDialog").addEventListener("close", () => { offenesProjekt = null; });
+
+  $("bdSpeichern").onclick = buchungSpeichern;
+
+  document.querySelectorAll("dialog").forEach((d) => {
+    d.addEventListener("click", (e) => { if (e.target === d) d.close(); });
+  });
+  document.querySelectorAll("[data-schliessen]").forEach((b) => {
+    b.addEventListener("click", () => b.closest("dialog").close());
+  });
+
+  window.addEventListener("beforeprint", () => { if (reiter === "export") vorschau(); });
+}
+
+async function start() {
+  bedienung();
+  const gemerkt = speicher("lesen");
+  if (gemerkt) await anmelden("admin", gemerkt, true);
+  else $("loginKarte").hidden = false;
+}
+
+start();
+</script>
+</body>
+</html>
