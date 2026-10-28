@@ -37,6 +37,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 
 body {
@@ -179,6 +180,7 @@ textarea.feld { min-height: 140px; resize: vertical; font-family: ui-monospace, 
 .buchungschip.krank b { color: var(--rot); }
 .tagkurz { display: inline-block; min-width: 40px; }
 .krankmarke { color: var(--rot); font-weight: 700; }
+.knopf.krankaktiv { background: #fdf0ef; border-color: #f1c9c6; }
 
 /* ---------- Dialoge ---------- */
 dialog {
@@ -339,7 +341,25 @@ dialog::backdrop { background: rgba(15, 20, 60, .55); }
       <button class="knopf gefahr" id="pdLoeschen" type="button">Projekt löschen</button>
       <button class="knopf zurueck" id="pdCode" type="button">Neuer Änderungscode</button>
     </div>
-    <button class="knopf" id="pdSpeichern" type="button">Angaben speichern</button>
+    <button class="knopf" id="pdSpeichern" type="button">Änderungen speichern</button>
+  </div>
+</dialog>
+
+<!-- Krankmeldung -->
+<dialog id="krankDialog" aria-labelledby="kdTitel">
+  <div class="fenster-kopf">
+    <h2><span id="kdTitel">Krankmeldung</span>
+      <button class="schliessen" type="button" data-schliessen aria-label="Schließen">×</button></h2>
+  </div>
+  <div class="fenster-inhalt">
+    <p id="kdText" style="margin-top:0"></p>
+    <label class="label" for="kdVertretung">Vertretung (Kürzel oder Name)</label>
+    <input class="feld" id="kdVertretung" type="text" maxlength="60" placeholder="kann auch später eingetragen werden">
+  </div>
+  <div class="fenster-fuss">
+    <div class="links"><button class="knopf gefahr" id="kdAufheben" type="button">Krankmeldung aufheben</button></div>
+    <button class="knopf zurueck" type="button" data-schliessen>Abbrechen</button>
+    <button class="knopf" id="kdSpeichern" type="button">Krank melden</button>
   </div>
 </dialog>
 
@@ -847,6 +867,8 @@ function renderProjektDialog() {
       (b.krank ? '<div class="krankmarke">krank' + (b.vertretung ? " · Vertretung: " + esc(b.vertretung) : " · noch keine Vertretung") + "</div>" : "");
     li.append(
       text,
+      Object.assign(knopf("🤒", "zurueck mini" + (b.krank ? " krankaktiv" : ""), () => krankOeffnen(b.id)),
+        { title: b.krank ? "Krankmeldung ändern" : "Krank melden", ariaLabel: "Krankmeldung " + TAGE[b.tag] }),
       knopf("Bearbeiten", "zurueck mini", () => buchungOeffnen(b.id, p.id)),
       knopf("Entfernen", "gefahr mini", async () => {
         if (!confirm(TAGE[b.tag] + " aus dem Projekt entfernen?")) return;
@@ -878,7 +900,8 @@ async function projektSpeichern() {
   if (!werte.p_thema || !werte.p_name) { meldung("Thema und Name dürfen nicht leer sein.", true); return; }
   if (werte.p_kuerzel.length < 2 || werte.p_kuerzel.length > 5) { meldung("Das Kürzel muss 2 bis 5 Zeichen haben.", true); return; }
   if (werte.p_klasse_von > werte.p_klasse_bis) { meldung("Klassenstufe „von“ ist größer als „bis“.", true); return; }
-  await aktion("pw_admin_project_update", werte, "Projekt gespeichert.");
+  const ok = await aktion("pw_admin_project_update", werte, "Projekt gespeichert.");
+  if (ok !== undefined) $("projektDialog").close();
 }
 
 /* ---------- Buchungsdialog ---------- */
@@ -1005,6 +1028,32 @@ function renderBuchungDialog() {
       box.appendChild(zv);
     }
   }
+}
+
+/* ---------- Krankmeldung (Schnellzugriff) ---------- */
+
+let krankId = null;
+
+function krankOeffnen(buchungId) {
+  const b = daten.buchungen.find((x) => x.id === buchungId);
+  const p = b && projektVon(b.project_id);
+  if (!b || !p) return;
+  krankId = b.id;
+  $("kdTitel").textContent = "Krankmeldung · " + TAGE[b.tag];
+  $("kdText").textContent = p.kuerzel + " – „" + p.thema + "“ · " + ortText(b, true) + " · " + stundenText(b.std_von, b.std_bis);
+  $("kdVertretung").value = b.vertretung || "";
+  $("kdAufheben").hidden = !b.krank;
+  $("kdSpeichern").textContent = b.krank ? "Speichern" : "Krank melden";
+  $("krankDialog").showModal();
+  $("kdVertretung").focus();
+}
+
+async function krankSpeichern(krank) {
+  const vertretung = krank ? $("kdVertretung").value.trim() : "";
+  const ok = await aktion("pw_admin_set_krank",
+    { p_booking: krankId, p_krank: krank, p_vertretung: vertretung || null },
+    krank ? "Krankmeldung gespeichert." : "Krankmeldung aufgehoben.");
+  if (ok !== undefined) $("krankDialog").close();
 }
 
 async function buchungSpeichern() {
@@ -1628,6 +1677,9 @@ function bedienung() {
   $("projektDialog").addEventListener("close", () => { offenesProjekt = null; });
 
   $("bdSpeichern").onclick = buchungSpeichern;
+  $("kdSpeichern").onclick = () => krankSpeichern(true);
+  $("kdAufheben").onclick = () => krankSpeichern(false);
+  $("kdVertretung").onkeydown = (e) => { if (e.key === "Enter") krankSpeichern(true); };
 
   document.querySelectorAll("dialog").forEach((d) => {
     d.addEventListener("click", (e) => { if (e.target === d) d.close(); });
