@@ -235,6 +235,8 @@ dialog.breit { width: min(1000px, calc(100vw - 24px)); height: min(820px, calc(1
 .buchungschip.krank b { color: var(--rot); }
 .tagkurz { display: inline-block; min-width: 40px; }
 .krankmarke { color: var(--rot); font-weight: 700; }
+.krankicon { width: 16px; height: 16px; vertical-align: -3px; flex: none; }
+.krankknopf .krankicon { width: 18px; height: 18px; }
 .knopf.krankaktiv { background: #fdf0ef; border-color: #f1c9c6; }
 
 /* ---------- Dialoge ---------- */
@@ -479,6 +481,9 @@ const SUPABASE_KEY = "sb_publishable_TlasNLd2Yxq8nxrkgHMnlA_J5-IezYg";
 /* =========================================================
    1 · Zustand
    ========================================================= */
+
+/* Kranksymbol: rotes Kreuz im roten Kreis */
+const KRANK_SVG = '<svg class="krankicon" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.5" fill="none" stroke="#c62828" stroke-width="2"/><path d="M10 5.5v9M5.5 10h9" stroke="#c62828" stroke-width="2.6" stroke-linecap="round"/></svg>';
 
 const TAGE = ["", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const TAGE_KURZ = ["", "Mo", "Di", "Mi", "Do", "Fr"];
@@ -806,7 +811,7 @@ function zaehlerAdmin() {
     if (z) h += '<div class="balken"><i style="width:' + Math.min(100, Math.round(n / z * 100)) + '%"></i></div>' +
       '<div class="r ziel">' + (n >= z ? "Ziel erreicht" : "noch " + (z - n) + " fehlen") + "</div>";
     else h += '<div class="r">Projekte · kein Tagesziel</div>';
-    h += '<div class="r' + (ohne ? " rot" : "") + '">🤒 ' + krank.length + " krank" + (ohne ? " · " + ohne + " ohne Vertretung" : "") + "</div>";
+    h += '<div class="r' + (ohne ? " rot" : "") + '">' + KRANK_SVG + " " + krank.length + " krank" + (ohne ? " · " + ohne + " ohne Vertretung" : "") + "</div>";
     k.innerHTML = h;
     const b = el("button", "abwknopf", "Abwesend: " + (abw ? abw.anzahl : 0) + "  ✎");
     b.type = "button";
@@ -994,8 +999,8 @@ function renderProjektDialog() {
       (b.krank ? '<div class="krankmarke">krank' + (b.vertretung ? " · Vertretung: " + esc(b.vertretung) : " · noch keine Vertretung") + "</div>" : "");
     li.append(
       text,
-      Object.assign(knopf("🤒", "zurueck mini" + (b.krank ? " krankaktiv" : ""), () => krankOeffnen(b.id)),
-        { title: b.krank ? "Krankmeldung ändern" : "Krank melden", ariaLabel: "Krankmeldung " + TAGE[b.tag] }),
+      Object.assign(knopf("", "zurueck mini krankknopf" + (b.krank ? " krankaktiv" : ""), () => krankOeffnen(b.id)),
+        { innerHTML: KRANK_SVG, title: b.krank ? "Krankmeldung ändern" : "Krank melden", ariaLabel: "Krankmeldung " + TAGE[b.tag] }),
       knopf("Bearbeiten", "zurueck mini", () => buchungOeffnen(b.id, p.id)),
       knopf("Entfernen", "gefahr mini", async () => {
         if (!confirm(TAGE[b.tag] + " aus dem Projekt entfernen?")) return;
