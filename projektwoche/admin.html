@@ -138,6 +138,61 @@ textarea.feld { min-height: 140px; resize: vertical; font-family: ui-monospace, 
 .hinweisbox.info { background: var(--badge-bg); color: var(--indigo); }
 .hinweisbox ul { margin: 6px 0 0; padding-left: 20px; }
 
+/* ---------- Zähler ---------- */
+.zaehler { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.zkachel { background: var(--chip); border-radius: 12px; padding: 10px 14px; }
+.zkachel .k { font-size: 12.5px; font-weight: 700; color: var(--tinte-leise); }
+.zkachel .w { font-size: 22px; font-weight: 700; color: var(--indigo); line-height: 1.25; }
+.zkachel .w small { font-size: 14px; color: var(--tinte-leise); font-weight: 600; }
+.zkachel .balken { height: 6px; background: #dfe2ec; border-radius: 99px; margin: 6px 0 4px; overflow: hidden; }
+.zkachel .balken i { display: block; height: 100%; background: var(--orange); border-radius: 99px; }
+.zkachel.erreicht .balken i { background: var(--gruen); }
+.zkachel .r { font-size: 12.5px; color: var(--tinte-leise); }
+.zkachel.erreicht .r.ziel { color: var(--gruen); font-weight: 700; }
+.zkachel .rot { color: var(--rot); font-weight: 700; }
+.abwknopf {
+  margin-top: 6px; padding: 3px 9px; width: 100%;
+  background: #fff; border: 1.5px solid var(--linie); border-radius: 8px;
+  font-family: inherit; font-size: 12.5px; color: var(--navy); font-weight: 600; text-align: left; cursor: pointer;
+}
+.abwknopf:hover { border-color: var(--indigo); }
+
+/* ---------- Raumauswahl ---------- */
+dialog.breit { width: min(1000px, calc(100vw - 24px)); height: min(820px, calc(100vh - 24px)); }
+.suchzeile { display: flex; gap: 12px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+.suchzeile .feld { flex: 1 1 240px; }
+.raumabschnitt { margin: 0 0 22px; }
+.raumabschnitt h3 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--tinte-leise); }
+.raumgitter { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.raum {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 12px 14px; min-height: 92px;
+  background: #fff; border: 1.5px solid var(--linie); border-radius: 12px;
+  font-family: inherit; text-align: left; cursor: pointer; color: var(--tinte);
+  transition: border-color .15s ease, transform .15s ease;
+}
+.raum:hover:not(:disabled) { border-color: var(--indigo); transform: translateY(-1px); }
+.raum:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+.raum.gewaehlt { border-color: var(--indigo); background: var(--badge-bg); }
+.raum:disabled { background: #f3f4f7; cursor: not-allowed; color: var(--tinte-leise); }
+.raum .rnr { font-size: 19px; font-weight: 700; color: var(--indigo); }
+.raum:disabled .rnr { color: #9aa1ae; }
+.raum .bes { font-size: 13px; color: var(--tinte-leise); min-height: 19px; }
+.raum .zust { margin-top: auto; font-size: 12.5px; font-weight: 600; display: flex; gap: 6px; align-items: baseline; }
+.raum .zust::before { content: ""; width: 8px; height: 8px; border-radius: 999px; flex: none; transform: translateY(-1px); }
+.zust.frei   { color: var(--gruen); }  .zust.frei::before   { background: var(--gruen); }
+.zust.teil   { color: var(--orange); } .zust.teil::before   { background: var(--orange); }
+.zust.belegt { color: #8a909c; }       .zust.belegt::before { background: #b3b8c2; }
+.raumwahl {
+  width: 100%; padding: 10px 14px;
+  background: var(--badge-bg); color: var(--indigo);
+  border: 1.5px solid transparent; border-radius: var(--radius-klein);
+  font-family: inherit; font-size: 15px; text-align: left; cursor: pointer;
+}
+.raumwahl:hover { border-color: var(--indigo); }
+.raumwahl.leer { background: #fff; color: var(--navy); border: 1.5px dashed #b7bdd6; font-weight: 600; }
+.leer-hinweis { color: var(--tinte-leise); text-align: center; padding: 40px 0; }
+
 /* ---------- Kennzahlen ---------- */
 .zahlen { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .zahl { background: var(--chip); border-radius: 12px; padding: 12px 16px; }
@@ -345,6 +400,40 @@ dialog::backdrop { background: rgba(15, 20, 60, .55); }
   </div>
 </dialog>
 
+<!-- Raumauswahl -->
+<dialog class="breit" id="raumDialog" aria-labelledby="rdTitel">
+  <div class="fenster-kopf">
+    <h2><span id="rdTitel">Raum wählen</span>
+      <button class="schliessen" type="button" data-schliessen aria-label="Schließen">×</button></h2>
+    <div class="suchzeile">
+      <input class="feld" id="rdSuche" type="search" placeholder="Raumnummer oder Beschreibung suchen …">
+      <label class="schalter" style="align-items:center"><input type="checkbox" id="rdNurFrei"> Nur freie Räume</label>
+    </div>
+    <div class="filterreihe" id="rdFilter"></div>
+  </div>
+  <div class="fenster-inhalt" id="rdInhalt"></div>
+</dialog>
+
+<!-- Abwesende -->
+<dialog id="abwDialog" aria-labelledby="abwTitel">
+  <div class="fenster-kopf">
+    <h2><span id="abwTitel">Abwesende Kollegen</span>
+      <button class="schliessen" type="button" data-schliessen aria-label="Schließen">×</button></h2>
+  </div>
+  <div class="fenster-inhalt">
+    <label class="label" for="abwAnzahl">Anzahl abwesender Kollegen</label>
+    <input class="feld" id="abwAnzahl" type="number" min="0" max="200" step="1" style="max-width:160px">
+    <div class="feldgruppe">
+      <label class="label" for="abwNotiz">Wer? (optional, nur im Admin sichtbar)</label>
+      <textarea class="feld" id="abwNotiz" style="min-height:90px;font-family:inherit" placeholder="z. B. Kürzel, Grund"></textarea>
+    </div>
+  </div>
+  <div class="fenster-fuss">
+    <button class="knopf zurueck" type="button" data-schliessen>Abbrechen</button>
+    <button class="knopf" id="abwSpeichern" type="button">Speichern</button>
+  </div>
+</dialog>
+
 <!-- Krankmeldung -->
 <dialog id="krankDialog" aria-labelledby="kdTitel">
   <div class="fenster-kopf">
@@ -398,7 +487,9 @@ const REITER = [
   ["export", "Aushänge"], ["einstellungen", "Einstellungen"]
 ];
 
-const daten = { raeume: [], gruppen: [], raumGruppen: [], projekte: [], buchungen: [], status: {} };
+const daten = { raeume: [], gruppen: [], raumGruppen: [], projekte: [], buchungen: [], status: {}, abwesend: [] };
+const rw = { gebaeude: "alle", gruppe: null, suche: "", nurFrei: false };   // Raumauswahl-Filter
+let abwTag = 1;
 let PW = "";
 let reiter = "planung";
 const ansicht = {
@@ -477,15 +568,16 @@ async function admin(funktion, parameter) {
 }
 
 async function laden() {
-  const [raeume, gruppen, raumGruppen, projekte, buchungen, status] = await Promise.all([
+  const [raeume, gruppen, raumGruppen, projekte, buchungen, status, abwesend] = await Promise.all([
     lesen("pw_rooms?select=*&order=nummer"),
     lesen("pw_groups?select=*&order=name"),
     lesen("pw_room_groups?select=*"),
     lesen("pw_projects?select=*&order=thema"),
     lesen("pw_bookings?select=*&order=tag,std_von"),
-    rpc("pw_get_status")
+    rpc("pw_get_status"),
+    PW ? rpc("pw_admin_get_abwesend", { p_pw: PW }).catch(() => []) : Promise.resolve([])
   ]);
-  Object.assign(daten, { raeume, gruppen, raumGruppen, projekte, buchungen, status: status || {} });
+  Object.assign(daten, { raeume, gruppen, raumGruppen, projekte, buchungen, status: status || {}, abwesend: abwesend || [] });
 }
 
 /* Admin-Aktion: ausführen, neu laden, alles neu zeichnen */
@@ -649,22 +741,8 @@ function renderPlanung(ziel) {
   const v = ansicht.plan;
   const k = karte();
 
-  /* Kennzahlen */
-  const zahlen = el("div", "zahlen");
-  const kranke = daten.buchungen.filter((b) => b.krank).length;
-  const ohneVertretung = daten.buchungen.filter((b) => b.krank && !b.vertretung).length;
-  const belegteRaeume = new Set(daten.buchungen.filter((b) => !istExkursion(b.room)).map((b) => b.room)).size;
-  [
-    [daten.projekte.length, "Projekte"],
-    [daten.buchungen.length, "Tagesbuchungen"],
-    [belegteRaeume, "genutzte Räume"],
-    [kranke, "Krankmeldungen" + (ohneVertretung ? " · " + ohneVertretung + " ohne Vertretung" : ""), ohneVertretung > 0]
-  ].forEach(([wert, text, rot]) => {
-    const z = el("div", "zahl" + (rot ? " rot" : ""));
-    z.append(el("b", "", String(wert)), el("span", "", text));
-    zahlen.appendChild(z);
-  });
-  k.appendChild(zahlen);
+  /* Zähler: gesamt und je Tag */
+  k.appendChild(zaehlerAdmin());
 
   /* Steuerung */
   const steuer = el("div", "zeile");
@@ -706,6 +784,55 @@ function renderPlanung(ziel) {
     liste.appendChild(v.modus === "raster" ? wochenraster() : projektliste());
   }
   zeichneListe();
+}
+
+function zaehlerAdmin() {
+  const box = el("div", "zaehler");
+  const ziele = daten.status.tagesziele || [];
+  const raeume = new Set(daten.buchungen.filter((b) => !istExkursion(b.room)).map((b) => b.room)).size;
+  const g = el("div", "zkachel");
+  g.innerHTML = '<div class="k">Projekte gesamt</div><div class="w">' + daten.projekte.length + "</div>" +
+    '<div class="r">' + daten.buchungen.length + " Tagesbuchungen · " + raeume + " Räume</div>";
+  box.appendChild(g);
+  for (let t = 1; t <= 5; t++) {
+    const n = new Set(daten.buchungen.filter((b) => b.tag === t).map((b) => b.project_id)).size;
+    const z = Number(ziele[t - 1]) || 0;
+    const krank = daten.buchungen.filter((b) => b.tag === t && b.krank);
+    const ohne = krank.filter((b) => !b.vertretung).length;
+    const abw = daten.abwesend.find((a) => a.tag === t);
+    const k = el("div", "zkachel" + (z && n >= z ? " erreicht" : ""));
+    let h = '<div class="k">' + TAGE[t] + (datum(t) ? " · " + esc(datum(t)) : "") + '</div><div class="w">' + n +
+      (z ? "<small> / " + z + "</small>" : "") + "</div>";
+    if (z) h += '<div class="balken"><i style="width:' + Math.min(100, Math.round(n / z * 100)) + '%"></i></div>' +
+      '<div class="r ziel">' + (n >= z ? "Ziel erreicht" : "noch " + (z - n) + " fehlen") + "</div>";
+    else h += '<div class="r">Projekte · kein Tagesziel</div>';
+    h += '<div class="r' + (ohne ? " rot" : "") + '">🤒 ' + krank.length + " krank" + (ohne ? " · " + ohne + " ohne Vertretung" : "") + "</div>";
+    k.innerHTML = h;
+    const b = el("button", "abwknopf", "Abwesend: " + (abw ? abw.anzahl : 0) + "  ✎");
+    b.type = "button";
+    b.title = abw && abw.notiz ? abw.notiz : "Abwesende Kollegen eintragen";
+    b.onclick = () => abwOeffnen(t);
+    k.appendChild(b);
+    box.appendChild(k);
+  }
+  return box;
+}
+
+function abwOeffnen(t) {
+  abwTag = t;
+  const a = daten.abwesend.find((x) => x.tag === t) || { anzahl: 0, notiz: "" };
+  $("abwTitel").textContent = "Abwesende Kollegen · " + TAGE[t] + (datum(t) ? ", " + datum(t) : "");
+  $("abwAnzahl").value = a.anzahl || 0;
+  $("abwNotiz").value = a.notiz || "";
+  $("abwDialog").showModal();
+  $("abwAnzahl").select();
+}
+
+async function abwSpeichern() {
+  const n = Math.max(0, Math.round(Number($("abwAnzahl").value) || 0));
+  const ok = await aktion("pw_admin_set_abwesend",
+    { p_tag: abwTag, p_anzahl: n, p_notiz: $("abwNotiz").value.trim() || null }, "Abwesende gespeichert.");
+  if (ok !== undefined) $("abwDialog").close();
 }
 
 function projektTreffer(p, q) {
@@ -963,35 +1090,21 @@ function renderBuchungDialog() {
   box.appendChild(z1);
 
   /* Raum */
-  const sRaum = el("select", "feld");
-  sRaum.appendChild(Object.assign(el("option", "", "Raum wählen …"), { value: "" }));
-  const gruppen = new Map();
-  daten.raeume.slice().sort(vergleichRaum).forEach((r) => {
-    if (r.versteckt && r.nummer !== bd.raum) return;
-    const titel = r.ist_exkursion ? "Außerhalb der Schule" : r.trakt === null ? "Weitere Räume" : "Trakt " + r.trakt + " · " + etageText(r.etage);
-    if (!gruppen.has(titel)) gruppen.set(titel, []);
-    gruppen.get(titel).push(r);
-  });
-  gruppen.forEach((raeume, titel) => {
-    const og = el("optgroup");
-    og.label = titel;
-    raeume.forEach((r) => {
-      const k = konflikt(r.nummer, bd.tag, von, bis, bd.id);
-      const p = k ? projektVon(k.project_id) : null;
-      const o = el("option", "", (r.ist_exkursion ? "Exkursion" : r.nummer) +
-        (r.beschreibung && !r.ist_exkursion ? " · " + r.beschreibung : "") +
-        (r.versteckt ? " (ausgeblendet)" : "") +
-        (k ? " – belegt (" + (p ? p.kuerzel : "?") + ", " + stundenText(k.std_von, k.std_bis) + ")" : ""));
-      o.value = r.nummer;
-      o.disabled = !!k && r.nummer !== bd.raum;
-      if (r.nummer === bd.raum) o.selected = true;
-      og.appendChild(o);
-    });
-    sRaum.appendChild(og);
-  });
-  sRaum.onchange = () => { bd.raum = sRaum.value; if (!istExkursion(bd.raum)) bd.ort = ""; renderBuchungDialog(); };
+  const wahl = el("button", "raumwahl" + (bd.raum ? "" : " leer"));
+  wahl.type = "button";
+  if (bd.raum) {
+    const r = raumInfo(bd.raum);
+    wahl.innerHTML = istExkursion(bd.raum) ? "🚌 <b>Exkursion</b>"
+      : "<b>" + esc(bd.raum) + "</b>" + (r && r.beschreibung ? " · " + esc(r.beschreibung) : "") +
+        (r && r.versteckt ? " (ausgeblendet)" : "");
+    wahl.title = "Raum ändern";
+  } else {
+    wahl.textContent = "＋ Raum wählen";
+  }
+  wahl.onclick = raumwahlOeffnen;
   const zr = el("div", "feldgruppe");
-  zr.appendChild(feldMitLabel("Raum", sRaum));
+  const lr = el("span", "label", "Raum");
+  zr.append(lr, wahl);
   box.appendChild(zr);
 
   if (bd.raum && istExkursion(bd.raum)) {
@@ -1006,7 +1119,8 @@ function renderBuchungDialog() {
   if (k) {
     const p = projektVon(k.project_id);
     box.appendChild(el("p", "hinweisbox warnung", "Der Raum ist zu dieser Zeit belegt durch " +
-      (p ? p.kuerzel + " („" + p.thema + "“)" : "ein anderes Projekt") + ". Bitte anderen Raum, Tag oder andere Stunden wählen."));
+      (p ? p.kuerzel + " – " + p.thema : "ein anderes Projekt") + " (" + stundenText(k.std_von, k.std_bis) +
+      "). Bitte anderen Raum, Tag oder andere Stunden wählen."));
   }
 
   /* Krankmeldung nur bei bestehender Buchung */
@@ -1054,6 +1168,106 @@ async function krankSpeichern(krank) {
     { p_booking: krankId, p_krank: krank, p_vertretung: vertretung || null },
     krank ? "Krankmeldung gespeichert." : "Krankmeldung aufgehoben.");
   if (ok !== undefined) $("krankDialog").close();
+}
+
+/* ---------- Raumauswahl (Kacheln) ---------- */
+
+function raumwahlOeffnen() {
+  $("rdTitel").textContent = "Raum für " + TAGE[bd.tag] + (datum(bd.tag) ? ", " + datum(bd.tag) : "") + " wählen";
+  $("rdSuche").value = rw.suche;
+  $("rdNurFrei").checked = rw.nurFrei;
+  renderRaumFilter();
+  renderRaumwahl();
+  $("raumDialog").showModal();
+}
+
+function renderRaumFilter() {
+  const box = $("rdFilter");
+  box.innerHTML = "";
+  const gebaeude = [...new Set(daten.raeume.filter((r) => r.trakt !== null && !r.versteckt).map((r) => r.trakt))].sort();
+  const chip = (text, aktiv, klick) => {
+    const b = el("button", "filter", text);
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(aktiv));
+    b.onclick = () => { klick(); renderRaumFilter(); renderRaumwahl(); };
+    box.appendChild(b);
+  };
+  chip("Alle", rw.gebaeude === "alle" && rw.gruppe === null, () => { rw.gebaeude = "alle"; rw.gruppe = null; });
+  gebaeude.forEach((g) => chip("Gebäude " + g, rw.gebaeude === g, () => { rw.gebaeude = g; rw.gruppe = null; }));
+  daten.gruppen.forEach((g) => chip(g.name, rw.gruppe === g.id, () => { rw.gruppe = g.id; rw.gebaeude = "alle"; }));
+}
+
+function belegtListe(liste) {
+  return liste.map((b) => {
+    const p = projektVon(b.project_id);
+    return (p ? p.kuerzel + " – " + p.thema : "?") + " (" + stundenText(b.std_von, b.std_bis) + ")";
+  }).join(", ");
+}
+
+function renderRaumwahl() {
+  const box = $("rdInhalt");
+  box.innerHTML = "";
+  const von = bd.ganz ? 1 : bd.von, bis = bd.ganz ? 6 : bd.bis;
+  const q = rw.suche.trim().toLowerCase();
+  const gr = rw.gruppe === null ? null
+    : new Set(daten.raumGruppen.filter((x) => x.group_id === rw.gruppe).map((x) => x.room));
+
+  const abschnitt = (titel, raeume) => {
+    const sek = el("section", "raumabschnitt");
+    sek.appendChild(el("h3", "", titel));
+    const gitter = el("div", "raumgitter");
+    raeume.forEach((r) => gitter.appendChild(kachel(r)));
+    sek.appendChild(gitter);
+    box.appendChild(sek);
+  };
+
+  const kachel = (r) => {
+    const b = el("button", "raum");
+    b.type = "button";
+    if (bd.raum === r.nummer) b.classList.add("gewaehlt");
+    let zustand, klasse;
+    if (r.ist_exkursion) { zustand = "für beliebig viele Projekte"; klasse = "frei"; }
+    else {
+      const andere = daten.buchungen.filter((x) => x.room === r.nummer && x.tag === bd.tag && x.id !== bd.id);
+      if (konflikt(r.nummer, bd.tag, von, bis, bd.id)) { zustand = "belegt: " + belegtListe(andere); klasse = "belegt"; b.disabled = true; }
+      else if (andere.length) { zustand = "frei · sonst belegt: " + belegtListe(andere); klasse = "teil"; }
+      else { zustand = von === 1 && bis === 6 ? "ganztägig frei" : "frei"; klasse = "frei"; }
+    }
+    b.innerHTML = '<span class="rnr">' + (r.ist_exkursion ? "🚌 Exkursion" : esc(r.nummer)) + "</span>" +
+      '<span class="bes">' + esc(r.ist_exkursion ? "Ziel danach eintragen" :
+        (r.beschreibung || (r.etage !== null ? etageText(r.etage) : ""))) + "</span>" +
+      '<span class="zust ' + klasse + '">' + esc(zustand) + "</span>";
+    b.onclick = () => {
+      if (bd.raum !== r.nummer && !r.ist_exkursion) bd.ort = "";
+      bd.raum = r.nummer;
+      $("raumDialog").close();
+      renderBuchungDialog();
+    };
+    return b;
+  };
+
+  if (rw.gebaeude === "alle" && !gr && (!q || "exkursion außer haus unterwegs".includes(q))) {
+    const exk = daten.raeume.filter((r) => r.ist_exkursion);
+    if (exk.length) abschnitt("Außerhalb der Schule", exk);
+  }
+
+  let liste = daten.raeume.filter((r) => !r.ist_exkursion && !r.versteckt);
+  if (rw.gebaeude !== "alle") liste = liste.filter((r) => r.trakt === rw.gebaeude);
+  if (gr) liste = liste.filter((r) => gr.has(r.nummer));
+  if (q) liste = liste.filter((r) => (r.nummer + " " + (r.beschreibung || "")).toLowerCase().includes(q));
+  if (rw.nurFrei) liste = liste.filter((r) => !konflikt(r.nummer, bd.tag, von, bis, bd.id));
+  liste.sort(vergleichRaum);
+
+  const gruppiert = new Map();
+  liste.forEach((r) => {
+    const s2 = r.trakt === null ? "9" : String(r.trakt);
+    if (!gruppiert.has(s2)) gruppiert.set(s2, []);
+    gruppiert.get(s2).push(r);
+  });
+  [...gruppiert.keys()].sort().forEach((s2) =>
+    abschnitt(s2 === "9" ? "Weitere Räume" : "Gebäude " + s2, gruppiert.get(s2)));
+
+  if (!box.children.length) box.appendChild(el("p", "leer-hinweis", "Keine passenden Räume gefunden."));
 }
 
 async function buchungSpeichern() {
@@ -1154,7 +1368,7 @@ function renderRaeume(ziel) {
   oben.appendChild(kImp);
 
   /* Neuer Raum */
-  const kNeu = karte("Raum anlegen", "Vierstellige Nummer (Trakt, Etage, Raum) – Trakt und Etage ergeben sich daraus.");
+  const kNeu = karte("Raum anlegen", "Vierstellige Nummer (Gebäude, Etage, Raum) – Gebäude und Etage ergeben sich daraus.");
   const fNr = input("", "z. B. 3208");
   fNr.maxLength = 20;
   const fBes = input("", "z. B. Computerraum");
@@ -1205,7 +1419,7 @@ function renderRaeume(ziel) {
       const anz = daten.buchungen.filter((b) => b.room === r.nummer).length;
 
       const tdNr = el("td", "nr", r.ist_exkursion ? "Exkursion" : r.nummer);
-      const tdLage = el("td", "leise", r.ist_exkursion ? "–" : r.trakt === null ? "–" : "Trakt " + r.trakt + ", " + etageText(r.etage));
+      const tdLage = el("td", "leise", r.ist_exkursion ? "–" : r.trakt === null ? "–" : "Gebäude " + r.trakt + ", " + etageText(r.etage));
 
       const tdBes = el("td");
       if (r.ist_exkursion) tdBes.appendChild(el("span", "leise", "für Projekte außer Haus"));
@@ -1361,7 +1575,7 @@ function renderExport(ziel) {
   sG.onchange = () => { v.gruppe = sG.value; vorschau(); };
 
   const trakte = [...new Set(daten.raeume.filter((r) => r.trakt !== null).map((r) => r.trakt))].sort();
-  const sT = auswahl([["", "Alle Trakte"]].concat(trakte.map((t) => [t, "Trakt " + t])), v.trakt);
+  const sT = auswahl([["", "Alle Gebäude"]].concat(trakte.map((t) => [t, "Gebäude " + t])), v.trakt);
   sT.onchange = () => { v.trakt = sT.value; vorschau(); };
 
   const tagOpt = (v.art === "tag" ? [] : [[0, "Alle Tage"]]).concat([1, 2, 3, 4, 5].map((t) => [t, TAGE[t]]));
@@ -1371,7 +1585,7 @@ function renderExport(ziel) {
   const fS = input(v.suche, "Thema, Kürzel, Raum …", "search");
   fS.oninput = () => { v.suche = fS.value; vorschau(); };
 
-  z.append(feldMitLabel("Klassenstufe", sK), feldMitLabel("Raumgruppe", sG), feldMitLabel("Trakt", sT),
+  z.append(feldMitLabel("Klassenstufe", sK), feldMitLabel("Raumgruppe", sG), feldMitLabel("Gebäude", sT),
     feldMitLabel("Tag", sD), feldMitLabel("Textsuche", fS));
   k.appendChild(z);
 
@@ -1419,7 +1633,7 @@ function filterText() {
   const teile = [];
   if (v.klasse !== "alle") teile.push(v.klasse === "sek1" ? "Sek I" : v.klasse === "sek2" ? "Sek II" : "Klasse " + v.klasse);
   if (v.gruppe) { const g = daten.gruppen.find((x) => String(x.id) === String(v.gruppe)); if (g) teile.push(g.name); }
-  if (v.trakt !== "") teile.push("Trakt " + v.trakt);
+  if (v.trakt !== "") teile.push("Gebäude " + v.trakt);
   if (v.tag && v.art !== "tag") teile.push(TAGE[v.tag]);
   if (v.suche.trim()) teile.push("Suche „" + v.suche.trim() + "“");
   return teile.join(" · ");
@@ -1574,6 +1788,33 @@ function renderEinstellungen(ziel) {
   kW.append(zW, rW);
   raster.appendChild(kW);
 
+  /* Tagesziele */
+  const kZ = karte("Tagesziele", "Wie viele Projekte sollen an jedem Tag laufen? Der Zähler erscheint auf der Buchungsseite und in der Planung. 0 = kein Ziel.");
+  const ziele = daten.status.tagesziele || [0, 0, 0, 0, 0];
+  const zz = el("div", "zeile");
+  const felder = [1, 2, 3, 4, 5].map((t) => {
+    const f = input(ziele[t - 1] || 0, null, "number");
+    f.min = 0; f.max = 500;
+    const w = feldMitLabel(TAGE_KURZ[t], f);
+    w.style.flex = "1 1 70px";
+    zz.appendChild(w);
+    return f;
+  });
+  const zAlle = el("div", "zeile feldgruppe");
+  const fAlle = input("", "z. B. 40", "number");
+  fAlle.min = 0;
+  const wA = feldMitLabel("Für alle Tage", fAlle);
+  const bA = knopf("Übernehmen", "zurueck", () => { felder.forEach((f) => { f.value = fAlle.value || 0; }); });
+  bA.style.flex = "0 0 auto";
+  zAlle.append(wA, bA);
+  const rZ = el("div", "buttonreihe");
+  rZ.appendChild(knopf("Speichern", "", () => {
+    const werte = felder.map((f) => Math.max(0, Math.round(Number(f.value) || 0)));
+    aktion("pw_admin_set_ziele", { p_ziele: werte }, "Tagesziele gespeichert.");
+  }));
+  kZ.append(zz, zAlle, rZ);
+  raster.appendChild(kZ);
+
   /* Phasen */
   const kP = karte("Phasen", "Nach der Planungsphase beides abschalten, dann kann niemand mehr etwas ändern – außer dir hier.");
   const sch1 = el("label", "schalter");
@@ -1677,6 +1918,10 @@ function bedienung() {
   $("projektDialog").addEventListener("close", () => { offenesProjekt = null; });
 
   $("bdSpeichern").onclick = buchungSpeichern;
+  $("abwSpeichern").onclick = abwSpeichern;
+  $("abwAnzahl").onkeydown = (e) => { if (e.key === "Enter") abwSpeichern(); };
+  $("rdSuche").oninput = (e) => { rw.suche = e.target.value; renderRaumwahl(); };
+  $("rdNurFrei").onchange = (e) => { rw.nurFrei = e.target.checked; renderRaumwahl(); };
   $("kdSpeichern").onclick = () => krankSpeichern(true);
   $("kdAufheben").onclick = () => krankSpeichern(false);
   $("kdVertretung").onkeydown = (e) => { if (e.key === "Enter") krankSpeichern(true); };

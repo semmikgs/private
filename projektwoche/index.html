@@ -149,6 +149,19 @@ select.feld { padding-right: 8px; }
   background: var(--badge-bg); color: var(--indigo); border-radius: 999px; font-size: 12.5px;
 }
 
+
+/* ---------- Zähler ---------- */
+.zaehler { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 18px; }
+.zkachel { background: var(--chip); border-radius: 12px; padding: 10px 14px; }
+.zkachel .k { font-size: 12.5px; font-weight: 700; color: var(--tinte-leise); }
+.zkachel .w { font-size: 22px; font-weight: 700; color: var(--indigo); line-height: 1.25; }
+.zkachel .w small { font-size: 14px; color: var(--tinte-leise); font-weight: 600; }
+.zkachel .balken { height: 6px; background: #dfe2ec; border-radius: 99px; margin: 6px 0 4px; overflow: hidden; }
+.zkachel .balken i { display: block; height: 100%; background: var(--orange); border-radius: 99px; }
+.zkachel.erreicht .balken i { background: var(--gruen); }
+.zkachel .r { font-size: 12.5px; color: var(--tinte-leise); }
+.zkachel.erreicht .r { color: var(--gruen); font-weight: 700; }
+
 /* ---------- Werkbank ---------- */
 .werkbank {
   display: grid;
@@ -325,6 +338,7 @@ dialog.breit[open] { display: flex; flex-direction: column; }
       <span><b>2</b>Tage und Räume wählen</span>
       <span><b>3</b>Verbindlich buchen</span>
     </div>
+    <div class="zaehler" id="zaehler"></div>
     <div class="buttonreihe">
       <a class="knopf zurueck" href="../index.html">Zurück zu KGS-Digital</a>
       <a class="knopf zurueck" href="admin.html" title="Für die Projektwochen-Leitung">🔐 Admin</a>
@@ -568,6 +582,11 @@ const vonStd = (d) => (d.ganz ? 1 : d.von);
 const bisStd = (d) => (d.ganz ? 6 : d.bis);
 const aktiveTage = () => [1, 2, 3, 4, 5].filter((t) => form.tage[t].aktiv);
 
+function projektName(id) {
+  const p = daten.projekte.find((x) => x.id === id);
+  return p ? p.kuerzel + " – " + p.thema : "?";
+}
+
 function projektKuerzel(id) {
   const p = daten.projekte.find((x) => x.id === id);
   return p ? p.kuerzel : "?";
@@ -589,7 +608,7 @@ function stundenText(von, bis) {
 }
 
 function belegtText(liste) {
-  return liste.map((b) => stundenText(b.std_von, b.std_bis) + " " + projektKuerzel(b.project_id)).join(", ");
+  return liste.map((b) => projektName(b.project_id) + " (" + stundenText(b.std_von, b.std_bis) + ")").join(", ");
 }
 
 function etageText(e) {
@@ -623,7 +642,32 @@ function renderAlles() {
   renderAbschluss();
 }
 
+function renderZaehler() {
+  const box = $("zaehler");
+  box.innerHTML = "";
+  const ziele = daten.status.tagesziele || [];
+  const gesamt = el("div", "zkachel");
+  gesamt.innerHTML = '<div class="k">Projekte gesamt</div><div class="w">' + daten.projekte.length + "</div>";
+  box.appendChild(gesamt);
+  for (let t = 1; t <= 5; t++) {
+    const n = new Set(daten.buchungen.filter((b) => b.tag === t).map((b) => b.project_id)).size;
+    const z = Number(ziele[t - 1]) || 0;
+    const k = el("div", "zkachel" + (z && n >= z ? " erreicht" : ""));
+    let h = '<div class="k">' + TAGE[t] + (datum(t) ? " · " + esc(datum(t).slice(0, 6)) : "") + '</div><div class="w">' + n +
+      (z ? "<small> / " + z + "</small>" : "") + "</div>";
+    if (z) {
+      h += '<div class="balken"><i style="width:' + Math.min(100, Math.round(n / z * 100)) + '%"></i></div>' +
+        '<div class="r">' + (n >= z ? "Ziel erreicht" : "noch " + (z - n) + " fehlen") + "</div>";
+    } else {
+      h += '<div class="r">Projekte</div>';
+    }
+    k.innerHTML = h;
+    box.appendChild(k);
+  }
+}
+
 function renderKopf() {
+  renderZaehler();
   const offen = daten.status.buchung_offen !== false;
   const aenderbar = daten.status.aenderung_offen !== false;
 
@@ -721,8 +765,8 @@ function renderTage() {
     const k = d.raum ? konflikt(d.raum, t, vonStd(d), bisStd(d)) : null;
     if (k) {
       mitte.appendChild(el("div", "warnung",
-        "Zu dieser Zeit belegt (" + stundenText(k.std_von, k.std_bis) + ", " +
-        projektKuerzel(k.project_id) + "). Bitte anderen Raum oder andere Stunden wählen."));
+        "Zu dieser Zeit belegt: " + projektName(k.project_id) + " (" + stundenText(k.std_von, k.std_bis) +
+        "). Bitte anderen Raum oder andere Stunden wählen."));
     }
     zeile.appendChild(mitte);
 
@@ -816,7 +860,7 @@ function renderPickerFilter() {
   };
 
   chip("Alle", picker.trakt === "alle" && picker.gruppe === null, () => { picker.trakt = "alle"; picker.gruppe = null; });
-  trakte.forEach((tr) => chip("Trakt " + tr, picker.trakt === tr, () => { picker.trakt = tr; picker.gruppe = null; }));
+  trakte.forEach((tr) => chip("Gebäude " + tr, picker.trakt === tr, () => { picker.trakt = tr; picker.gruppe = null; }));
   daten.gruppen.forEach((g) => chip(g.name, picker.gruppe === g.id, () => { picker.gruppe = g.id; picker.trakt = "alle"; }));
 }
 
@@ -843,7 +887,7 @@ function renderPicker() {
 
   const gruppiert = new Map();
   liste.forEach((r) => {
-    const schluessel = r.trakt === null ? "9-9" : r.trakt + "-" + r.etage;
+    const schluessel = r.trakt === null ? "9" : String(r.trakt);
     if (!gruppiert.has(schluessel)) gruppiert.set(schluessel, []);
     gruppiert.get(schluessel).push(r);
   });
@@ -851,7 +895,7 @@ function renderPicker() {
   [...gruppiert.keys()].sort().forEach((s) => {
     const raeume = gruppiert.get(s);
     const r = raeume[0];
-    const titel = r.trakt === null ? "Weitere Räume" : "Trakt " + r.trakt + " · " + etageText(r.etage);
+    const titel = r.trakt === null ? "Weitere Räume" : "Gebäude " + r.trakt;
     box.appendChild(abschnitt(titel, raeume, t, von, bis));
   });
 
@@ -883,9 +927,9 @@ function raumKachel(r, t, von, bis) {
   } else {
     const andere = belegungen(r.nummer, t);
     if (konflikt(r.nummer, t, von, bis)) {
-      zustand = "belegt · " + belegtText(andere); klasse = "belegt"; b.disabled = true;
+      zustand = "belegt: " + belegtText(andere); klasse = "belegt"; b.disabled = true;
     } else if (andere.length) {
-      zustand = "frei · sonst " + belegtText(andere); klasse = "teil";
+      zustand = "frei · sonst belegt: " + belegtText(andere); klasse = "teil";
     } else {
       zustand = von === 1 && bis === 6 ? "ganztägig frei" : "frei"; klasse = "frei";
     }
@@ -893,7 +937,7 @@ function raumKachel(r, t, von, bis) {
 
   b.innerHTML =
     '<span class="nr">' + (r.ist_exkursion ? "🚌 Exkursion" : esc(r.nummer)) + "</span>" +
-    '<span class="bes">' + esc(r.ist_exkursion ? "Ziel trägst du danach ein" : (r.beschreibung || "")) + "</span>" +
+    '<span class="bes">' + esc(r.ist_exkursion ? "Ziel trägst du danach ein" : (r.beschreibung || (r.etage !== null ? etageText(r.etage) : ""))) + "</span>" +
     '<span class="zust ' + klasse + '">' + esc(zustand) + "</span>";
 
   b.onclick = () => {
