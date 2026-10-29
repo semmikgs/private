@@ -364,7 +364,10 @@ dialog.breit[open] { display: flex; flex-direction: column; }
     </div>
     <div class="zaehler" id="zaehler"></div>
     <div class="buttonreihe">
-      <a class="knopf zurueck" href="../index.html">Zurück zu KGS-Digital</a>
+      <!-- Testphase: Link deaktiviert. Später wieder aktivieren mit:
+           <a class="knopf zurueck" href="../index.html">Zurück zu KGS-Digital</a> -->
+      <span class="knopf zurueck" aria-disabled="true" title="In der Testphase deaktiviert"
+            style="color:#9aa1ae;cursor:default;pointer-events:none;">Zurück zu KGS-Digital</span>
       <a class="knopf zurueck" href="admin.html" title="Für die Projektwochen-Leitung">🔐 Admin</a>
       <button class="knopf zurueck" id="btnCode" type="button" hidden>Mit Änderungscode bearbeiten</button>
     </div>
