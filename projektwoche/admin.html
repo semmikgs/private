@@ -411,6 +411,7 @@ dialog::backdrop { background: rgba(15, 20, 60, .55); }
   <div class="fenster-kopf">
     <h2><span id="rdTitel">Raum wählen</span>
       <button class="schliessen" type="button" data-schliessen aria-label="Schließen">×</button></h2>
+    <p class="hinweisbox info" id="rdInfo" hidden style="margin:12px 0 0"></p>
     <div class="suchzeile">
       <input class="feld" id="rdSuche" type="search" placeholder="Raumnummer oder Beschreibung suchen …">
       <label class="schalter" style="align-items:center"><input type="checkbox" id="rdNurFrei"> Nur freie Räume</label>
@@ -934,7 +935,8 @@ function wochenraster() {
         if (b.krank) zusatz.push("krank" + (b.vertretung ? " → " + b.vertretung : " · keine Vertretung"));
         if (zusatz.length) html += "<small>" + esc(zusatz.join(" · ")) + "</small>";
         chip.innerHTML = html;
-        chip.onclick = () => projektOeffnen(p.id);
+        chip.title = "Klicken zum Umbuchen";
+        chip.onclick = () => umbuchen(b.id);
         td.appendChild(chip);
       });
       tr.appendChild(td);
@@ -1058,6 +1060,7 @@ function renderProjektDialog() {
       text,
       Object.assign(knopf("", "zurueck mini krankknopf" + (b.krank ? " krankaktiv" : ""), () => krankOeffnen(b.id)),
         { innerHTML: KRANK_SVG, title: b.krank ? "Krankmeldung ändern" : "Krank melden", ariaLabel: "Krankmeldung " + TAGE[b.tag] }),
+      knopf("Umbuchen", "zurueck mini", () => umbuchen(b.id)),
       knopf("Bearbeiten", "zurueck mini", () => buchungOeffnen(b.id, p.id)),
       knopf("Entfernen", "gefahr mini", async () => {
         if (!confirm(TAGE[b.tag] + " aus dem Projekt entfernen?")) return;
@@ -1097,6 +1100,40 @@ async function projektSpeichern() {
 }
 
 /* ---------- Buchungsdialog ---------- */
+
+/* Schnell-Umbuchung: Kachel-Overlay direkt öffnen, Klick auf einen Raum bucht sofort um */
+function umbuchen(buchungId) {
+  const b = daten.buchungen.find((x) => x.id === buchungId);
+  const p = b && projektVon(b.project_id);
+  if (!b || !p) return;
+  bd = {
+    id: b.id, pid: p.id, tag: b.tag, raum: b.room, ort: b.ort || "",
+    ganz: b.std_von === 1 && b.std_bis === 6, von: b.std_von, bis: b.std_bis,
+    krank: b.krank, vertretung: b.vertretung || "", original: b, schnell: true
+  };
+  raumwahlOeffnen();
+}
+
+async function umbuchenSpeichern(r) {
+  const o = bd.original;
+  if (r.nummer === o.room) { $("raumDialog").close(); return; }
+  if (r.ist_exkursion) {
+    /* Für eine Exkursion wird ein Ziel gebraucht: in die volle Maske wechseln */
+    bd.raum = r.nummer;
+    bd.ort = "";
+    bd.schnell = false;
+    $("raumDialog").close();
+    $("bdTitel").textContent = TAGE[bd.tag] + " · " + projektVon(bd.pid).thema;
+    renderBuchungDialog();
+    $("buchungDialog").showModal();
+    return;
+  }
+  $("raumDialog").close();
+  const ok = await aktion("pw_admin_booking_move",
+    { p_id: o.id, p_room: r.nummer, p_tag: o.tag, p_von: o.std_von, p_bis: o.std_bis, p_ort: null },
+    TAGE_KURZ[o.tag] + ": " + (istExkursion(o.room) ? "Exkursion" : o.room) + " → " + r.nummer + " umgebucht.");
+  if (ok === undefined) umbuchen(o.id);
+}
 
 function buchungOeffnen(buchungId, projektId) {
   const p = projektVon(projektId);
@@ -1290,7 +1327,20 @@ async function krankSpeichern(krank) {
 /* ---------- Raumauswahl (Kacheln) ---------- */
 
 function raumwahlOeffnen() {
-  $("rdTitel").textContent = "Raum für " + TAGE[bd.tag] + (datum(bd.tag) ? ", " + datum(bd.tag) : "") + " wählen";
+  const p = projektVon(bd.pid);
+  $("rdTitel").textContent = bd.schnell
+    ? "Umbuchen · " + TAGE[bd.tag] + (datum(bd.tag) ? ", " + datum(bd.tag) : "")
+    : "Raum für " + TAGE[bd.tag] + (datum(bd.tag) ? ", " + datum(bd.tag) : "") + " wählen";
+  const info = $("rdInfo");
+  info.hidden = !bd.schnell;
+  if (bd.schnell && p) {
+    info.innerHTML = "<b>" + esc(p.kuerzel) + "</b> – " + esc(p.thema) + " · " + esc(stundenText(bd.von, bd.bis)) +
+      " · bisher <b>" + esc(istExkursion(bd.raum) ? "Exkursion" : bd.raum) + "</b>. Klick auf einen freien Raum bucht sofort um. ";
+    const pk = el("button", "knopf zurueck mini", "Ganzes Projekt öffnen");
+    pk.type = "button";
+    pk.onclick = () => { $("raumDialog").close(); projektOeffnen(bd.pid); };
+    info.appendChild(pk);
+  }
   $("rdSuche").value = rw.suche;
   $("rdNurFrei").checked = rw.nurFrei;
   renderRaumFilter();
@@ -1355,6 +1405,7 @@ function renderRaumwahl() {
         (r.beschreibung || (r.etage !== null ? etageText(r.etage) : ""))) + "</span>" +
       '<span class="zust ' + klasse + '">' + esc(zustand) + "</span>";
     b.onclick = () => {
+      if (bd.schnell) { umbuchenSpeichern(r); return; }
       if (bd.raum !== r.nummer && !r.ist_exkursion) bd.ort = "";
       bd.raum = r.nummer;
       $("raumDialog").close();
