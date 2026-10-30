@@ -1029,7 +1029,7 @@ function renderProjektDialog() {
   box.appendChild(zK);
 
   const klassen = [];
-  for (let i = 5; i <= 13; i++) klassen.push([i, "Klasse " + i]);
+  for (let i = 5; i <= 12; i++) klassen.push([i, "Klasse " + i]);
   const z3 = el("div", "zeile feldgruppe");
   const fV = auswahl(klassen, p.klasse_von); fV.id = "pdVon";
   const fB = auswahl(klassen, p.klasse_bis); fB.id = "pdBis";
@@ -1844,8 +1844,8 @@ function renderExport(ziel) {
   k.appendChild(arten);
 
   const z = el("div", "zeile feldgruppe");
-  const klassen = [["alle", "Alle Klassen"], ["sek1", "Sek I (5–10)"], ["sek2", "Sek II (11–13)"]];
-  for (let i = 5; i <= 13; i++) klassen.push([String(i), "Klasse " + i]);
+  const klassen = [["alle", "Alle Klassen"], ["sek1", "Sek I (5–10)"], ["sek2", "Sek II (11–12)"]];
+  for (let i = 5; i <= 12; i++) klassen.push([String(i), "Klasse " + i]);
   const sK = auswahl(klassen, v.klasse);
   sK.onchange = () => { v.klasse = sK.value; vorschau(); };
 

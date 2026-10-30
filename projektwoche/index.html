@@ -547,7 +547,7 @@ const TAGE = ["", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const TAGE_KURZ = ["", "Mo", "Di", "Mi", "Do", "Fr"];
 const KLASSEN_VORLAGEN = [
   ["5–6", 5, 6], ["7–8", 7, 8], ["9–10", 9, 10],
-  ["Sek I (5–10)", 5, 10], ["Sek II (11–13)", 11, 13], ["Alle (5–13)", 5, 13]
+  ["Sek I (5–10)", 5, 10], ["Sek II (11–12)", 11, 12], ["Alle (5–12)", 5, 12]
 ];
 
 const daten = { raeume: [], gruppen: [], raumGruppen: [], projekte: [], buchungen: [], status: {} };
@@ -1005,8 +1005,8 @@ function renderPlan() {
     steuer.appendChild(planAuswahl([1, 2, 3, 4, 5].map((t) => [t, TAGE[t] + (datum(t) ? ", " + datum(t).slice(0, 6) : "") + (t === heute ? " (heute)" : "")]),
       plan.tag, (v) => { plan.tag = Number(v); }, "Tag"));
   }
-  const klassen = [["alle", "Alle Klassen"], ["sek1", "Sek I (5–10)"], ["sek2", "Sek II (11–13)"]];
-  for (let i = 5; i <= 13; i++) klassen.push([String(i), "Klasse " + i]);
+  const klassen = [["alle", "Alle Klassen"], ["sek1", "Sek I (5–10)"], ["sek2", "Sek II (11–12)"]];
+  for (let i = 5; i <= 12; i++) klassen.push([String(i), "Klasse " + i]);
   steuer.appendChild(planAuswahl(klassen, plan.klasse, (v) => { plan.klasse = v; }, "Klassenstufe"));
   steuer.appendChild(planAuswahl([["alle", "Alle"], ["frei", "Nur kostenlose"], ["mit", "Nur mit Kosten"]], plan.kosten, (v) => { plan.kosten = v; }, "Kosten"));
   if (plan.ansicht !== "raeume") {
@@ -1440,7 +1440,7 @@ function bedienungEinrichten() {
 
   ["fVon", "fBis"].forEach((id) => {
     const s = $(id);
-    for (let k = 5; k <= 13; k++) {
+    for (let k = 5; k <= 12; k++) {
       const o = el("option", "", "Klasse " + k);
       o.value = k;
       s.appendChild(o);
