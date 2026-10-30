@@ -38,6 +38,10 @@ canvas{display:block}
 #menu .lv{display:flex;flex-direction:column;gap:8px;width:100%;max-width:340px;margin-top:10px}
 #menu button{font-size:16px;padding:12px 16px;border-radius:12px;border:0;background:#f5b941;font-weight:700}
 #menu button:disabled{background:#444;color:#999}
+#menu input{font-size:17px;padding:10px 12px;border-radius:10px;border:0;width:100%;box-sizing:border-box;text-align:center}
+#menu button.sec{background:#e0e0e0}
+#menu table{border-collapse:collapse;width:100%;max-width:420px;font-size:14px;margin-top:8px}#menu td,#menu th{padding:5px 4px;border-bottom:1px solid #ffffff22}#menu th{opacity:.7;font-weight:600}#menu tr.me{background:#f5b94133;font-weight:700}
+#menu .tabs{display:flex;gap:6px;margin-top:8px}#menu .tabs button{padding:8px 12px;font-size:14px;background:#555;color:#fff}#menu .tabs button.on{background:#f5b941;color:#000}
 #menu .ml{list-style:none;padding:0;margin:6px 0;font-size:14px;text-align:left}
 #menu .ml li{padding:2px 0;opacity:.55}#menu .ml li.cur{opacity:1;font-weight:700}#menu .ml li.done{opacity:.8}
 </style></head><body>
@@ -614,7 +618,7 @@ function canSee(c,d,R,fov){if(S.hidden||d>R)return false;const dx=player.positio
  if(d>.9&&Math.abs(wrapA(Math.atan2(dx,dz)-c.rotation.y))>fov/2)return false;return rayHit(c.position.x,c.position.z,dx/d,dz/d,d)>=d-.1;}
 function startTalk(c){const u=c.userData,T=u.T;if(u.state==='busy')endBusy(c,true);else if(u.act&&u.act.spot){u.act.spot.used=null;u.act=null;}
  if(u.type==='kollege'&&Math.random()<.15){u.cool=6;u.sus=0;u.state='walk';u.route=[];say('…nickt nur freundlich. Glück gehabt! 😅',1.6);return;}
- u.state='talk';u.talkT=T.talk;S.frozen=T.talk;S.sand-=T.pen;S.enc++;S.talksDay++;
+ u.state='talk';u.talkT=T.talk;S.frozen=T.talk;S.sand-=T.pen;S.enc++;S.talksDay++;S.ms.talks++;
  popup(`−${T.pen} s`,c.position);say(`🗣️ ${T.n}: ${pick(LINES[u.type])}`,T.talk);blah(u.type==='dezernent'?120:180,u.type==='dezernent'?240:380);
  if(S.enc>=3){S.enc=0;loseLife('3 Gespräche – ein Herz verloren!');}}
 function loseLife(msg){S.lives--;setTimeout(()=>popup('💔',player.position,'#ff4d4d'),500);snd(300,.4,'sawtooth',.05,80);
@@ -667,13 +671,13 @@ function updHazards(dt,t){hzNext-=dt;if(hzNext<=0){if(HZ.length<3)spawnHazard();
  S.slow=false;S.slipCD-=dt;S.burnCD-=dt;const P=player.position;
  for(const h of [...HZ]){h.t-=dt;const d=Math.hypot(P.x-h.x,P.z-h.z);
   if(h.kid){anim(h.kid,0,dt);h.kid.userData.ic.position.y=1.6/h.kid.scale.x+Math.sin(t*4)*.1;if(h.type==='kotze')h.kid.userData.P.body.rotation.x=.35+Math.sin(t*6)*.08;}
-  if(h.type==='kotze'){if(d<.75&&S.slipCD<=0&&S.frozen<=0){S.frozen=1;S.slipCD=2.5;S.sand-=3;popup('−3 s',P);say('🤮 Iiih – ausgerutscht!',1.4);snd(260,.25,'sawtooth',.04,120);}}
+  if(h.type==='kotze'){if(d<.75&&S.slipCD<=0&&S.frozen<=0){S.frozen=1;S.slipCD=2.5;S.sand-=3;S.ms.haz++;popup('−3 s',P);say('🤮 Iiih – ausgerutscht!',1.4);snd(260,.25,'sawtooth',.04,120);}}
   else if(h.type==='heulen'){for(let i=0;i<8;i++){h.dp[i*3+1]-=dt*1.2;if(h.dp[i*3+1]<.05){h.dp[i*3]=h.x+rand(-.08,.08);h.dp[i*3+1]=.9*h.kid.scale.x;h.dp[i*3+2]=h.z+rand(-.08,.08);}}h.drops.geometry.attributes.position.needsUpdate=true;
-   if(!h.done&&d<1&&S.frozen<=0){h.done=true;S.frozen=2.5;S.sand-=5;popup('−5 s',P);say('😭 Du bleibst hängen und tröstest das Kind…',2.4);h.t=Math.min(h.t,2.6);}}
+   if(!h.done&&d<1&&S.frozen<=0){h.done=true;S.frozen=2.5;S.sand-=5;S.ms.haz++;popup('−5 s',P);say('😭 Du bleibst hängen und tröstest das Kind…',2.4);h.t=Math.min(h.t,2.6);}}
   else if(h.type==='feuer'){for(let i=0;i<30;i++){h.fp[i*3+1]+=dt*rand(1,2);h.fp[i*3]+=Math.sin(t*9+i)*dt*.2;if(h.fp[i*3+1]>1.3){h.fp[i*3]=h.x+rand(-.15,.15);h.fp[i*3+1]=.5;h.fp[i*3+2]=h.z+rand(-.15,.15);}}
    for(let i=0;i<22;i++){h.spp[i*3+1]+=dt*.8;h.spp[i*3]+=dt*.15;if(h.spp[i*3+1]>3){h.spp[i*3]=h.x+rand(-.2,.2);h.spp[i*3+1]=1.1;h.spp[i*3+2]=h.z+rand(-.2,.2);}}
    h.fl.geometry.attributes.position.needsUpdate=true;h.sm.geometry.attributes.position.needsUpdate=true;h.light.intensity=2+Math.random()*2.5;
-   if(d<1.15){const an=Math.atan2(P.x-h.x,P.z-h.z);move(player,Math.sin(an)*.12,Math.cos(an)*.12);if(S.burnCD<=0){S.burnCD=1.6;S.sand-=3;popup('−3 s',P);say('🔥 Heiß! Lieber außen herum.',1.3);snd(180,.2,'sawtooth',.04);}}}
+   if(d<1.15){const an=Math.atan2(P.x-h.x,P.z-h.z);move(player,Math.sin(an)*.12,Math.cos(an)*.12);if(S.burnCD<=0){S.burnCD=1.6;S.sand-=3;S.ms.haz++;popup('−3 s',P);say('🔥 Heiß! Lieber außen herum.',1.3);snd(180,.2,'sawtooth',.04);}}}
   else if(h.type==='flut'){h.r=Math.min(3.2,h.r+dt*.5)*(h.t<4?h.t/4+.0001:1);const r=Math.max(.01,h.r);h.water.scale.set(r,r,r);h.ripple.scale.setScalar(r*(.3+((t*.6)%1)*.7));h.ripple.material.opacity=.4*(1-((t*.6)%1));if(d<h.r){S.slow=true;}}
   if(h.t<=0){if(h.who)endBusy(h.who,true);endHazard(h);}}}
 
@@ -708,25 +712,43 @@ const DAYS=[
 let unlocked=1;try{unlocked=Math.max(1,+localStorage.getItem('slsim_day')||1);}catch(e){}
 
 /* ================= Spielzustand ================= */
-const S={running:false,day:0,mi:0,step:0,minutes:450,lives:3,enc:0,talksDay:0,frozen:0,sand:100,pause:false,map:false,hidden:false,near:null,fumble:0,nextFight:30,slow:false,slipCD:0,burnCD:0,trying:null,cakeT:0,cakeOn:false,result:[]};
+const S={ms:{left:0,talks:0,spotted:false,haz:0,walk:0,ideal:1,used:0},dayScore:0,daySec:0,cakes:0,running:false,day:0,mi:0,step:0,minutes:450,lives:3,enc:0,talksDay:0,frozen:0,sand:100,pause:false,map:false,hidden:false,near:null,fumble:0,nextFight:30,slow:false,slipCD:0,burnCD:0,trying:null,cakeT:0,cakeOn:false,result:[]};
 const msgEl=$('msg');function say(t,d=1.6){msgEl.textContent=t;clearTimeout(say.t);say.t=setTimeout(()=>msgEl.textContent='',d*1000);}
 const hm=()=>Math.floor(S.minutes/60)+':'+String(Math.floor(S.minutes%60)).padStart(2,'0');
 const hearts=()=>'❤️'.repeat(Math.max(0,S.lives))+'🖤'.repeat(3-Math.max(0,S.lives));
 const menu=$('menu');
-const HELPTXT=`<p style="opacity:.7;margin-top:14px;font-size:13px">Stick/Pfeiltasten laufen · <b>A</b> sprinten · <b>B</b> Zeitung vors Gesicht · <b>🗺️</b>/M Karte<br>Rote Kegel = Blickfeld. Versteck dich hinter Schränken, Stellwänden, Türen, Tafelflügeln, Hecken und Autos.<br>Jedes Gespräch kostet Zeit – das 3. Gespräch einer Mission kostet ein ❤️. Kuchen 🍰 im Lehrerzimmer gibt ein ❤️ zurück.<br>Vorsicht vor Pfützen 🤮, Feuer 🔥, Wasser 🌊 und weinenden Kindern 😭.<br>Zum Aufschließen die Tür berühren. Die Schlüsselfarben bleiben immer gleich.</p>`;
-function mainMenu(head){menu.innerHTML=(head||'<h2>🏫 Schulleitungssimulator</h2><p>Arbeite so wenig wie möglich – und lass dich nicht vollquatschen.</p>')+
- `<div class="lv">${DAYS.map((d,i)=>`<button data-d="${i}" ${i+1>unlocked?'disabled':''}>${i+1>unlocked?'🔒':d.ic}  Spieltag ${i+1}: ${d.n}</button>`).join('')}</div>`+HELPTXT;
- menu.querySelectorAll('button[data-d]').forEach(b=>b.onclick=()=>startDay(+b.dataset.d));menu.style.display='flex';}
+/* ================= Highscore online (Supabase) ================= */
+const SB_URL='https://xzhxqbyobdlyqkyyjcxc.supabase.co',SB_KEY='sb_publishable_TlasNLd2Yxq8nxrkgHMnlA_J5-IezYg';
+const sbHead=()=>{const h={apikey:SB_KEY,'Content-Type':'application/json'};if(SB_KEY.startsWith('eyJ'))h.Authorization='Bearer '+SB_KEY;return h;};
+async function hsSave(e){const r=await fetch(SB_URL+'/rest/v1/sls_scores',{method:'POST',headers:Object.assign(sbHead(),{Prefer:'return=minimal'}),body:JSON.stringify(e)});if(!r.ok)throw new Error(r.status);}
+async function hsLoad(day){const r=await fetch(SB_URL+`/rest/v1/sls_scores?select=name,score,talks,lives,seconds,created_at&day=eq.${day}&order=score.desc,created_at.asc&limit=300`,{headers:sbHead()});if(!r.ok)throw new Error(r.status);
+ const seen=new Set(),out=[];for(const e of await r.json()){const k=e.name.toLowerCase();if(seen.has(k))continue;seen.add(k);out.push(e);}return out;}
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let pname='';try{pname=localStorage.getItem('slsim_name')||'';}catch(e){}
+function nameScreen(){menu.innerHTML=`<h2>🏫 Schulleitungssimulator</h2><p>Mit welchem Namen willst du in der Highscore-Liste stehen?</p>
+ <div class="lv"><input id="nm" maxlength="20" placeholder="Dein Name" value="${esc(pname)}"><button id="nmOk">Speichern</button></div><p id="nmErr" style="color:#ff8a80"></p>`;
+ const ok=()=>{const v=$('nm').value.trim().replace(/\s+/g,' ');if(v.length<2){$('nmErr').textContent='Bitte mindestens 2 Zeichen.';return;}pname=v;try{localStorage.setItem('slsim_name',v);}catch(e){}mainMenu();};
+ $('nmOk').onclick=ok;$('nm').addEventListener('keydown',e=>{if(e.key==='Enter')ok();});menu.style.display='flex';}
+async function hsScreen(day=0,head=''){menu.innerHTML=head+`<h2>🏆 Highscores</h2><div class="tabs">${DAYS.map((d,i)=>`<button data-t="${i}" class="${i===day?'on':''}">${d.n}</button>`).join('')}</div><div id="hsBox"><p>Lade…</p></div><div class="lv"><button class="sec" id="hsBack">Zurück</button></div>`;
+ menu.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>hsScreen(+b.dataset.t));$('hsBack').onclick=()=>mainMenu();menu.style.display='flex';
+ try{const L=(await hsLoad(day+1)).slice(0,20);$('hsBox').innerHTML=L.length?`<table><tr><th>#</th><th style="text-align:left">Name</th><th>Punkte</th><th>🗣️</th><th>❤️</th><th>⏱️</th></tr>${L.map((e,i)=>`<tr class="${e.name.toLowerCase()===pname.toLowerCase()?'me':''}"><td>${i<3?['🥇','🥈','🥉'][i]:i+1}</td><td style="text-align:left">${esc(e.name)}</td><td><b>${e.score}</b></td><td>${e.talks}</td><td>${e.lives}</td><td>${Math.floor(e.seconds/60)}:${String(e.seconds%60).padStart(2,'0')}</td></tr>`).join('')}</table>`:'<p>Noch keine Einträge – sei die/der Erste!</p>';}
+ catch(e){$('hsBox').innerHTML='<p style="color:#ff8a80">Highscore-Liste gerade nicht erreichbar.</p>';}}
+const HELPTXT=`<p style="opacity:.7;margin-top:14px;font-size:13px">Stick/Pfeiltasten laufen · <b>A</b> sprinten · <b>B</b> Zeitung vors Gesicht · <b>🗺️</b>/M Karte<br>Rote Kegel = Blickfeld. Versteck dich hinter Schränken, Stellwänden, Türen, Tafelflügeln, Hecken und Autos.<br>Jedes Gespräch kostet Zeit – das 3. Gespräch einer Mission kostet ein ❤️. Kuchen 🍰 im Lehrerzimmer gibt ein ❤️ zurück.<br>Vorsicht vor Pfützen 🤮, Feuer 🔥, Wasser 🌊 und weinenden Kindern 😭.<br>Zum Aufschließen die Tür berühren. Die Schlüsselfarben bleiben immer gleich.<br>Punkte gibt's für Restzeit, wenige Gespräche, unentdeckt bleiben, kurze Wege und übrige Herzen.</p>`;
+function mainMenu(head){if(!pname){nameScreen();return;}menu.innerHTML=(head||'<h2>🏫 Schulleitungssimulator</h2><p>Arbeite so wenig wie möglich – und lass dich nicht vollquatschen.</p>')+
+ `<p>Spieler: <b>${esc(pname)}</b> · <a href="#" id="chName" style="color:#f5b941">ändern</a></p>`+
+ `<div class="lv">${DAYS.map((d,i)=>`<button data-d="${i}" ${i+1>unlocked?'disabled':''}>${i+1>unlocked?'🔒':d.ic}  Spieltag ${i+1}: ${d.n}</button>`).join('')}<button class="sec" id="hsBtn">🏆 Highscores</button></div>`+HELPTXT;
+ menu.querySelectorAll('button[data-d]').forEach(b=>b.onclick=()=>startDay(+b.dataset.d));$('hsBtn').onclick=()=>hsScreen(S.day||0);$('chName').onclick=e=>{e.preventDefault();nameScreen();};menu.style.display='flex';}
 function missionScreen(head){const D=DAYS[S.day],M=D.missions[S.mi];
  menu.innerHTML=(head||'')+`<h3>${D.n} · Mission ${S.mi+1}/${D.missions.length}</h3><h2>${M.n}</h2><p>${M.intro}</p><p style="font-size:24px;margin:.2em">${hearts()}</p>
  <ul class="ml">${D.missions.map((m,i)=>`<li class="${i<S.mi?'done':i===S.mi?'cur':''}">${i<S.mi?'✅':i===S.mi?'▶️':'⬜'} ${m.n}</li>`).join('')}</ul>
  <div class="lv"><button id="go">Los!</button></div>`;$('go').onclick=()=>startMission();menu.style.display='flex';}
 function startDay(d){if(!AC)try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}
- Object.assign(S,{day:d,mi:0,lives:3,talksDay:0});missionScreen('');}
+ Object.assign(S,{day:d,mi:0,lives:3,talksDay:0,dayScore:0,daySec:0,cakes:0});missionScreen('');}
 function setItem(k){Object.entries(ITEMS).forEach(([n,m])=>m.visible=n===k);player.userData.P.holdR=!!k;}
 function setStep(){const st=DAYS[S.day].missions[S.mi].steps[S.step];goal.position.copy(st[2]);gIc.material.map=icon(st[0],'#ffd23f');$('task').textContent=st[0]+' '+st[1];S.sand=st[4];}
+function idealDist(M){let pos=V(M.start[0],M.start[1]),d=0;for(const st of M.steps){let prev=pos;for(const q of pathTo(pos,st[2])){d+=prev.distanceTo(q);prev=q;}pos=st[2];}return d;}
 function startMission(){const M=DAYS[S.day].missions[S.mi];
- S.trying=null;$('keys').classList.remove('busy');$('keys').style.display='none';Object.assign(S,{running:true,step:0,minutes:M.min,enc:0,frozen:0,pause:false,near:null,fumble:0,nextFight:rand(15,25),cakeT:rand(20,45),cakeOn:false});cake.visible=false;
+ S.trying=null;$('keys').classList.remove('busy');$('keys').style.display='none';S.ms={left:0,talks:0,spotted:false,haz:0,walk:0,ideal:idealDist(M),used:0};Object.assign(S,{running:true,step:0,minutes:M.min,enc:0,frozen:0,pause:false,near:null,fumble:0,nextFight:rand(15,25),cakeT:rand(20,45),cakeOn:false});cake.visible=false;
  player.position.set(M.start[0],0,M.start[1]);player.rotation.y=Math.PI;setItem(M.item||null);
  LOCKED.forEach(r=>{r.open=false;r.col.open=false;r.pivot.rotation.y=0;r.lbl.material.map=r.texL;});
  SPOTS.forEach(s=>s.used=null);HELP.forEach(h=>h.visible=false);endFight();students.forEach(s=>s.visible=false);
@@ -736,10 +758,17 @@ function startMission(){const M=DAYS[S.day].missions[S.mi];
   if(u.active){const areas=u.T.wander||WANDER;for(let n=0;n<20;n++){const p=randIn(pick(areas));if(p.distanceTo(player.position)>10){c.position.copy(p);break;}}u.lp.copy(c.position);}});
  while(HZ.length)endHazard(HZ[0]);hzNext=rand(8,14);setStep();menu.style.display='none';S.map=false;$('map').style.display='none';
  say(`${M.n}`,2);}
-function missionWon(){S.running=false;const D=DAYS[S.day];snd(660,.4,'triangle',.06,990);
+function missionScore(){const m=S.ms,eff=Math.round(200*Math.min(1,m.ideal/Math.max(1,m.walk)));const parts=[['Geschafft',500],['Restzeit',Math.round(m.left*10)],['Gespräche',-100*m.talks],['Schleich-Bonus',m.spotted?0:150],['Störungen',-30*m.haz],['Weg-Effizienz',eff]];
+ return {parts,total:Math.max(0,parts.reduce((a,p)=>a+p[1],0))};}
+const scoreTable=(parts,total)=>`<table style="max-width:300px">${parts.map(p=>`<tr><td style="text-align:left">${p[0]}</td><td style="text-align:right;color:${p[1]<0?'#ff8a80':'#b9f6ca'}">${p[1]>0?'+':''}${p[1]}</td></tr>`).join('')}<tr><td style="text-align:left"><b>Summe</b></td><td style="text-align:right"><b>${total}</b></td></tr></table>`;
+function missionWon(){S.running=false;const D=DAYS[S.day];snd(660,.4,'triangle',.06,990);const ms=missionScore();S.dayScore+=ms.total;S.daySec+=Math.round(S.ms.used);
  if(S.mi>=D.missions.length-1){const stars=S.talksDay===0?'⭐⭐⭐':S.talksDay<=4?'⭐⭐':'⭐';unlocked=Math.max(unlocked,Math.min(DAYS.length,S.day+2));try{localStorage.setItem('slsim_day',unlocked);}catch(e){}
-  mainMenu(`<h2>🎉 ${D.n} geschafft!</h2><p style="font-size:26px">${stars}</p><p>Gespräche am ganzen Tag: <b>${S.talksDay}</b> · übrige Herzen: ${hearts()}${S.talksDay===0?'<br>🏆 Perfekter Drückeberger!':''}${S.day+1<DAYS.length?'<br>Der nächste Spieltag ist freigeschaltet.':''}</p>`);}
- else{S.mi++;missionScreen(`<p style="font-size:20px">✅ Geschafft – um ${hm()} Uhr!</p>`);}}
+  S.dayScore+=300*S.lives+50*S.cakes;const total=S.dayScore;
+  mainMenu(`<h2>🎉 ${D.n} geschafft!</h2><p style="font-size:26px;margin:.1em">${stars}</p><p style="font-size:30px;margin:.1em"><b>${total}</b> Punkte</p><p>Letzte Mission ${ms.total} · Herzen ${hearts()} +${300*S.lives}${S.cakes?` · Kuchen +${50*S.cakes}`:''}<br>Gespräche heute: <b>${S.talksDay}</b>${S.talksDay===0?' – 🏆 Perfekter Drückeberger!':''}${S.day+1<DAYS.length?'<br>Der nächste Spieltag ist freigeschaltet.':''}</p><p id="upl">📡 Speichere Punktestand…</p>`);
+  const day=S.day+1,entry={name:pname,day,score:total,talks:S.talksDay,lives:S.lives,seconds:Math.min(7200,S.daySec)};
+  hsSave(entry).then(()=>hsLoad(day)).then(L=>{const i=L.findIndex(e=>e.name.toLowerCase()===pname.toLowerCase());const u=$('upl');if(u)u.innerHTML=`✅ Gespeichert! Dein bester ${D.n}: Platz <b>${i+1}</b> von ${L.length}. <a href="#" id="toHs" style="color:#f5b941">Highscores ansehen</a>`;const a=$('toHs');if(a)a.onclick=e=>{e.preventDefault();hsScreen(day-1);};})
+   .catch(()=>{const u=$('upl');if(u)u.innerHTML='⚠️ Punktestand konnte nicht online gespeichert werden.';});}
+ else{S.mi++;missionScreen(`<p style="font-size:20px;margin:.2em">✅ Geschafft – um ${hm()} Uhr!</p>${scoreTable(ms.parts,ms.total)}<p>Punkte heute: <b>${S.dayScore}</b></p>`);}}
 function timeUp(){S.running=false;S.lives--;snd(200,.5,'triangle',.06,90);
  if(S.lives<=0)dayLost();else missionScreen('<p style="font-size:18px">⏳ Zeit abgelaufen – 💔 ein Herz verloren. Nochmal!</p>');}
 function dayLost(){S.running=false;$('keys').style.display='none';S.near=null;S.trying=null;$('keys').classList.remove('busy');
@@ -789,7 +818,7 @@ function updNPC(c,dt,t,crowd){const u=c.userData,T=u.T;if(!u.active)return;
  const effR=u.state==='talk'?0:range*(btn.B?.55:1);
  const seen=u.cool<=0&&u.state!=='talk'&&canSee(c,d,effR,fov);
  if(seen){u.sus+=dt*(u.state==='busy'?.7:1.8)*(crowd>=3?.35:1)*(btn.B?.6:1);u.last.copy(player.position);u.lost=0;}else u.sus=Math.max(0,u.sus-dt*.6);
- if(u.sus>=1&&u.state!=='chase'&&u.state!=='talk'){if(u.state==='busy')endBusy(c,true);else if(u.act&&u.act.spot){u.act.spot.used=null;u.act=null;}u.state='chase';u.chaseT=0;snd(700,.08,'square',.03);}
+ if(u.sus>=1&&u.state!=='chase'&&u.state!=='talk'){if(u.state==='busy')endBusy(c,true);else if(u.act&&u.act.spot){u.act.spot.used=null;u.act=null;}u.state='chase';u.chaseT=0;S.ms.spotted=true;snd(700,.08,'square',.03);}
  if(d<.65&&u.cool<=0&&u.state!=='talk'&&!S.hidden&&S.frozen<=0)startTalk(c);
  let tgt=null,spd=0;
  switch(u.state){
@@ -831,7 +860,7 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
   let ix=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0)+stick.x,iz=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0)+stick.y;const l=Math.hypot(ix,iz);if(l>1){ix/=l;iz/=l;}
   if(S.frozen>0){S.frozen-=dt;ix=iz=0;}
   const sp=3.6*(btn.A?1.6:1)*(btn.B?.45:1)*(S.slow?.45:1);
-  move(player,ix*sp*dt,iz*sp*dt);const ps=Math.hypot(player.position.x-px,player.position.z-pz)/dt;
+  move(player,ix*sp*dt,iz*sp*dt);const ps=Math.hypot(player.position.x-px,player.position.z-pz)/dt;S.ms.walk+=ps*dt;
   if(Math.hypot(ix,iz)>.1)player.rotation.y=lerpA(player.rotation.y,Math.atan2(ix,iz),.25);
   anim(player,ps,dt);paper.visible=btn.B;
   const pr=roomAt(player.position.x,player.position.z);S.hidden=!!(pr&&pr.lock!==undefined);
@@ -839,13 +868,13 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
   // Kuchen
   if(!S.cakeOn){S.cakeT-=dt;if(S.cakeT<=0){S.cakeOn=true;S.cakeT=28;cake.visible=true;if(S.lives<3)say('🍰 Im Lehrerzimmer gibt es Kuchen!',2);}}
   else{S.cakeT-=dt;cakeIc.position.y=.9+Math.sin(t*3)*.08;
-   if(Math.hypot(player.position.x-cake.position.x,player.position.z-cake.position.z)<1.3){if(S.lives<3){S.lives++;popup('+❤️',player.position,'#ff8fb0');say('🍰 Lecker! Ein Herz zurück.',1.8);snd(600,.1,'triangle',.06);setTimeout(()=>snd(900,.15,'triangle',.06),110);S.cakeOn=false;cake.visible=false;S.cakeT=rand(45,80);}}
+   if(Math.hypot(player.position.x-cake.position.x,player.position.z-cake.position.z)<1.3){if(S.lives<3){S.lives++;S.cakes++;popup('+❤️',player.position,'#ff8fb0');say('🍰 Lecker! Ein Herz zurück.',1.8);snd(600,.1,'triangle',.06);setTimeout(()=>snd(900,.15,'triangle',.06),110);S.cakeOn=false;cake.visible=false;S.cakeT=rand(45,80);}}
    if(S.cakeT<=0&&S.cakeOn){S.cakeOn=false;cake.visible=false;S.cakeT=rand(40,70);}}
   // Aufgaben
   const M=DAYS[S.day].missions[S.mi],st=M.steps[S.step];
   if(Math.hypot(player.position.x-goal.position.x,player.position.z-goal.position.z)<.95){
-   if(S.step===M.steps.length-1)missionWon();
-   else{if(st[3]!==undefined)setItem(st[3]);S.step++;setStep();say('✔️ Erledigt! Weiter: '+M.steps[S.step][1],2);snd(520,.1,'triangle',.06);setTimeout(()=>snd(780,.15,'triangle',.06),100);}}
+   if(S.step===M.steps.length-1){S.ms.left+=Math.max(0,S.sand);S.ms.used+=st[4]-Math.max(0,S.sand);missionWon();}
+   else{S.ms.left+=Math.max(0,S.sand);S.ms.used+=st[4]-Math.max(0,S.sand);if(st[3]!==undefined)setItem(st[3]);S.step++;setStep();say('✔️ Erledigt! Weiter: '+M.steps[S.step][1],2);snd(520,.1,'triangle',.06);setTimeout(()=>snd(780,.15,'triangle',.06),100);}}
   if(S.running&&S.sand<=0){S.sand=0;timeUp();}
  }
  if(S.running){
