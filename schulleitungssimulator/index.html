@@ -725,6 +725,11 @@ async function hsLoad(day){const r=await fetch(SB_URL+`/rest/v1/sls_scores?selec
  const seen=new Set(),out=[];for(const e of await r.json()){const k=e.name.toLowerCase();if(seen.has(k))continue;seen.add(k);out.push(e);}return out;}
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let pname='';try{pname=localStorage.getItem('slsim_name')||'';}catch(e){}
+function introScreen(){menu.innerHTML=`<h2>🏫 Schulleitungssimulator</h2><h3>⚠️ Satire-Hinweis</h3>
+ <p>Alle Figuren in diesem Spiel sind frei erfunden. Ähnlichkeiten mit real existierenden Kolleginnen und Kollegen, Dezernenten oder Schulbuchvertretern wären rein zufällig – und vermutlich sehr unterhaltsam.</p>
+ <p>Natürlich drückt sich keine echte Schulleitung vor der Arbeit. Im Gegenteil: Dass man sie so selten auf dem Flur sieht, liegt daran, dass sie gerade Stundenpläne baut, Vertretungen jongliert, Konferenzen vorbereitet, Eltern beruhigt, Statistiken fürs Ministerium ausfüllt, den Kopierer wiederbelebt – und dabei ihr Kaffee kalt wird.</p>
+ <p>Dieses Spiel zeigt nur, wie es aussehen <i>könnte</i>, wenn man mal fünf Minuten Zeit hätte. 😉</p>
+ <div class="lv"><button id="introOk">Verstanden – los geht's!</button></div>`;$('introOk').onclick=()=>mainMenu();menu.style.display='flex';}
 function nameScreen(){menu.innerHTML=`<h2>🏫 Schulleitungssimulator</h2><p>Mit welchem Namen willst du in der Highscore-Liste stehen?</p>
  <div class="lv"><input id="nm" maxlength="20" placeholder="Dein Name" value="${esc(pname)}"><button id="nmOk">Speichern</button></div><p id="nmErr" style="color:#ff8a80"></p>`;
  const ok=()=>{const v=$('nm').value.trim().replace(/\s+/g,' ');if(v.length<2){$('nmErr').textContent='Bitte mindestens 2 Zeichen.';return;}pname=v;try{localStorage.setItem('slsim_name',v);}catch(e){}mainMenu();};
@@ -736,8 +741,8 @@ async function hsScreen(day=0,head=''){menu.innerHTML=head+`<h2>🏆 Highscores<
 const HELPTXT=`<p style="opacity:.7;margin-top:14px;font-size:13px">Stick/Pfeiltasten laufen · <b>A</b> sprinten · <b>B</b> Zeitung vors Gesicht · <b>🗺️</b>/M Karte<br>Rote Kegel = Blickfeld. Versteck dich hinter Schränken, Stellwänden, Türen, Tafelflügeln, Hecken und Autos.<br>Jedes Gespräch kostet Zeit – das 3. Gespräch einer Mission kostet ein ❤️. Kuchen 🍰 im Lehrerzimmer gibt ein ❤️ zurück.<br>Vorsicht vor Pfützen 🤮, Feuer 🔥, Wasser 🌊 und weinenden Kindern 😭.<br>Zum Aufschließen die Tür berühren. Die Schlüsselfarben bleiben immer gleich.<br>Punkte gibt's für Restzeit, wenige Gespräche, unentdeckt bleiben, kurze Wege und übrige Herzen.</p>`;
 function mainMenu(head){if(!pname){nameScreen();return;}menu.innerHTML=(head||'<h2>🏫 Schulleitungssimulator</h2><p>Arbeite so wenig wie möglich – und lass dich nicht vollquatschen.</p>')+
  `<p>Spieler: <b>${esc(pname)}</b> · <a href="#" id="chName" style="color:#f5b941">ändern</a></p>`+
- `<div class="lv">${DAYS.map((d,i)=>`<button data-d="${i}" ${i+1>unlocked?'disabled':''}>${i+1>unlocked?'🔒':d.ic}  Spieltag ${i+1}: ${d.n}</button>`).join('')}<button class="sec" id="hsBtn">🏆 Highscores</button></div>`+HELPTXT;
- menu.querySelectorAll('button[data-d]').forEach(b=>b.onclick=()=>startDay(+b.dataset.d));$('hsBtn').onclick=()=>hsScreen(S.day||0);$('chName').onclick=e=>{e.preventDefault();nameScreen();};menu.style.display='flex';}
+ `<div class="lv">${DAYS.map((d,i)=>`<button data-d="${i}" ${i+1>unlocked?'disabled':''}>${i+1>unlocked?'🔒':d.ic}  Spieltag ${i+1}: ${d.n}</button>`).join('')}<button class="sec" id="hsBtn">🏆 Highscores</button></div>`+HELPTXT+`<p style="font-size:12px;opacity:.6"><a href="#" id="satire" style="color:#ccc">ℹ️ Satire-Hinweis</a></p>`;
+ menu.querySelectorAll('button[data-d]').forEach(b=>b.onclick=()=>startDay(+b.dataset.d));$('hsBtn').onclick=()=>hsScreen(S.day||0);$('chName').onclick=e=>{e.preventDefault();nameScreen();};$('satire').onclick=e=>{e.preventDefault();introScreen();};menu.style.display='flex';}
 function missionScreen(head){const D=DAYS[S.day],M=D.missions[S.mi];
  menu.innerHTML=(head||'')+`<h3>${D.n} · Mission ${S.mi+1}/${D.missions.length}</h3><h2>${M.n}</h2><p>${M.intro}</p><p style="font-size:24px;margin:.2em">${hearts()}</p>
  <ul class="ml">${D.missions.map((m,i)=>`<li class="${i<S.mi?'done':i===S.mi?'cur':''}">${i<S.mi?'✅':i===S.mi?'▶️':'⬜'} ${m.n}</li>`).join('')}</ul>
@@ -781,7 +786,7 @@ function keyResult(){const {r,i}=S.trying;S.trying=null;$('keys').classList.remo
  if(i===r.lock){r.open=true;r.col.open=true;$('lockIc').textContent='🔓';$('tryTxt').textContent='Passt!';say('🔓 Klick! '+r.n+' ist offen.');snd(500,.05,'square',.05);setTimeout(()=>snd(900,.08,'square',.05),80);r.lbl.material.map=r.texO;
   setTimeout(()=>{if(S.near===r){S.near=null;$('keys').style.display='none';}},500);}
  else{const tk=$('tryKey');tk.className='';void tk.offsetWidth;tk.className='fail';$('tryTxt').textContent='✖ passt nicht';const k=$('keys');k.classList.remove('shake');void k.offsetWidth;k.classList.add('shake');snd(140,.15,'sawtooth',.05,90);}}
-mainMenu();
+introScreen();
 
 /* ================= Karte (hochkant gedreht) ================= */
 const fog=$('fog'),fx=fog.getContext('2d'),mapC=$('map'),mx=mapC.getContext('2d');
