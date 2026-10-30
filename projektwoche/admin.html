@@ -302,6 +302,10 @@ dialog::backdrop { background: rgba(15, 20, 60, .55); }
 .d-schild-tabelle td { font-size: 14px; padding: 9px 10px; }
 .d-schild-tabelle .tagzelle { width: 110px; font-weight: 700; }
 .d-leer { color: #888; }
+.d-zwischen { font-size: 16px; margin: 22px 0 8px; color: var(--indigo); break-after: avoid; }
+.d-leertabelle td { line-height: 1.55; }
+.d-leertabelle .tagzelle { width: 120px; }
+.d-leertabelle .tagzelle small { display: block; }
 
 #druck { display: none; }
 
@@ -523,7 +527,7 @@ let reiter = "planung";
 const ansicht = {
   plan: { modus: "raster", suche: "", alleRaeume: false },
   raeume: { suche: "", versteckte: true, zuordnung: null },
-  export: { art: "liste", klasse: "alle", kosten: "alle", gruppe: "", trakt: "", tag: 0, suche: "", sort: "thema" }
+  export: { art: "liste", klasse: "alle", kosten: "alle", gruppe: "", trakt: "", tag: 0, suche: "", sort: "thema", leerAnhang: true }
 };
 let offenesProjekt = null;
 let bd = null;                  // Zustand des Buchungsdialogs
@@ -1830,7 +1834,7 @@ function renderExport(ziel) {
 
   const arten = el("div", "filterreihe");
   arten.style.marginTop = "0";
-  [["liste", "Gesamtliste für Schüler"], ["schild", "Türschilder pro Raum"], ["tag", "Tagesplan Lehrkräfte"]].forEach(([w, t]) => {
+  [["liste", "Gesamtliste für Schüler"], ["schild", "Türschilder pro Raum"], ["tag", "Tagesplan Lehrkräfte"], ["leer", "Leere Räume"]].forEach(([w, t]) => {
     const b = el("button", "filter", t);
     b.type = "button";
     b.setAttribute("aria-pressed", String(v.art === w));
@@ -1867,11 +1871,22 @@ function renderExport(ziel) {
   const fS = input(v.suche, "Thema, Kürzel, Raum …", "search");
   fS.oninput = () => { v.suche = fS.value; vorschau(); };
 
-  z.append(feldMitLabel("Klassenstufe", sK), feldMitLabel("Kosten", sKo), feldMitLabel("Raumgruppe", sG), feldMitLabel("Gebäude", sT),
-    feldMitLabel("Tag", sD));
-  if (v.art !== "schild") z.appendChild(feldMitLabel("Sortieren nach", sS));
+  if (v.art !== "leer") z.append(feldMitLabel("Klassenstufe", sK), feldMitLabel("Kosten", sKo));
+  z.append(feldMitLabel("Raumgruppe", sG), feldMitLabel("Gebäude", sT), feldMitLabel("Tag", sD));
+  if (v.art !== "schild" && v.art !== "leer") z.appendChild(feldMitLabel("Sortieren nach", sS));
+  fS.placeholder = v.art === "leer" ? "Raumnummer oder Beschreibung …" : "Thema, Kürzel, Raum …";
   z.appendChild(feldMitLabel("Textsuche", fS));
   k.appendChild(z);
+
+  if (v.art === "liste") {
+    const sch = el("label", "schalter");
+    sch.style.marginTop = "14px";
+    const cb = input(null, null, "checkbox");
+    cb.checked = v.leerAnhang;
+    cb.onchange = () => { v.leerAnhang = cb.checked; vorschau(); };
+    sch.append(cb, el("span", "", "Übersicht der leeren Räume am Ende anhängen"));
+    k.appendChild(sch);
+  }
 
   const reihe = el("div", "buttonreihe");
   reihe.appendChild(knopf("Drucken / Als PDF speichern", "", () => {
@@ -2008,7 +2023,8 @@ function htmlListe() {
   });
   if (!projekte.length) h += '<tr><td colspan="9" class="d-leer">Keine Projekte für diese Auswahl.</td></tr>';
   h += "</tbody></table></div>";
-  return { html: h, anzahl: projekte.length + " Projekte", quer: true };
+  if (v.leerAnhang) h += htmlLeerSeite([1, 2, 3, 4, 5], false);
+  return { html: h, anzahl: projekte.length + " Projekte" + (v.leerAnhang ? " + leere Räume" : ""), quer: true };
 }
 
 /* Tagesversion der Schülerliste */
@@ -2026,7 +2042,9 @@ function htmlListeTag(t) {
       "</td><td>" + esc(lehrkraefte(p)) + vertretungHtml(b) + "</td><td>" + esc(stundenText(b.std_von, b.std_bis)) + "</td></tr>";
   });
   if (!liste.length) h += '<tr><td colspan="6" class="d-leer">Keine Projekte für diese Auswahl.</td></tr>';
-  h += "</tbody></table></div>";
+  h += "</tbody></table>";
+  if (ansicht.export.leerAnhang) h += '<h2 class="d-zwischen">Leere Räume am ' + TAGE[t] + "</h2>" + leerTabelle([t], false);
+  h += "</div>";
   return { html: h, n: liste.length };
 }
 
@@ -2094,9 +2112,90 @@ function htmlTagSeite(t) {
   return { html: h, n: liste.length };
 }
 
+/* --- Leere Räume --- */
+
+/* Räume (ohne Exkursion, ohne ausgeblendete) nach Raumgruppe, Gebäude und – nur im Modus „Leere Räume“ – Textsuche */
+function leerKandidaten(mitSuche) {
+  const q = mitSuche ? ansicht.export.suche.trim().toLowerCase() : "";
+  return daten.raeume.filter((r) => !r.ist_exkursion && !r.versteckt && raumPasst(r.nummer) &&
+    (!q || (r.nummer + " " + (r.beschreibung || "")).toLowerCase().includes(q))).sort(vergleichRaum);
+}
+
+function leerAmTag(t, mitSuche) {
+  const frei = [], teil = [];
+  leerKandidaten(mitSuche).forEach((r) => {
+    const bs = daten.buchungen.filter((b) => b.room === r.nummer && b.tag === t);
+    if (!bs.length) { frei.push(r); return; }
+    const belegt = new Set();
+    bs.forEach((b) => { for (let i = b.std_von; i <= b.std_bis; i++) belegt.add(i); });
+    const freiStd = [1, 2, 3, 4, 5, 6].filter((i) => !belegt.has(i));
+    if (freiStd.length) teil.push({ r, freiStd });
+  });
+  return { frei, teil };
+}
+
+function raumName(r) {
+  return r.nummer + (r.beschreibung ? " (" + r.beschreibung + ")" : "");
+}
+
+function stdBereiche(liste) {
+  const teile = [];
+  let start = liste[0], vor = liste[0];
+  for (let i = 1; i <= liste.length; i++) {
+    if (liste[i] === vor + 1) { vor = liste[i]; continue; }
+    teile.push(start === vor ? start + "." : start + ".–" + vor + ".");
+    start = vor = liste[i];
+  }
+  return teile.join(", ") + " Std.";
+}
+
+function freiNachGebaeude(raeume) {
+  const gruppen = new Map();
+  raeume.forEach((r) => {
+    const g = r.trakt === null ? "Weitere" : "Gebäude " + r.trakt;
+    if (!gruppen.has(g)) gruppen.set(g, []);
+    gruppen.get(g).push(raumName(r));
+  });
+  if (!gruppen.size) return '<span class="d-leer">keine</span>';
+  return [...gruppen.entries()].map(([g, l]) => "<b>" + esc(g) + ":</b> " + esc(l.join(", "))).join("<br>");
+}
+
+function leerTabelle(tage, mitSuche) {
+  let h = '<table class="d-tabelle d-leertabelle"><thead><tr><th>Tag</th><th>Ganztägig frei</th><th>Teilweise frei</th></tr></thead><tbody>';
+  tage.forEach((t) => {
+    const { frei, teil } = leerAmTag(t, mitSuche);
+    h += '<tr><td class="tagzelle"><b>' + TAGE[t] + "</b>" + (datum(t) ? "<small>" + datum(t) + "</small>" : "") +
+      "<small>" + frei.length + " frei</small></td><td>" + freiNachGebaeude(frei) + "</td><td>" +
+      (teil.length ? teil.map((x) => esc(raumName(x.r)) + " <small style=\"display:inline\">(" + esc(stdBereiche(x.freiStd)) + ")</small>").join("<br>")
+        : '<span class="d-leer">keine</span>') + "</td></tr>";
+  });
+  return h + "</tbody></table>";
+}
+
+function htmlLeerSeite(tage, mitSuche) {
+  const titel = tage.length === 1 ? "Leere Räume am " + TAGE[tage[0]] + (datum(tage[0]) ? ", " + datum(tage[0], true) : "")
+    : "Leere Räume · Projektwoche " + wochenText();
+  const ft = [];
+  const v = ansicht.export;
+  if (v.gruppe) { const g = daten.gruppen.find((x) => String(x.id) === String(v.gruppe)); if (g) ft.push(g.name); }
+  if (v.trakt !== "") ft.push("Gebäude " + v.trakt);
+  if (mitSuche && v.suche.trim()) ft.push("Suche „" + v.suche.trim() + "“");
+  return '<div class="d-seite"><h1>' + esc(titel) + "</h1>" +
+    '<p class="d-unter">Räume ohne Projekt' + (ft.length ? " · " + esc(ft.join(" · ")) : "") + " · ausgeblendete Räume nicht enthalten · " + stand() + "</p>" +
+    leerTabelle(tage, mitSuche) + "</div>";
+}
+
+function htmlLeer() {
+  const v = ansicht.export;
+  const tage = v.tag === 0 ? [1, 2, 3, 4, 5] : tageAuswahl();
+  const seiten = v.tag === -1 ? tage.map((t) => htmlLeerSeite([t], true)) : [htmlLeerSeite(tage, true)];
+  const frei = tage.reduce((n, t) => n + leerAmTag(t, true).frei.length, 0);
+  return { html: seiten.join(""), anzahl: (tage.length === 1 ? frei + " ganztägig freie Räume" : frei + " freie Raum-Tage") + " · " + seiten.length + (seiten.length === 1 ? " Seite" : " Seiten"), quer: false };
+}
+
 function vorschau() {
   const v = ansicht.export;
-  const erg = v.art === "schild" ? htmlSchilder() : v.art === "tag" ? htmlTag() : htmlListe();
+  const erg = v.art === "schild" ? htmlSchilder() : v.art === "tag" ? htmlTag() : v.art === "leer" ? htmlLeer() : htmlListe();
   const box = $("vorschauBox");
   if (box) box.innerHTML = erg.html;
   $("druck").innerHTML = erg.html;
