@@ -727,7 +727,6 @@ const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 let pname='';try{pname=localStorage.getItem('slsim_name')||'';}catch(e){}
 function introScreen(){menu.innerHTML=`<h2>🏫 Schulleitungssimulator</h2><h3>⚠️ Satire-Hinweis</h3>
  <p>Alle Figuren in diesem Spiel sind frei erfunden. Ähnlichkeiten mit real existierenden Kolleginnen und Kollegen, Dezernenten oder Schulbuchvertretern wären rein zufällig – und vermutlich sehr unterhaltsam.</p>
- <p>Natürlich drückt sich keine echte Schulleitung vor der Arbeit. Im Gegenteil: Dass man sie so selten auf dem Flur sieht, liegt daran, dass sie gerade Stundenpläne baut, Vertretungen jongliert, Konferenzen vorbereitet, Eltern beruhigt, Statistiken fürs Ministerium ausfüllt, den Kopierer wiederbelebt – und dabei ihr Kaffee kalt wird.</p>
  <p>Dieses Spiel zeigt nur, wie es aussehen <i>könnte</i>, wenn man mal fünf Minuten Zeit hätte. 😉</p>
  <div class="lv"><button id="introOk">Verstanden – los geht's!</button></div>`;$('introOk').onclick=()=>mainMenu();menu.style.display='flex';}
 function nameScreen(){menu.innerHTML=`<h2>🏫 Schulleitungssimulator</h2><p>Mit welchem Namen willst du in der Highscore-Liste stehen?</p>
