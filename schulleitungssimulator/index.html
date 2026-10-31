@@ -5,6 +5,9 @@
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#0d0f16;font-family:system-ui,-apple-system,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 canvas{display:block}
+*{touch-action:manipulation}
+html,body,canvas,#stick,.btn,#keys,.key{touch-action:none}
+.btn,.key,#stick{-webkit-tap-highlight-color:transparent}
 #hud{position:fixed;top:calc(8px + env(safe-area-inset-top));left:8px;right:8px;display:flex;gap:6px;flex-wrap:wrap;color:#fff;font-size:13px;pointer-events:none;z-index:5}
 .pill{background:rgba(0,0,0,.55);padding:5px 9px;border-radius:14px;backdrop-filter:blur(4px)}
 #hide{display:none;background:rgba(40,140,80,.75)}
@@ -60,6 +63,11 @@ const V=(x,z)=>new THREE.Vector3(x,0,z);
 const wrapA=a=>((a+Math.PI)%(Math.PI*2)+Math.PI*2)%(Math.PI*2)-Math.PI;
 const lerpA=(a,b,k)=>a+wrapA(b-a)*k;
 
+/* ================= iOS: Doppeltipp-/Pinch-Zoom unterbinden ================= */
+for(const ev of ['gesturestart','gesturechange','gestureend'])document.addEventListener(ev,e=>e.preventDefault(),{passive:false});
+document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
+let lastTouchEnd=0,lastTouchEl=null;document.addEventListener('touchend',e=>{const n=Date.now(),el=e.target;if(n-lastTouchEnd<350&&el===lastTouchEl&&!el.closest('input'))e.preventDefault();lastTouchEnd=n;lastTouchEl=el;},{passive:false});
+document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
 /* ================= Renderer & Licht ================= */
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);
@@ -578,6 +586,7 @@ const btn={A:false,B:false};
 for(const k of ['A','B']){const el=$('b'+k),on=()=>{btn[k]=true;el.classList.add('on');},off=()=>{btn[k]=false;el.classList.remove('on');};
  el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointerleave',off);el.addEventListener('pointercancel',off);}
 $('bM').addEventListener('pointerdown',e=>{e.preventDefault();toggleMap();});
+for(const id of ['bA','bB','bM','stick','keys'])$(id).addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
 
 const KEYS=[['Rot','#e74c3c'],['Blau','#3498db'],['Grün','#2ecc71'],['Gelb','#f1c40f'],['Lila','#9b59b6'],['Orange','#e67e22']];
 const keySVG=(c,i)=>`<svg viewBox="0 0 60 26" width="54" height="23"><circle cx="11" cy="13" r="9" fill="${c}" stroke="#0006" stroke-width="1.5"/><circle cx="8" cy="13" r="3" fill="#1a1a24"/><rect x="18" y="10" width="38" height="6" rx="2" fill="${c}" stroke="#0006"/>${[0,1,2].map(j=>`<rect x="${34+j*7}" y="16" width="4" height="${3+((i*7+j*5)%4)*1.5}" fill="${c}"/>`).join('')}</svg>`;
