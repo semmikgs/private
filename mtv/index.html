@@ -173,7 +173,8 @@
 </main>
 
 <footer>
-  Daten: <a id="quelle" href="#" target="_blank" rel="noopener">nuLiga HVNB (offizielle Seite)</a>
+  Daten: <a id="quelle" href="#" target="_blank" rel="noopener">nuLiga HVNB (offizielle Seite)</a><br>
+  <a id="aktion" href="#" target="_blank" rel="noopener" style="color:var(--leise)">Trainer: Daten jetzt abrufen</a>
 </footer>
 
 <script>
@@ -189,12 +190,9 @@ const URL_TABELLE = CONFIG.basis + "groupPage?championship=" + encodeURIComponen
 const URL_SPIELPLAN = CONFIG.basis + "groupPage?displayTyp=vorrunde&displayDetail=meetings&championship=" + encodeURIComponent(CONFIG.championship) + "&group=" + CONFIG.group;
 document.getElementById("quelle").href = URL_TABELLE;
 
-/* nuLiga erlaubt keinen direkten Abruf aus dem Browser – daher öffentliche Proxys, der Reihe nach */
-const PROXYS = [
-  u => "https://corsproxy.io/?url=" + encodeURIComponent(u),
-  u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
-  u => "https://api.codetabs.com/v1/proxy/?quest=" + encodeURIComponent(u)
-];
+/* Daten kommen aus daten.json – eine GitHub Action holt sie alle 30 Minuten von nuLiga */
+const URL_DATEN = "daten.json";
+const URL_AKTION = "https://github.com/semmikgs/private/actions/workflows/mtv.yml";
 
 /* ---------- kleine Helfer ---------- */
 const speicher = {
@@ -202,131 +200,14 @@ const speicher = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const txt = el => (el ? el.textContent : "").replace(/\s+/g, " ").trim();
 const istWir = name => name && name.toLowerCase().includes(CONFIG.team.toLowerCase());
 const WOCHENTAG = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 const WOCHENTAG_LANG = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 
-async function holen(url) {
-  const reihenfolge = [...PROXYS.keys()];
-  const bester = speicher.get("mtv_proxy");
-  if (Number.isInteger(bester) && bester < PROXYS.length) {
-    reihenfolge.splice(reihenfolge.indexOf(bester), 1);
-    reihenfolge.unshift(bester);
-  }
-  let fehler;
-  for (const i of reihenfolge) {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 9000);
-    try {
-      const r = await fetch(PROXYS[i](url), { signal: ctrl.signal, cache: "no-store" });
-      clearTimeout(timer);
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      const html = await r.text();
-      if (!html.includes("nuLiga")) throw new Error("unerwartete Antwort");
-      speicher.set("mtv_proxy", i);
-      return new DOMParser().parseFromString(html, "text/html");
-    } catch (e) {
-      clearTimeout(timer);
-      fehler = e;
-    }
-  }
-  throw fehler || new Error("kein Proxy erreichbar");
-}
-
-/* ---------- Auslesen ---------- */
-function leseTabelle(doc) {
-  const zeilen = [];
-  doc.querySelectorAll("tr").forEach(tr => {
-    const tds = [...tr.querySelectorAll("td")];
-    const m = tds.findIndex(td => td.querySelector('a[href*="teamPortrait"]'));
-    if (m < 1 || tds.length < m + 8) return;
-    const rang = txt(tds[m - 1]);
-    if (!/^\d+$/.test(rang)) return;
-    zeilen.push({
-      rang: +rang,
-      team: txt(tds[m]),
-      spiele: txt(tds[m + 1]),
-      s: txt(tds[m + 2]), u: txt(tds[m + 3]), n: txt(tds[m + 4]),
-      tore: txt(tds[m + 5]), diff: txt(tds[m + 6]), punkte: txt(tds[m + 7])
-    });
-  });
-  return zeilen;
-}
-
-function leseSpielplan(doc) {
-  const spiele = [];
-  let datum = "";
-  doc.querySelectorAll("tr").forEach(tr => {
-    const tds = [...tr.querySelectorAll("td")];
-    if (tds.length < 6) return;
-    const texte = tds.map(txt);
-    const iDatum = texte.findIndex(t => /^\d{2}\.\d{2}\.\d{4}$/.test(t));
-    if (iDatum >= 0) datum = texte[iDatum];
-    const iZeit = texte.findIndex(t => /^\d{1,2}:\d{2}(\s|$|[a-z])/i.test(t));
-    if (iZeit < 0 || !datum) return;
-    let iOrt = tds.findIndex(td => td.querySelector('a[href*="courtInfo"]'));
-    if (iOrt < 0) iOrt = iZeit + 1;
-    const heim = texte[iOrt + 2], gast = texte[iOrt + 3];
-    if (!heim || !gast) return;
-    const ortLink = tds[iOrt] && tds[iOrt].querySelector("a");
-    const ergText = texte[iOrt + 4] || "";
-    const erg = /^\d+:\d+$/.test(ergText) ? ergText : "";
-    const [t, mo, j] = datum.split(".").map(Number);
-    const [h, mi] = texte[iZeit].match(/(\d{1,2}):(\d{2})/).slice(1).map(Number);
-    let location = "";
-    if (ortLink) {
-      const m = ortLink.getAttribute("href").match(/location=(\d+)/);
-      if (m) location = m[1];
-    }
-    spiele.push({
-      zeitpunkt: new Date(j, mo - 1, t, h, mi).getTime(),
-      datum, zeit: texte[iZeit].match(/\d{1,2}:\d{2}/)[0],
-      nr: texte[iOrt + 1],
-      hallenNr: texte[iOrt] || "",
-      hallenTitel: ortLink ? (ortLink.getAttribute("title") || "") : "",
-      location,
-      heim, gast, erg
-    });
-  });
-  return spiele;
-}
-
-function leseHalle(doc) {
-  const h1 = txt(doc.querySelector("h1")).replace(/\s*Hallenspielplan\s*$/i, "");
-  let zeilen = [];
-  const ueber = [...doc.querySelectorAll("h2, h3")].find(h => /Hallenadresse/i.test(h.textContent));
-  if (ueber) {
-    let html = "";
-    let el = ueber.nextElementSibling;
-    while (el && !/^H[1-3]$/.test(el.tagName)) { html += el.outerHTML; el = el.nextElementSibling; }
-    if (!html && ueber.parentElement) html = ueber.parentElement.innerHTML.split(/Hallenadresse/i)[1] || "";
-    const tmp = document.createElement("div");
-    tmp.innerHTML = html.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|td|tr|li)>/gi, "\n");
-    zeilen = tmp.textContent.split("\n").map(s => s.replace(/\s+/g, " ").trim()).filter(Boolean);
-  }
-  if (!zeilen.length) {
-    const alles = txt(doc.body);
-    const m = alles.match(/Hallenadresse\s+(.+?\s\d{5}\s+[^\d]+?)(?:\s{2}|Haftmittel|Hallenspielplan|$)/i);
-    if (m) zeilen = [m[1]];
-  }
-  const iPlz = zeilen.findIndex(z => /\b\d{5}\b/.test(z));
-  const adresse = iPlz >= 0 ? zeilen.slice(Math.max(0, iPlz - 1), iPlz + 1).join(", ") : zeilen.slice(0, 2).join(", ");
-  return { name: h1.replace(/\s*\(\d+\)\s*$/, ""), adresse };
-}
-
-async function hallen(spiele) {
-  const cache = speicher.get("mtv_hallen") || {};
-  const offen = [...new Set(spiele.filter(s => s.location && !cache[s.location]).map(s => s.location))];
-  await Promise.all(offen.map(async loc => {
-    try {
-      const url = CONFIG.basis + "courtInfo?federation=HVNB&roundTyp=0&championship=" + encodeURIComponent(CONFIG.championship) + "&location=" + loc;
-      const info = leseHalle(await holen(url));
-      if (info.name || info.adresse) cache[loc] = info;
-    } catch (e) { /* Halle bleibt ohne Adresse */ }
-  }));
-  speicher.set("mtv_hallen", cache);
-  return cache;
+function zeitpunkt(s) {
+  const [t, mo, j] = s.datum.split(".").map(Number);
+  const [h, mi] = s.zeit.split(":").map(Number);
+  return new Date(j, mo - 1, t, h, mi).getTime();
 }
 
 /* ---------- Anzeige ---------- */
@@ -447,7 +328,7 @@ function zeichne(hinweis) {
   }
   html += "</section>";
 
-  html += '<div class="status">Stand: ' + new Date(daten.stand).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" }) + " Uhr</div>";
+  html += '<div class="status">Letzte Änderung bei nuLiga: ' + new Date(daten.stand).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" }) + " Uhr<br>wird alle 30 Minuten automatisch abgeglichen</div>";
 
   const app = document.getElementById("app");
   app.innerHTML = html;
@@ -463,20 +344,17 @@ async function laden() {
   knopf.disabled = true; knopf.textContent = "…";
   const gespeichert = speicher.get("mtv_daten");
   try {
-    const [docTab, docPlan] = await Promise.all([holen(URL_TABELLE), holen(URL_SPIELPLAN)]);
-    const tabelle = leseTabelle(docTab);
-    let spiele = leseSpielplan(docPlan);
-    if (!spiele.length) spiele = leseSpielplan(docTab);
-    if (!tabelle.length && !spiele.length) throw new Error("Seite konnte nicht gelesen werden");
-    daten = { tabelle, spiele, stand: Date.now(), hallen: (gespeichert && gespeichert.hallen) || speicher.get("mtv_hallen") || {} };
-    zeichne();
-    daten.hallen = await hallen(spiele.filter(s => istWir(s.heim) || istWir(s.gast)));
+    const r = await fetch(URL_DATEN + "?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const d = await r.json();
+    d.spiele.forEach(s => s.zeitpunkt = zeitpunkt(s));
+    daten = d;
     speicher.set("mtv_daten", daten);
     zeichne();
   } catch (e) {
     if (gespeichert) {
       daten = gespeichert;
-      zeichne("Live-Abruf gerade nicht möglich – angezeigt wird der zuletzt geladene Stand.");
+      zeichne("Gerade keine Verbindung – angezeigt wird der zuletzt geladene Stand.");
     } else {
       document.getElementById("app").innerHTML =
         '<section class="karte"><div class="leer">Die Daten konnten gerade nicht geladen werden (' + esc(e.message) + ').<br><br>' +
@@ -487,6 +365,7 @@ async function laden() {
   }
 }
 
+document.getElementById("aktion").href = URL_AKTION;
 document.getElementById("neu").onclick = laden;
 laden();
 </script>
