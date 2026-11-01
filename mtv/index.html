@@ -74,10 +74,12 @@
   .naechstes { border-top: 5px solid var(--rot); }
   .naechstes .inhalt { padding: 4px 16px 16px; }
   .wann { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-  .wann .tag { font-size: 22px; font-weight: 800; }
-  .wann .zeit { font-size: 22px; font-weight: 800; color: var(--rot); }
+  .wann { flex-wrap: nowrap; white-space: nowrap; }
+  .wann .tag { font-size: 19px; font-weight: 800; }
+  .wann .zeit { font-size: 19px; font-weight: 800; color: var(--rot); }
   .countdown { font-size: 13px; color: var(--leise); margin-top: 2px; }
-  .paarung { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 14px 0; text-align: center; }
+  .paarung { margin: 12px 0; font-size: 17px; }
+  .paarung .hg { gap: 3px 10px; }
   .paarung .team { font-weight: 700; font-size: 16px; line-height: 1.2; }
   .paarung .team.wir { color: var(--rot); }
   .paarung .vs { font-size: 13px; color: var(--leise); font-weight: 700; }
@@ -90,9 +92,12 @@
     display: flex; gap: 10px; align-items: flex-start;
     background: var(--grund); border-radius: 10px; padding: 10px 12px;
   }
-  .ort .pin { font-size: 20px; line-height: 1; margin-top: 2px; }
-  .ort .name { font-weight: 700; }
-  .ort .adr { font-size: 14px; color: var(--leise); }
+  .ort { align-items: center; padding: 8px 12px; text-decoration: none; color: inherit; }
+  .ort .pin { font-size: 18px; line-height: 1; margin-top: 0; }
+  .ort > div:last-child { min-width: 0; }
+  .ort .name, .ort .adr { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ort .name { font-weight: 700; font-size: 15px; }
+  .ort .adr { font-size: 13px; color: var(--leise); }
   .knoepfe { display: flex; gap: 8px; margin-top: 12px; }
   .knopf {
     flex: 1; text-align: center; text-decoration: none; font-weight: 700; font-size: 15px;
@@ -250,6 +255,12 @@ function tageBis(ts) {
   return "in " + n + " Tagen";
 }
 
+function kurzHalle(name) {
+  /* "Schwarmstedt, Wilhelm-Röpke-Schule" -> "Wilhelm-Röpke-Schule"; Ort steht in der Adresse */
+  const teil = name.includes(",") ? name.split(",").slice(1).join(",").trim() : name;
+  return teil.replace(/^SH\b/, "Sporthalle").replace(/\bSH\b/, "Sporthalle") || name;
+}
+
 function heimGast(s) {
   return '<div class="hg"><span class="lbl">Heim</span><span>' + teamHtml(s.heim) + '</span><span class="lbl">Gast</span><span>' + teamHtml(s.gast) + "</span></div>";
 }
@@ -292,10 +303,10 @@ function zeichne(hinweis) {
     const heim = istWir(naechstes.heim);
     const h = hallenInfo(naechstes);
     html += '<section class="karte naechstes"><h2>Nächstes Spiel</h2><div class="inhalt">' +
-      '<div class="wann"><span class="tag">' + WOCHENTAG_LANG[d.getDay()] + ", " + esc(naechstes.datum.slice(0, 6)) + '</span><span class="zeit">Anpfiff ' + esc(naechstes.zeit) + " Uhr</span></div>" +
+      '<div class="wann"><span class="tag">' + WOCHENTAG[d.getDay()] + ", " + esc(naechstes.datum.slice(0, 6)) + '</span><span class="zeit">Anpfiff ' + esc(naechstes.zeit) + " Uhr</span></div>" +
       '<div class="countdown">' + tageBis(naechstes.zeitpunkt) + ' · <span class="badge ' + (heim ? "" : "aus") + '">' + (heim ? "Heimspiel" : "Auswärts") + "</span></div>" +
-      '<div class="paarung"><div class="team ' + (heim ? "wir" : "") + '">' + esc(naechstes.heim) + '</div><div class="vs">gegen</div><div class="team ' + (heim ? "" : "wir") + '">' + esc(naechstes.gast) + "</div></div>" +
-      '<div class="ort"><div class="pin">📍</div><div><div class="name">' + esc(h.name) + "</div>" + (h.adresse ? '<div class="adr">' + esc(h.adresse) + "</div>" : "") + "</div></div>" +
+      '<div class="paarung">' + heimGast(naechstes) + "</div>" +
+      '<a class="ort" href="' + h.maps + '" target="_blank" rel="noopener"><div class="pin">📍</div><div><div class="name">' + esc(kurzHalle(h.name)) + "</div>" + (h.adresse ? '<div class="adr">' + esc(h.adresse) + "</div>" : "") + "</div></a>" +
       '<div class="knoepfe"><a class="knopf" href="' + h.maps + '" target="_blank" rel="noopener">Route</a><button class="knopf hell" id="kal">In Kalender</button></div>' +
       "</div></section>";
   } else {
