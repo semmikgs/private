@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: "7,37 * * * *"
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["scripts/mtv_scrape.py", ".github/workflows/mtv.yml"]
 permissions:
   contents: write
 concurrency:
