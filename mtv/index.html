@@ -105,6 +105,10 @@
   .letztes { display: flex; align-items: center; gap: 12px; padding: 4px 16px 14px; }
   .letztes .text { flex: 1; font-size: 14px; }
   .letztes .text b { font-size: 15px; }
+  .hg { display: grid; grid-template-columns: auto 1fr; gap: 1px 8px; align-items: baseline; }
+  .hg .lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--leise); }
+  .hg .wir { font-weight: 800; color: var(--rot); }
+  .letztes .datum2 { font-size: 13px; color: var(--leise); margin-top: 3px; }
 
   /* Tabelle */
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -246,6 +250,10 @@ function tageBis(ts) {
   return "in " + n + " Tagen";
 }
 
+function heimGast(s) {
+  return '<div class="hg"><span class="lbl">Heim</span><span>' + teamHtml(s.heim) + '</span><span class="lbl">Gast</span><span>' + teamHtml(s.gast) + "</span></div>";
+}
+
 function teamHtml(name) {
   return istWir(name) ? '<span class="wir">' + esc(name) + "</span>" : esc(name);
 }
@@ -297,8 +305,8 @@ function zeichne(hinweis) {
   /* Letztes Ergebnis */
   if (letztes) {
     const w = wertung(letztes);
-    html += '<section class="karte"><h2>Letztes Ergebnis</h2><div class="letztes"><div class="text"><b>' + teamHtml(letztes.heim) + " – " + teamHtml(letztes.gast) + "</b><br>" +
-      WOCHENTAG[new Date(letztes.zeitpunkt).getDay()] + ", " + esc(letztes.datum) + '</div><span class="erg ' + w + '">' + esc(letztes.erg) + "</span></div></section>";
+    html += '<section class="karte"><h2>Letztes Ergebnis</h2><div class="letztes"><div class="text">' + heimGast(letztes) + '<div class="datum2">' +
+      WOCHENTAG[new Date(letztes.zeitpunkt).getDay()] + ", " + esc(letztes.datum) + '</div></div><span class="erg ' + w + '">' + esc(letztes.erg) + "</span></div></section>";
   }
 
   /* Tabelle */
@@ -330,7 +338,7 @@ function zeichne(hinweis) {
       const rechts = s.erg ? '<span class="erg ' + (unser ? wertung(s) : "") + '">' + esc(s.erg) + "</span>" : '<span class="badge ' + (istWir(s.heim) ? "" : "aus") + '">' + (unser ? (istWir(s.heim) ? "Heim" : "Auswärts") : "") + "</span>";
       return '<div class="spiel"><div class="datum"><b>' + WOCHENTAG[d.getDay()] + ", " + esc(s.datum) + "</b> · Anpfiff " + esc(s.zeit) + " Uhr</div>" +
         '<div class="rechts">' + (unser || s.erg ? rechts : "") + "</div>" +
-        '<div class="teams">' + teamHtml(s.heim) + " – " + teamHtml(s.gast) + "</div>" +
+        '<div class="teams">' + heimGast(s) + "</div>" +
         '<div class="halle">📍 <a href="' + h.maps + '" target="_blank" rel="noopener">' + esc(h.name) + "</a></div></div>";
     }).join("");
   }
