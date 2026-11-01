@@ -117,7 +117,15 @@
   td.pkt { font-weight: 800; }
   tr.wir td { background: var(--rot-hell); color: var(--rot-dunkel); }
   tr.wir td.mann { font-weight: 800; }
-  @media (max-width: 380px) { .schmal-weg { display: none; } }
+  table { table-layout: auto; }
+  th, td { white-space: nowrap; }
+  td.mann { white-space: normal; font-size: 13px; line-height: 1.25; }
+  th.k, td.k { width: 22px; padding-left: 2px; padding-right: 2px; }
+  td.k.s { color: var(--sieg); font-weight: 700; }
+  td.k.n { color: var(--rot); font-weight: 700; }
+  td.k.u { color: var(--remis); font-weight: 700; }
+  tr.wir td.k.s { color: var(--sieg); }
+  @media (max-width: 380px) { td, th { padding-left: 2px; padding-right: 2px; } td.mann { font-size: 12px; } }
 
   /* Spiele-Liste */
   .reiter { display: flex; gap: 6px; padding: 0 12px 10px; flex-wrap: wrap; }
@@ -296,9 +304,9 @@ function zeichne(hinweis) {
   /* Tabelle */
   html += '<section class="karte"><h2>Tabelle</h2>';
   if (daten.tabelle.length) {
-    html += '<table><thead><tr><th>#</th><th class="mann">Mannschaft</th><th>Sp</th><th class="schmal-weg">S-U-N</th><th>Tore</th><th>+/-</th><th>Pkt</th></tr></thead><tbody>' +
+    html += '<table><thead><tr><th>#</th><th class="mann">Mannschaft</th><th>Sp</th><th class="k">S</th><th class="k">U</th><th class="k">N</th><th>Tore</th><th>+/-</th><th>Pkt</th></tr></thead><tbody>' +
       daten.tabelle.map(z => '<tr class="' + (istWir(z.team) ? "wir" : "") + '"><td>' + z.rang + '</td><td class="mann">' + esc(z.team) + "</td><td>" + esc(z.spiele) +
-        '</td><td class="schmal-weg">' + esc(z.s + "-" + z.u + "-" + z.n) + "</td><td>" + esc(z.tore) + "</td><td>" + esc(z.diff) + '</td><td class="pkt">' + esc(z.punkte) + "</td></tr>").join("") +
+        '</td><td class="k ' + (+z.s ? "s" : "") + '">' + esc(z.s) + '</td><td class="k ' + (+z.u ? "u" : "") + '">' + esc(z.u) + '</td><td class="k ' + (+z.n ? "n" : "") + '">' + esc(z.n) + "</td><td>" + esc(z.tore) + "</td><td>" + esc(z.diff) + '</td><td class="pkt">' + esc(z.punkte) + "</td></tr>").join("") +
       "</tbody></table>";
   } else {
     html += '<div class="leer">Tabelle konnte nicht gelesen werden.</div>';
