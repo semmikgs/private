@@ -34,31 +34,31 @@
   header {
     background: var(--rot);
     color: var(--weiss);
-    padding: calc(14px + env(safe-area-inset-top)) 16px 34px;
+    padding: calc(8px + env(safe-area-inset-top)) 16px 14px;
     position: relative;
   }
   header::after { /* weißer Streifen wie Trikot */
-    content: ""; position: absolute; left: 0; right: 0; bottom: 14px;
-    height: 4px; background: var(--weiss); opacity: .9;
+    content: ""; position: absolute; left: 0; right: 0; bottom: 5px;
+    height: 3px; background: var(--weiss); opacity: .9;
   }
   .kopf { max-width: 640px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
   .wappen {
-    width: 46px; height: 46px; border-radius: 50%; flex: none;
+    width: 36px; height: 36px; border-radius: 50%; flex: none;
     background: var(--weiss); color: var(--rot);
-    display: grid; place-items: center; font-weight: 900; font-size: 15px; letter-spacing: -.5px;
-    border: 3px solid var(--rot-dunkel);
+    display: grid; place-items: center; font-weight: 900; font-size: 12px; letter-spacing: -.5px;
+    border: 2px solid var(--rot-dunkel);
   }
-  .kopf h1 { margin: 0; font-size: 20px; line-height: 1.15; }
-  .kopf .sub { font-size: 13px; opacity: .9; }
+  .kopf h1 { margin: 0; font-size: 17px; line-height: 1.15; }
+  .kopf .sub { font-size: 12px; opacity: .9; }
   .neu {
     margin-left: auto; flex: none;
     background: rgba(255,255,255,.15); color: var(--weiss);
     border: 1px solid rgba(255,255,255,.5); border-radius: 999px;
-    padding: 7px 12px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    padding: 5px 11px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   }
   .neu:active { background: rgba(255,255,255,.3); }
 
-  main { max-width: 640px; margin: -6px auto 0; padding: 0 12px calc(30px + env(safe-area-inset-bottom)); position: relative; }
+  main { max-width: 640px; margin: 12px auto 0; padding: 0 12px calc(30px + env(safe-area-inset-bottom)); position: relative; }
   .karte {
     background: var(--weiss); border-radius: var(--radius);
     box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 14px; overflow: hidden;
@@ -134,7 +134,7 @@
     border: 2px solid var(--rot); background: var(--weiss); color: var(--rot); cursor: pointer;
   }
   .reiter button.an { background: var(--rot); color: var(--weiss); }
-  .reiter .rechts { margin-left: auto; border-color: var(--linie); color: var(--leise); }
+  .reiter .rechts { margin-left: auto; background: var(--rot); border-color: var(--rot); color: var(--weiss); }
   .reiter .rechts.an { background: var(--tinte); border-color: var(--tinte); color: var(--weiss); }
   .spiel { border-top: 1px solid var(--linie); padding: 11px 16px; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; }
   .spiel .datum { font-size: 13px; color: var(--leise); }
@@ -284,7 +284,7 @@ function zeichne(hinweis) {
     const heim = istWir(naechstes.heim);
     const h = hallenInfo(naechstes);
     html += '<section class="karte naechstes"><h2>Nächstes Spiel</h2><div class="inhalt">' +
-      '<div class="wann"><span class="tag">' + WOCHENTAG_LANG[d.getDay()] + ", " + esc(naechstes.datum.slice(0, 6)) + '</span><span class="zeit">' + esc(naechstes.zeit) + " Uhr</span></div>" +
+      '<div class="wann"><span class="tag">' + WOCHENTAG_LANG[d.getDay()] + ", " + esc(naechstes.datum.slice(0, 6)) + '</span><span class="zeit">Anpfiff ' + esc(naechstes.zeit) + " Uhr</span></div>" +
       '<div class="countdown">' + tageBis(naechstes.zeitpunkt) + ' · <span class="badge ' + (heim ? "" : "aus") + '">' + (heim ? "Heimspiel" : "Auswärts") + "</span></div>" +
       '<div class="paarung"><div class="team ' + (heim ? "wir" : "") + '">' + esc(naechstes.heim) + '</div><div class="vs">gegen</div><div class="team ' + (heim ? "" : "wir") + '">' + esc(naechstes.gast) + "</div></div>" +
       '<div class="ort"><div class="pin">📍</div><div><div class="name">' + esc(h.name) + "</div>" + (h.adresse ? '<div class="adr">' + esc(h.adresse) + "</div>" : "") + "</div></div>" +
@@ -328,7 +328,7 @@ function zeichne(hinweis) {
       const h = hallenInfo(s);
       const unser = istWir(s.heim) || istWir(s.gast);
       const rechts = s.erg ? '<span class="erg ' + (unser ? wertung(s) : "") + '">' + esc(s.erg) + "</span>" : '<span class="badge ' + (istWir(s.heim) ? "" : "aus") + '">' + (unser ? (istWir(s.heim) ? "Heim" : "Auswärts") : "") + "</span>";
-      return '<div class="spiel"><div class="datum"><b>' + WOCHENTAG[d.getDay()] + ", " + esc(s.datum) + "</b> · " + esc(s.zeit) + " Uhr</div>" +
+      return '<div class="spiel"><div class="datum"><b>' + WOCHENTAG[d.getDay()] + ", " + esc(s.datum) + "</b> · Anpfiff " + esc(s.zeit) + " Uhr</div>" +
         '<div class="rechts">' + (unser || s.erg ? rechts : "") + "</div>" +
         '<div class="teams">' + teamHtml(s.heim) + " – " + teamHtml(s.gast) + "</div>" +
         '<div class="halle">📍 <a href="' + h.maps + '" target="_blank" rel="noopener">' + esc(h.name) + "</a></div></div>";
