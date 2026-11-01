@@ -109,7 +109,13 @@ def halle(loc):
         zeilen = [re.sub(r"\s+", " ", z).strip() for z in "\n".join(teile).split("\n")]
         zeilen = [z for z in zeilen if z]
     i = next((i for i, z in enumerate(zeilen) if re.search(r"\b\d{5}\b", z)), -1)
-    adresse = ", ".join(zeilen[max(0, i - 1): i + 1]) if i >= 0 else ", ".join(zeilen[:2])
+    if i >= 0:
+        plz = zeilen[i]
+        if re.fullmatch(r"\d{5}", plz) and i + 1 < len(zeilen):
+            plz += " " + zeilen[i + 1]
+        adresse = ", ".join(zeilen[max(0, i - 1): i] + [plz])
+    else:
+        adresse = ", ".join(zeilen[:2])
     print(f"  Halle {loc}: {name} | {adresse}")
     return {"name": name, "adresse": adresse}
 
@@ -128,7 +134,7 @@ def main():
 
     hallen = dict(alt.get("hallen", {}))
     for loc in sorted({s["location"] for s in plan if s["location"] and (wir(s["heim"]) or wir(s["gast"]))}):
-        if loc in hallen and hallen[loc].get("adresse"):
+        if loc in hallen and re.search(r"\d{5} \S", hallen[loc].get("adresse", "")):
             continue
         try:
             hallen[loc] = halle(loc)
