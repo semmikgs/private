@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-31T12:19:27+00:00",
+  "generated": "2026-11-01T20:06:38+00:00",
   "projects": [
     {
       "folder": "calliope-bloecke",
@@ -29,6 +29,20 @@
       "hasIndex": true,
       "files": [],
       "updated": "2026-10-15T17:03:04+03:00"
+    },
+    {
+      "folder": "mtv",
+      "title": "MTV Schwarmstedt – mD Spielplan",
+      "description": "Tabelle, nächstes Spiel, kommende Spiele und Ergebnisse der männlichen D-Jugend (Regionsliga D Süd) – live von nuLiga, optimiert fürs Smartphone.",
+      "icon": "🤾",
+      "tags": [
+        "Handball",
+        "MTV Schwarmstedt",
+        "D-Jugend"
+      ],
+      "hasIndex": true,
+      "files": [],
+      "updated": "2026-11-01T21:06:29+01:00"
     },
     {
       "folder": "projektwoche",
