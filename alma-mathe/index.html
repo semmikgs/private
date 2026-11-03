@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Almas Mathe-Training</title>
+<meta name="theme-color" content="#ff8a3d">
+<style>
+:root{
+  --bg:#fff7ec; --card:#ffffff; --ink:#2b2340; --muted:#7a7090;
+  --pri:#ff8a3d; --pri2:#ffb36b; --ok:#2fb36d; --bad:#e5484d; --blue:#3d7bff; --line:#eadfce;
+  --soft:#fff1de;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif}
+body{min-height:100vh;display:flex;flex-direction:column}
+main{flex:1;width:100%;max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:1.7rem;margin:.2em 0}
+h2{font-size:1.3rem;margin:.4em 0}
+button{font:inherit;cursor:pointer;border:none}
+.card{background:var(--card);border-radius:22px;padding:18px;box-shadow:0 4px 0 var(--line);margin-bottom:14px}
+.btn{background:var(--pri);color:#fff;border-radius:16px;padding:14px 20px;font-size:1.15rem;font-weight:700;box-shadow:0 4px 0 #d96a22}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #d96a22}
+.btn.sec{background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--line);border:2px solid var(--line)}
+.btn.blue{background:var(--blue);box-shadow:0 4px 0 #2856c4}
+.btn.wide{width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.center{text-align:center}
+input.txt{width:100%;font:inherit;font-size:1.2rem;padding:12px 14px;border-radius:14px;border:2px solid var(--line);margin:6px 0 12px;background:#fff}
+.err{color:var(--bad);font-weight:700;min-height:1.3em}
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.stars{background:#fff;border-radius:99px;padding:6px 14px;font-weight:700;box-shadow:0 3px 0 var(--line)}
+.linkbtn{background:none;color:var(--muted);text-decoration:underline;font-size:1rem;padding:6px}
+/* mode tiles */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mode{background:#fff;border-radius:22px;padding:18px 12px;text-align:center;box-shadow:0 5px 0 var(--line);border:3px solid transparent}
+.mode:active{transform:translateY(3px)}
+.mode .ic{font-size:2.4rem}
+.mode b{display:block;font-size:1.15rem;margin-top:4px}
+.mode small{color:var(--muted)}
+.mode.a{border-color:#ffd2a8}.mode.b{border-color:#bcd0ff}
+/* topic list */
+.topic{display:flex;align-items:center;gap:12px;background:#fff;border-radius:18px;padding:12px 14px;margin-bottom:10px;box-shadow:0 3px 0 var(--line);width:100%;text-align:left;color:var(--ink)}
+.topic .ic{font-size:1.7rem;width:2.2rem;text-align:center}
+.topic .nm{flex:1;font-weight:700}
+.topic .nm small{display:block;font-weight:400;color:var(--muted)}
+.topic.next{outline:3px solid var(--pri)}
+.badge{font-size:1.4rem}
+.bar{height:10px;background:#f1e7d8;border-radius:9px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--ok);border-radius:9px}
+/* task */
+.prog{display:flex;gap:5px;margin:4px 0 12px}
+.prog span{flex:1;height:10px;border-radius:9px;background:#f1e7d8}
+.prog span.ok{background:var(--ok)}.prog span.bad{background:var(--bad)}.prog span.cur{background:var(--pri2)}
+.tname{color:var(--muted);font-weight:700;font-size:.95rem}
+.q{font-size:1.7rem;font-weight:700;line-height:1.35;margin:10px 0 6px;text-align:center}
+.q.small{font-size:1.25rem}
+.box{display:inline-block;min-width:2.2em;border-bottom:4px solid var(--pri);color:var(--pri);text-align:center}
+.answer{display:flex;justify-content:center;margin:10px 0}
+.ansfield{min-width:150px;font-size:2rem;font-weight:700;text-align:center;background:var(--soft);border:3px solid var(--pri2);border-radius:16px;padding:6px 16px;min-height:62px;letter-spacing:2px}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:360px;margin:8px auto 0}
+.key{background:#fff;border-radius:16px;font-size:1.7rem;font-weight:700;padding:12px 0;box-shadow:0 4px 0 var(--line);border:2px solid var(--line);color:var(--ink)}
+.key:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+.key.ok{background:var(--ok);color:#fff;border-color:var(--ok);box-shadow:0 4px 0 #1f8a51}
+.key.del{background:#fff3f3}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.opts.one{grid-template-columns:1fr}
+.opt{background:#fff;border:3px solid var(--line);border-radius:16px;padding:14px 10px;font-size:1.25rem;font-weight:700;color:var(--ink);box-shadow:0 4px 0 var(--line)}
+.opt.big{font-size:2.2rem}
+.opt.right{background:#e3f7ec;border-color:var(--ok)}
+.opt.wrong{background:#fde8e8;border-color:var(--bad)}
+.fb{border-radius:18px;padding:14px;margin-top:14px;font-size:1.1rem}
+.fb.ok{background:#e3f7ec;border:2px solid var(--ok)}
+.fb.bad{background:#fde8e8;border:2px solid var(--bad)}
+.fb b.big{font-size:1.35rem}
+/* place value table */
+table.st{border-collapse:collapse;margin:8px auto;font-size:1.5rem}
+table.st th,table.st td{border:3px solid #c9b9a2;min-width:70px;height:56px;text-align:center;padding:4px}
+table.st th{background:#ffe6c9;font-size:1.25rem}
+table.st td.sel{background:#fff1de;outline:3px solid var(--pri);outline-offset:-5px}
+table.st td.inp{cursor:pointer;font-weight:700;color:var(--blue)}
+table.st td.strokes{height:70px;vertical-align:middle}
+/* hundred table cutout */
+.ht{display:grid;grid-template-columns:repeat(3,64px);gap:0;justify-content:center;margin:10px auto}
+.ht div{border:2px solid #c9b9a2;height:52px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;background:#fff}
+.ht div.q{background:#fff1de;color:var(--pri);font-size:1.6rem;margin:0}
+.ht div.e{background:#f7f2ea}
+svg{max-width:100%}
+/* parents */
+footer{text-align:center;padding:18px 10px 26px}
+table.stat{width:100%;border-collapse:collapse;font-size:.98rem}
+table.stat th,table.stat td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+table.stat td.n{text-align:right;white-space:nowrap}
+.pct{font-weight:700}
+.pct.g{color:var(--ok)}.pct.m{color:#d98a00}.pct.b{color:var(--bad)}
+details{margin:6px 0}
+summary{cursor:pointer;font-weight:700;padding:6px 0}
+.sub td{font-size:.9rem;color:#4b4361}
+.errlist li{margin-bottom:6px}
+.hide{display:none!important}
+.done-emoji{font-size:4rem;text-align:center}
+@media (max-width:480px){
+  .q{font-size:1.45rem}
+  table.st th,table.st td{min-width:58px}
+  .modes{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<footer id="foot"></footer>
+
+<script>
+"use strict";
+/* ================= Speicher ================= */
+const KEY = "alma-mathe-v1";
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(DB)); }catch(e){} }
+let DB = load();
+DB.stats = DB.stats || {};     // topic -> {n,ok}
+DB.sub = DB.sub || {};         // topic|sub -> {n,ok}
+DB.errors = DB.errors || [];   // letzte Fehler
+DB.progress = DB.progress || {}; // topic -> {rounds,best,done}
+DB.days = DB.days || {};       // datum -> {n,ok}
+DB.stars = DB.stars || 0;
+
+const USER = {name:"alma", pw:"123"};
+const PARENT_PW = "1234";
+let loggedIn = false; try{ loggedIn = sessionStorage.getItem(KEY+"-login")==="1" || localStorage.getItem(KEY+"-login")==="1"; }catch(e){}
+
+/* ================= Helfer ================= */
+const r = (a,b)=> a + Math.floor(Math.random()*(b-a+1));
+const pick = a => a[Math.floor(Math.random()*a.length)];
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+const BOX = '<span class="box">?</span>';
+const esc = s => String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const dot = " · ";
+function uniqOpts(correct, cands, n=4){
+  const s = new Set([String(correct)]);
+  for(const c of shuffle(cands)){ if(s.size>=n) break; if(c!==undefined && c!==null && String(c)!=="" ) s.add(String(c)); }
+  return shuffle([...s]);
+}
+
+/* Zahlwort 0..1000 */
+const EIN=["","ein","zwei","drei","vier","fünf","sechs","sieben","acht","neun"];
+const TEEN=["zehn","elf","zwölf","dreizehn","vierzehn","fünfzehn","sechzehn","siebzehn","achtzehn","neunzehn"];
+const ZIG=["","","zwanzig","dreißig","vierzig","fünfzig","sechzig","siebzig","achtzig","neunzig"];
+function wort2(n){ if(n===0) return ""; if(n===1) return "eins"; if(n<10) return EIN[n]; if(n<20) return TEEN[n-10];
+  const z=Math.floor(n/10), e=n%10; return (e? (e===1?"ein":EIN[e])+"und":"")+ZIG[z]; }
+function zahlwort(n){ if(n===1000) return "eintausend"; if(n===0) return "null"; const h=Math.floor(n/100), rest=n%100;
+  return (h? EIN[h]+"hundert":"")+wort2(rest); }
+
+/* Striche (Stellentafel) */
+function strokes(n){
+  if(n===0) return '<span class="muted" style="font-size:1rem">–</span>';
+  let x=6, out=""; const h=40;
+  for(let i=0;i<n;i++){ if(i>0 && i%5===0) x+=8; out+=`<line x1="${x}" y1="4" x2="${x}" y2="${h}" stroke="#2b2340" stroke-width="4" stroke-linecap="round"/>`; x+=9; }
+  return `<svg width="${x}" height="${h+4}" viewBox="0 0 ${x} ${h+4}">${out}</svg>`;
+}
+function stTable(cells, opts={}){
+  // cells: [h,z,e] Inhalte (HTML)
+  const cls = opts.cls || "";
+  return `<table class="st"><tr><th>H</th><th>Z</th><th>E</th></tr><tr>${cells.map((c,i)=>`<td class="${cls}" data-i="${i}">${c}</td>`).join("")}</tr></table>`;
+}
+
+/* Zahlenstrahl als SVG */
+function numberLine(start, end, step, labelEvery, markVal){
+  const W=640, H=140, x0=40, x1=W-40;
+  const n=(end-start)/step;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:640px"><line x1="${x0}" y1="70" x2="${x1}" y2="70" stroke="#2b2340" stroke-width="4"/>`;
+  for(let i=0;i<=n;i++){
+    const v=start+i*step, x=x0+(x1-x0)*i/n, big=(v-start)%labelEvery===0;
+    s+=`<line x1="${x}" y1="${big?52:60}" x2="${x}" y2="${big?88:80}" stroke="#2b2340" stroke-width="${big?4:3}"/>`;
+    if(big) s+=`<text x="${x}" y="124" text-anchor="middle" font-size="30" font-weight="700" fill="#2b2340">${v}</text>`;
+  }
+  if(markVal!==undefined){
+    const x=x0+(x1-x0)*(markVal-start)/(end-start);
+    s+=`<path d="M${x} 50 l-14 -24 h28 z" fill="#ff8a3d"/>`;
+  }
+  return s+"</svg>";
+}
+
+/* ================= Aufgaben-Generatoren ================= */
+/* Aufgabe: {q, type:'num'|'mc'|'cmp'|'place', ans, opts, ex, small} */
+const TOPICS = [
+{ id:"plusminus", name:"Plus und Minus bis 100", icon:"➕", gens:[
+  {sub:"plus", label:"Plus bis 100", w:3, f(){ const a=r(12,78), b=r(11,100-a); const z=Math.floor(b/10)*10, e=b%10;
+     return {q:`${a} + ${b} = ${BOX}`, type:"num", ans:a+b, ex:`Erst die Zehner: ${a} + ${z} = ${a+z}${e?`, dann die Einer: ${a+z} + ${e} = ${a+b}`:""}.`}; }},
+  {sub:"minus", label:"Minus bis 100", w:3, f(){ const a=r(31,100), b=r(11,a-6); const z=Math.floor(b/10)*10, e=b%10;
+     return {q:`${a} − ${b} = ${BOX}`, type:"num", ans:a-b, ex:`Erst die Zehner: ${a} − ${z} = ${a-z}${e?`, dann die Einer: ${a-z} − ${e} = ${a-b}`:""}.`}; }},
+  {sub:"luecke_plus", label:"Lücke bei Plus", w:2, f(){ const a=r(11,70), b=r(5,100-a), s=a+b;
+     return {q:`${a} + ${BOX} = ${s}`, type:"num", ans:b, ex:`Rechne umgekehrt: ${s} − ${a} = ${b}.`}; }},
+  {sub:"luecke_minus", label:"Lücke bei Minus", w:2, f(){ const a=r(30,99), b=r(5,a-5), d=a-b;
+     return {q:`${a} − ${BOX} = ${d}`, type:"num", ans:b, ex:`Wie viel fehlt von ${d} bis ${a}? ${a} − ${d} = ${b}.`}; }},
+  {sub:"summe", label:"Zwei Ergebnisse addieren", w:1, f(){ const a=r(15,45), b=r(3,9);
+     return {q:`Rechne ${a} + ${b} und ${a} − ${b}.<br>Addiere beide Ergebnisse.`, small:true, type:"num", ans:2*a, ex:`${a} + ${b} = ${a+b}, ${a} − ${b} = ${a-b}, zusammen ${a+b} + ${a-b} = ${2*a}.`}; }},
+]},
+{ id:"einmaleins", name:"Einmaleins: mal und geteilt", icon:"✖️", gens:[
+  {sub:"mal", label:"Malaufgaben", w:4, f(){ const a=r(2,10), b=Math.random()<.08?0:r(1,10);
+     return {q:`${a}${dot}${b} = ${BOX}`, type:"num", ans:a*b, ex:`${a}${dot}${b} = ${a*b}`+(b===0?" (mal 0 ist immer 0)":"")}; }},
+  {sub:"geteilt", label:"Geteiltaufgaben", w:4, f(){ const b=r(2,10), q=Math.random()<.06?0:r(1,10), a=b*q;
+     return {q:`${a} : ${b} = ${BOX}`, type:"num", ans:q, ex:`Probe: ${q}${dot}${b} = ${a}.`}; }},
+  {sub:"faktor", label:"Fehlende Malzahl", w:2, f(){ const a=r(2,10), b=r(2,10), p=a*b;
+     return Math.random()<.5 ? {q:`${BOX}${dot}${b} = ${p}`, type:"num", ans:a, ex:`${p} : ${b} = ${a}, also ${a}${dot}${b} = ${p}.`}
+                             : {q:`${p} = ${a}${dot}${BOX}`, type:"num", ans:b, ex:`${p} : ${a} = ${b}, also ${a}${dot}${b} = ${p}.`}; }},
+  {sub:"teiler", label:"Fehlende Geteiltzahl", w:2, f(){ const b=r(2,10), q=r(2,10), a=b*q;
+     return {q:`${a} : ${BOX} = ${q}`, type:"num", ans:b, ex:`Rechne ${a} : ${q} = ${b}. Probe: ${q}${dot}${b} = ${a}.`}; }},
+  {sub:"produkt", label:"Produkt (Fachwort)", w:1, f(){ const t=r(0,2);
+     if(t===0){ const a=r(3,10), b=r(3,10); return {q:`Wie heißt das Produkt aus ${a} und ${b}?`, small:true, type:"num", ans:a*b, ex:`Produkt heißt: malnehmen. ${a}${dot}${b} = ${a*b}.`}; }
+     if(t===1){ const a=r(3,10); return {q:`Multipliziere zwei gleiche Zahlen.<br>Das Produkt ist ${a*a}. Wie heißt die Zahl?`, small:true, type:"num", ans:a, ex:`${a}${dot}${a} = ${a*a}.`}; }
+     const a=r(3,9), b=r(3,9); return {q:`Multipliziere eine Zahl mit ${b}.<br>Das Produkt ist ${a*b}. Wie heißt die Zahl?`, small:true, type:"num", ans:a, ex:`${a}${dot}${b} = ${a*b}.`}; }},
+  {sub:"sach", label:"Sachaufgaben mal/geteilt", w:2, f(){ const t=r(0,2);
+     if(t===0){ const b=r(3,8), q=r(2,9); return {q:`${b*q} Perlen, immer ${b} auf eine Schnur.<br>Wie viele Schnüre braucht man?`, small:true, type:"num", ans:q, ex:`${b*q} : ${b} = ${q}. Probe: ${q}${dot}${b} = ${b*q}.`}; }
+     if(t===1){ const a=r(3,9), b=r(3,9); return {q:`Tim hat ${a} Tüten mit je ${b} Bonbons.<br>Wie viele Bonbons sind das?`, small:true, type:"num", ans:a*b, ex:`${a}${dot}${b} = ${a*b}.`}; }
+     const k=r(2,6), q=r(3,9); return {q:`${k*q} Kekse werden gerecht an ${k} Kinder verteilt.<br>Wie viele bekommt jedes Kind?`, small:true, type:"num", ans:q, ex:`${k*q} : ${k} = ${q}.`}; }},
+]},
+{ id:"vergleich", name:"Größer, kleiner, gleich", icon:"⚖️", gens:[
+  {sub:"prod_zahl", label:"Malaufgabe mit Zahl vergleichen", w:3, f(){ const a=r(2,9), b=r(2,9), p=a*b; const c=Math.random()<.3?p:Math.max(1,p+pick([-7,-4,-2,-1,1,2,3,5,8]));
+     const left=Math.random()<.7; const ans = left ? (p<c?"<":p>c?">":"=") : (c<p?"<":c>p?">":"=");
+     return {q: left?`${a}${dot}${b} &nbsp;${BOX}&nbsp; ${c}`:`${c} &nbsp;${BOX}&nbsp; ${a}${dot}${b}`, type:"cmp", ans, ex:`${a}${dot}${b} = ${p}. ${left?`${p} ${ans} ${c}`:`${c} ${ans} ${p}`}.`}; }},
+  {sub:"prod_prod", label:"Zwei Malaufgaben vergleichen", w:2, f(){ let a=r(2,9),b=r(2,9),c,d;
+     if(Math.random()<.3){ // gleiche Produkte
+        const pairs=[[2,6,3,4],[4,6,3,8],[2,8,4,4],[3,6,2,9],[4,5,2,10],[6,6,4,9],[2,9,3,6],[8,3,6,4],[4,9,6,6]]; [a,b,c,d]=pick(pairs);
+     } else { c=r(2,9); d=r(2,9); }
+     const p=a*b, q=c*d, ans=p<q?"<":p>q?">":"=";
+     return {q:`${a}${dot}${b} &nbsp;${BOX}&nbsp; ${c}${dot}${d}`, type:"cmp", ans, ex:`${a}${dot}${b} = ${p} und ${c}${dot}${d} = ${q}. Also ${p} ${ans} ${q}.`}; }},
+  {sub:"geteilt", label:"Geteiltaufgabe vergleichen", w:2, f(){ const b=r(2,9), q=r(2,9), a=b*q; const c=Math.random()<.35?q:Math.max(0,q+pick([-2,-1,1,2]));
+     const ans=q<c?"<":q>c?">":"=";
+     return {q:`${a} : ${b} &nbsp;${BOX}&nbsp; ${c}`, type:"cmp", ans, ex:`${a} : ${b} = ${q}. Also ${q} ${ans} ${c}.`}; }},
+  {sub:"einsetzen", label:"Welche Zahlen passen?", w:2, f(){
+     for(;;){ const b=r(2,9), lim=r(10,80);
+       if(Math.random()<.5){ // kleiner als -> groesste Zahl
+         let m=-1; for(let x=0;x<=10;x++) if(x*b<lim) m=x; if(m<1||m>9) continue;
+         return {q:`Welche Zahl ist die <u>größte</u>, die passt?<br>${BOX}${dot}${b} &lt; ${lim}`, small:true, type:"num", ans:m, ex:`${m}${dot}${b} = ${m*b} ist kleiner als ${lim}, aber ${m+1}${dot}${b} = ${(m+1)*b} nicht mehr.`};
+       } else { let m=-1; for(let x=10;x>=0;x--) if(x*b>lim) m=x; if(m<1||m>9) continue;
+         return {q:`Welche Zahl ist die <u>kleinste</u>, die passt?<br>${BOX}${dot}${b} &gt; ${lim}`, small:true, type:"num", ans:m, ex:`${m}${dot}${b} = ${m*b} ist größer als ${lim}, aber ${m-1}${dot}${b} = ${(m-1)*b} nicht.`}; } } }},
+  {sub:"los", label:"Gewinnlose (größer/kleiner als)", w:1, f(){
+     const gt=Math.random()<.5, lim=gt?pick([40,50,60]):pick([30,40,50]);
+     for(;;){ const ls=[]; for(let i=0;i<4;i++){ ls.push([r(3,9),r(3,9)]); }
+       const win=ls.filter(([a,b])=> gt? a*b>lim : a*b<lim);
+       if(win.length!==1 || new Set(ls.map(x=>x.join())).size<4) continue; const w=win[0];
+       return {q:`Gewinn: Produkt ${gt?"größer":"kleiner"} als ${lim}.<br>Welches Los gewinnt?`, small:true, type:"mc", ans:`${w[0]} · ${w[1]}`, opts:shuffle(ls.map(([a,b])=>`${a} · ${b}`)),
+         ex: ls.map(([a,b])=>`${a}·${b}=${a*b}`).join(", ")+"."}; } }},
+]},
+{ id:"punkt", name:"Punkt vor Strich", icon:"🎯", gens:[
+  {sub:"plus_mal", label:"Plus und mal", w:3, f(){ const b=r(2,9), c=r(2,9), p=b*c, a=r(2,Math.max(3,100-p)); const front=Math.random()<.5;
+     return {q: front?`${a} + ${b}${dot}${c} = ${BOX}`:`${b}${dot}${c} + ${a} = ${BOX}`, type:"num", ans:a+p, ex:`Erst mal: ${b}${dot}${c} = ${p}. Dann plus: ${p} + ${a} = ${a+p}.`}; }},
+  {sub:"minus_mal", label:"Minus und mal", w:3, f(){ const b=r(2,9), c=r(2,9), p=b*c;
+     if(Math.random()<.5){ const a=r(p+1,Math.min(100,p+50)); return {q:`${a} − ${b}${dot}${c} = ${BOX}`, type:"num", ans:a-p, ex:`Erst mal: ${b}${dot}${c} = ${p}. Dann minus: ${a} − ${p} = ${a-p}.`}; }
+     const a=r(1,p-1); return {q:`${b}${dot}${c} − ${a} = ${BOX}`, type:"num", ans:p-a, ex:`Erst mal: ${b}${dot}${c} = ${p}. Dann minus: ${p} − ${a} = ${p-a}.`}; }},
+  {sub:"geteilt", label:"Plus/Minus und geteilt", w:2, f(){ const d=r(2,9), q=r(2,9), t=d*q;
+     if(Math.random()<.5){ const a=r(2,80); return {q:`${a} + ${t} : ${d} = ${BOX}`, type:"num", ans:a+q, ex:`Erst geteilt: ${t} : ${d} = ${q}. Dann plus: ${a} + ${q} = ${a+q}.`}; }
+     const a=r(q+1,90); return {q:`${a} − ${t} : ${d} = ${BOX}`, type:"num", ans:a-q, ex:`Erst geteilt: ${t} : ${d} = ${q}. Dann minus: ${a} − ${q} = ${a-q}.`}; }},
+  {sub:"fehler", label:"Fehler finden", w:2, f(){ const a=r(2,9), b=r(2,9), c=r(2,9); const right=a+b*c, wrong=(a+b)*c;
+     return {q:`Flo rechnet:<br>${a} + ${b}${dot}${c} = ${a+b}${dot}${c} = ${wrong}<br>Was ist das richtige Ergebnis?`, small:true, type:"mc", ans:String(right),
+       opts:uniqOpts(right,[wrong, right+1, a*b+c, right-c, right+10]), ex:`Punkt vor Strich! Erst ${b}${dot}${c} = ${b*c}, dann ${a} + ${b*c} = ${right}.`}; }},
+]},
+{ id:"hunderter", name:"Rechnen mit Hundertern", icon:"💯", gens:[
+  {sub:"plus", label:"Hunderter plus", w:3, f(){ const a=r(1,8), b=r(1,10-a);
+     return {q:`${a*100} + ${b*100} = ${BOX}`, type:"num", ans:(a+b)*100, ex:`${a} Hunderter + ${b} Hunderter = ${a+b} Hunderter = ${(a+b)*100}.`}; }},
+  {sub:"minus", label:"Hunderter minus", w:3, f(){ const a=Math.random()<.4?10:r(2,9), b=r(1,a);
+     return {q:`${a*100} − ${b*100} = ${BOX}`, type:"num", ans:(a-b)*100, ex:`${a} Hunderter − ${b} Hunderter = ${a-b} Hunderter = ${(a-b)*100}.`}; }},
+  {sub:"haus", label:"Ergänzen (Zahlenhaus)", w:2, f(){ const s=r(3,10), a=r(1,s-1);
+     return {q:`${s*100} = ${a*100} + ${BOX}`, type:"num", ans:(s-a)*100, ex:`${s*100} − ${a*100} = ${(s-a)*100}.`}; }},
+  {sub:"mal100", label:"Plus- zur Malaufgabe", w:2, f(){ const t=r(0,2);
+     if(t===0){ const n=r(3,7); return {q:`${Array(n).fill("100").join(" + ")} = ${BOX}${dot}100`, small:true, type:"num", ans:n, ex:`Du zählst ${n}-mal die 100: ${n}${dot}100 = ${n*100}.`}; }
+     if(t===1){ const n=r(2,9); return {q:`${n}${dot}100 = ${BOX}`, type:"num", ans:n*100, ex:`${n} Hunderter = ${n*100}.`}; }
+     const d=pick([100,200,500]); return {q:`1000 = ${BOX}${dot}${d}`, type:"num", ans:1000/d, ex:`${1000/d}${dot}${d} = 1000.`}; }},
+]},
+{ id:"stellen", name:"Zahlen bis 1000 und Stellentafel", icon:"🧮", gens:[
+  {sub:"striche", label:"Striche in der Stellentafel", w:4, f(){ const h=r(1,9), z=r(0,9), e=r(0,9), n=h*100+z*10+e;
+     return {q:`Wie heißt die Zahl?`, small:true, extra: stTable([strokes(h),strokes(z),strokes(e)],{cls:"strokes"}), type:"num", ans:n,
+       ex:`${h} Striche bei H, ${z} bei Z, ${e} bei E: ${h}H + ${z}Z + ${e}E = ${h*100} + ${z*10} + ${e} = ${n}.`}; }},
+  {sub:"eintragen", label:"Zahl in die Stellentafel eintragen", w:3, f(){ const h=r(1,9), z=Math.random()<.2?0:r(0,9), e=Math.random()<.2?0:r(0,9), n=h*100+z*10+e;
+     return {q:`Trage <b>${n}</b> in die Stellentafel ein.`, small:true, type:"place", ans:[h,z,e], ex:`${n} = ${h} Hunderter, ${z} Zehner, ${e} Einer.`}; }},
+  {sub:"lesen", label:"Stellentafel lesen", w:2, f(){ const h=r(1,9), z=r(0,9), e=r(0,9), n=h*100+z*10+e;
+     return {q:`Wie heißt die Zahl?`, small:true, extra: stTable([h,z,e]), type:"num", ans:n, ex:`${h*100} + ${z*10} + ${e} = ${n}.`}; }},
+  {sub:"kurz", label:"H, Z, E in gemischter Reihenfolge", w:3, f(){ const h=r(1,9), z=r(0,9), e=r(0,9), n=h*100+z*10+e;
+     let parts=[[h,"H"],[z,"Z"],[e,"E"]].filter(p=>p[0]>0); if(Math.random()<.6) parts=shuffle(parts);
+     return {q:`${parts.map(p=>p[0]+p[1]).join(" + ")} = ${BOX}`, type:"num", ans:n, ex:`${h} Hunderter, ${z} Zehner, ${e} Einer: ${n}.`+((z===0||e===0)?" Achtung, eine Stelle ist leer – dort steht eine 0.":"")}; }},
+  {sub:"zerlegen", label:"Zahlen zerlegen", w:3, f(){ const h=r(1,9), z=r(1,9), e=r(1,9), n=h*100+z*10+e; const t=r(0,2);
+     const parts=[h*100,z*10,e]; const p=parts.map((v,i)=> i===t?BOX:v);
+     return {q:`${n} = ${p.join(" + ")}`, type:"num", ans:parts[t], ex:`${n} = ${h*100} + ${z*10} + ${e}.`}; }},
+  {sub:"zusammen", label:"Hunderter+Zehner+Einer zusammensetzen", w:2, f(){ const h=r(1,9), z=r(0,9), e=r(0,9), n=h*100+z*10+e;
+     const p=[h*100]; if(z) p.push(z*10); if(e) p.push(e);
+     return {q:`${p.join(" + ")} = ${BOX}`, type:"num", ans:n, ex:`${n}`+((z===0||e===0)?` – leere Stellen werden mit 0 aufgefüllt.`:"")}; }},
+  {sub:"ziffer", label:"Welche Ziffer steht an welcher Stelle?", w:2, f(){ const n=r(102,987); const t=r(0,2), nm=["Hunderter","Zehner","Einer"][t];
+     const d=String(n)[t];
+     return {q:`Welche Ziffer steht in <b>${n}</b> bei den <b>${nm}n</b>?`, small:true, type:"num", ans:+d, ex:`${n}: H = ${String(n)[0]}, Z = ${String(n)[1]}, E = ${String(n)[2]}.`}; }},
+  {sub:"buendeln", label:"Aufgepasst: mehr als 9 an einer Stelle", w:1, f(){
+     if(Math.random()<.5){ const h=r(1,8), e=r(10,19); const n=h*100+e; return {q:`${h}H + ${e}E = ${BOX}`, type:"num", ans:n, ex:`${e} Einer sind 1 Zehner und ${e-10} Einer. Also ${h}H + 1Z + ${e-10}E = ${n}.`}; }
+     const h=r(1,7), z=r(10,19), e=r(0,9); const n=h*100+z*10+e; return {q:`${h}H + ${z}Z + ${e}E = ${BOX}`, type:"num", ans:n, ex:`${z} Zehner sind 1 Hunderter und ${z-10} Zehner. Also ${h+1}H + ${z-10}Z + ${e}E = ${n}.`}; }},
+  {sub:"zahlwort", label:"Zahlwörter", w:2, f(){ const h=r(1,9), z=r(0,9), e=r(1,9); const n=h*100+z*10+e;
+     const cands=[h*100+e*10+z, z?z*100+h*10+e:null, e*100+z*10+h, h*100+z*10+((e+1)%10||2), n+10<1000?n+10:n-10].filter(x=>x && x!==n && x>=100);
+     if(Math.random()<.5) return {q:`Welche Zahl ist das?<br><i>${zahlwort(n)}</i>`, small:true, type:"mc", ans:String(n), opts:uniqOpts(n,cands), ex:`${zahlwort(n)} = ${n}.`};
+     const ws=cands.map(zahlwort); return {q:`Welches Zahlwort passt zu <b>${n}</b>?`, small:true, type:"mc", one:true, ans:zahlwort(n), opts:uniqOpts(zahlwort(n),ws), ex:`${n} = ${zahlwort(n)}.`}; }},
+]},
+{ id:"raetsel", name:"Zahlenrätsel", icon:"🕵️", gens:[
+  {sub:"einfach", label:"H, Z, E im Text", w:2, f(){ const h=r(1,9), z=r(0,9), e=r(0,9), n=h*100+z*10+e;
+     const parts=shuffle([`${h} Hunderter`,`${z} Zehner`,`${e} Einer`]);
+     return {q:`Die Zahl hat ${parts[0]}, ${parts[1]} und ${parts[2]}.<br>Wie heißt die Zahl?`, small:true, type:"num", ans:n, ex:`${h}H ${z}Z ${e}E = ${n}.`}; }},
+  {sub:"doppelt", label:"Doppelt so viele …", w:3, f(){ const t=r(0,1);
+     if(t===0){ const h=r(1,4), z=2*h, e=r(0,9), n=h*100+z*10+e; return {q:`Die Zahl hat ${h} Hunderter, doppelt so viele Zehner und ${e} Einer.`, small:true, type:"num", ans:n, ex:`Doppelt so viele Zehner wie Hunderter: ${h}${dot}2 = ${z}. Die Zahl ist ${n}.`}; }
+     const e=r(1,4), z=2*e, h=r(1,9), n=h*100+z*10+e; return {q:`Die Zahl hat ${e} Einer, doppelt so viele Zehner und ${h} Hunderter.`, small:true, type:"num", ans:n, ex:`Doppelt so viele Zehner wie Einer: ${e}${dot}2 = ${z}. Die Zahl ist ${n}.`}; }},
+  {sub:"halb", label:"Halb so viele …", w:2, f(){ const h=pick([2,4,6,8]), e=h/2, z=r(0,9), n=h*100+z*10+e;
+     return {q:`Die Zahl hat ${h} Hunderter, halb so viele Einer und ${z} Zehner.`, small:true, type:"num", ans:n, ex:`Die Hälfte von ${h} ist ${e}. Die Zahl ist ${n}.`}; }},
+  {sub:"mehrweniger", label:"… mehr / weniger als …", w:2, f(){ const h=r(1,9), e=r(3,9), d=r(1,3);
+     if(Math.random()<.5){ const z=e-d, n=h*100+z*10+e; return {q:`Die Zahl hat ${h} Hunderter und ${e} Einer.<br>Sie hat ${["","einen","zwei","drei"][d]} Zehner weniger als Einer.`, small:true, type:"num", ans:n, ex:`Zehner: ${e} − ${d} = ${z}. Die Zahl ist ${n}.`}; }
+     const z=r(0,9-d), e2=z+d, n=h*100+z*10+e2; return {q:`Die Zahl hat ${h} Hunderter und ${z} Zehner.<br>Sie hat ${["","einen","zwei","drei"][d]} Einer mehr als Zehner.`, small:true, type:"num", ans:n, ex:`Einer: ${z} + ${d} = ${e2}. Die Zahl ist ${n}.`}; }},
+  {sub:"karten", label:"Ziffernkarten legen", w:2, f(){ let ds; do{ ds=[r(1,9),r(1,9),r(1,9)]; }while(new Set(ds).size<3);
+     const big=Math.random()<.5, s=ds.slice().sort((a,b)=>big?b-a:a-b), n=+s.join("");
+     return {q:`Ziffernkarten: <b>${ds.join(" &nbsp; ")}</b><br>Lege die <u>${big?"größte":"kleinste"}</u> dreistellige Zahl.`, small:true, type:"num", ans:n, ex:`Die ${big?"größte":"kleinste"} Ziffer kommt nach vorn zu den Hundertern: ${n}.`}; }},
+]},
+{ id:"tafel", name:"Hundertertafel", icon:"🔢", gens:[
+  {sub:"ausschnitt", label:"Ausschnitt ergänzen", w:4, f(){ const b=r(0,9), row=r(2,9), col=r(2,9), c=b*100+(row-1)*10+col;
+     const cells=[]; for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++) cells.push({dr,dc,v:c+dr*10+dc});
+     const ask=pick(cells.filter(x=>!(x.dr===0&&x.dc===0)));
+     const shown=new Set(["0,0"]); for(const x of shuffle(cells)){ if(shown.size>=3) break; if(x!==ask) shown.add(x.dr+","+x.dc); }
+     const html='<div class="ht">'+cells.map(x=> x===ask?'<div class="q">?</div>': shown.has(x.dr+","+x.dc)?`<div>${x.v}</div>`:'<div class="e"></div>').join("")+'</div>';
+     const dir = (ask.dr? (ask.dr>0?"unten: +10":"oben: −10"):"") + (ask.dr&&ask.dc?" und ":"") + (ask.dc?(ask.dc>0?"rechts: +1":"links: −1"):"");
+     return {q:`Welche Zahl gehört an die Stelle mit dem <b style="color:var(--pri)">?</b>`, small:true, extra:html, type:"num", ans:ask.v, ex:`In der Hundertertafel gilt: nach ${dir}. Die Zahl ist ${ask.v}.`}; }},
+  {sub:"nachbar", label:"Über, unter, links, rechts", w:3, f(){ const b=r(0,9), row=r(2,9), col=r(2,9), c=b*100+(row-1)*10+col;
+     const d=pick([["direkt darunter",10],["direkt darüber",-10],["direkt rechts daneben",1],["direkt links daneben",-1]]);
+     return {q:`Welche Zahl steht in der Hundertertafel ${d[0]}?<br><b>${c}</b>`, small:true, type:"num", ans:c+d[1], ex:`${d[1]===10?"Darunter: +10":d[1]===-10?"Darüber: −10":d[1]===1?"Rechts: +1":"Links: −1"} → ${c+d[1]}.`}; }},
+  {sub:"muster", label:"Wie verändern sich die Zahlen?", w:1, f(){ const v=pick([["nach unten","immer 10 mehr"],["nach rechts","immer 1 mehr"],["schräg nach rechts unten","immer 11 mehr"],["nach oben","immer 10 weniger"]]);
+     const opts=shuffle(["immer 10 mehr","immer 1 mehr","immer 11 mehr","immer 10 weniger"]);
+     return {q:`Du gehst in der Hundertertafel ${v[0]}.<br>Wie verändern sich die Zahlen?`, small:true, type:"mc", one:true, ans:v[1], opts, ex:`Unten +10, rechts +1, schräg rechts unten +11, oben −10.`}; }},
+]},
+{ id:"strahl", name:"Zahlenstrahl", icon:"📏", gens:[
+  {sub:"ablesen", label:"Zahl am Zahlenstrahl ablesen", w:3, f(){
+     if(Math.random()<.5){ const s=r(0,9)*100, k=r(1,9), v=s+k*10; return {q:`Welche Zahl zeigt der Pfeil?`, small:true, extra:numberLine(s,s+100,10,50,v), type:"num", ans:v, ex:`Von ${s} bis ${s+100} geht jeder Strich 10 weiter. ${k} Striche nach ${s}: ${v}.`}; }
+     const k=r(1,9), v=k*100; return {q:`Welche Zahl zeigt der Pfeil?`, small:true, extra:numberLine(0,1000,100,500,v), type:"num", ans:v, ex:`Jeder Strich ist 100 weiter. ${k} Striche: ${v}.`}; }},
+  {sub:"mitte", label:"Zahl in der Mitte", w:2, f(){ const span=pick([200,100,100,50,20]); const a=r(0,(1000-span)/10)*10, b=a+span, m=(a+b)/2;
+     if(m%1) return this.f();
+     return {q:`Welche Zahl liegt genau in der Mitte?`, small:true, extra:numberLine(a,b,span/2,span), type:"num", ans:m, ex:`Der Abstand ist ${span}. Die Hälfte davon ist ${span/2}. ${a} + ${span/2} = ${m}.`}; }},
+  {sub:"folge", label:"Zahlenfolgen fortsetzen", w:3, f(){ const st=pick([10,10,-10,11,5,100,-100,20,-5,25]);
+     let a; if(st>0) a=r(0,Math.floor((1000-4*st)/5))*5; else a=r(Math.ceil(-4*st/5),200)*5;
+     if(Math.abs(st)===100) a=r(0,5)*100+r(0,9)*10; if(st===-100) a=r(4,9)*100+r(0,9)*10;
+     if(st===11) a=r(1,8)*100+r(0,5)*11; // z.B. 311, 322, 333
+     const seq=[a,a+st,a+2*st]; const next=a+3*st; if(next<0||next>1000||seq.some(x=>x<0)) return this.f();
+     return {q:`${seq.join(", ")}, ${BOX}`, type:"num", ans:next, ex:`Immer ${st>0?"plus":"minus"} ${Math.abs(st)}: ${seq[2]} ${st>0?"+":"−"} ${Math.abs(st)} = ${next}.`}; }},
+  {sub:"nachbar", label:"Nachbarzehner / Nachbarhunderter", w:2, f(){ const n=r(101,989); if(n%10===0) return this.f();
+     const t=pick([["Nachbarzehner davor",Math.floor(n/10)*10],["Nachbarzehner danach",Math.ceil(n/10)*10],["Nachbarhunderter davor",Math.floor(n/100)*100],["Nachbarhunderter danach",Math.ceil(n/100)*100]]);
+     if(t[1]===n) return this.f();
+     return {q:`Wie heißt der <b>${t[0]}</b> von <b>${n}</b>?`, small:true, type:"num", ans:t[1], ex:`${n} liegt zwischen ${t[0].includes("zehner")?Math.floor(n/10)*10+" und "+Math.ceil(n/10)*10:Math.floor(n/100)*100+" und "+Math.ceil(n/100)*100}.`}; }},
+]},
+];
+const TOPIC = Object.fromEntries(TOPICS.map(t=>[t.id,t]));
+
+function genTask(topicId){
+  const t=TOPIC[topicId]; const tot=t.gens.reduce((s,g)=>s+g.w,0); let x=Math.random()*tot;
+  let g=t.gens[0]; for(const gg of t.gens){ x-=gg.w; if(x<0){ g=gg; break; } }
+  const task=g.f(); task.topic=topicId; task.sub=g.sub; task.subLabel=g.label; return task;
+}
+
+/* ================= Zustand ================= */
+const ROUND = 10;
+let S = null; // aktuelle Runde
+
+function today(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function record(task, ok, given){
+  const st=DB.stats[task.topic] ||= {n:0,ok:0}; st.n++; if(ok) st.ok++;
+  const k=task.topic+"|"+task.sub; const sb=DB.sub[k] ||= {n:0,ok:0}; sb.n++; if(ok) sb.ok++;
+  const d=DB.days[today()] ||= {n:0,ok:0}; d.n++; if(ok) d.ok++;
+  if(ok) DB.stars++;
+  else { DB.errors.unshift({t:Date.now(), topic:task.topic, sub:task.subLabel, q:plainQ(task), given:String(given), correct:Array.isArray(task.ans)?task.ans.join(" | "):String(task.ans)}); DB.errors=DB.errors.slice(0,40); }
+  save();
+}
+function plainQ(task){ let s=task.q.replace(/<br>/g," ").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ").replace(/&lt;/g,"<").replace(/&gt;/g,">");
+  if(task.sub==="striche") s+=" (Striche-Tafel)"; else if(task.sub==="lesen") s+=" (Stellentafel)";
+  return s.trim(); }
+
+/* ================= Ansichten ================= */
+const app=document.getElementById("app"), foot=document.getElementById("foot");
+function setFoot(show=true){ foot.innerHTML = show? `<button class="linkbtn" onclick="showParentLogin()">👪 Eltern</button>` : ""; }
+
+function showLogin(){
+  setFoot(true);
+  app.innerHTML=`<div class="center" style="font-size:4rem;margin-top:20px">🦊</div>
+  <h1 class="center">Almas Mathe-Training</h1>
+  <div class="card">
+    <label>Name</label><input class="txt" id="lu" autocomplete="username" autocapitalize="none">
+    <label>Passwort</label><input class="txt" id="lp" type="password" inputmode="numeric" autocomplete="current-password">
+    <div class="err" id="le"></div>
+    <button class="btn wide" id="lb">Los geht's!</button>
+  </div>`;
+  const go=()=>{ const u=document.getElementById("lu").value.trim().toLowerCase(), p=document.getElementById("lp").value.trim();
+    if(u===USER.name && p===USER.pw){ loggedIn=true; try{ localStorage.setItem(KEY+"-login","1"); }catch(e){} showHome(); }
+    else document.getElementById("le").textContent="Name oder Passwort stimmt nicht."; };
+  document.getElementById("lb").onclick=go;
+  document.getElementById("lp").onkeydown=e=>{ if(e.key==="Enter") go(); };
+}
+
+function topicPct(id){ const s=DB.stats[id]; return s&&s.n? Math.round(100*s.ok/s.n):null; }
+function nextTopic(){ return TOPICS.find(t=>!(DB.progress[t.id]&&DB.progress[t.id].done)) || null; }
+
+function showHome(){
+  setFoot(true); S=null;
+  const done=TOPICS.filter(t=>DB.progress[t.id]&&DB.progress[t.id].done).length;
+  app.innerHTML=`<div class="top"><h1>Hallo Alma! 👋</h1><span class="stars">⭐ ${DB.stars}</span></div>
+  <div class="modes">
+    <button class="mode a" onclick="showTopics()"><div class="ic">🗺️</div><b>Thema für Thema</b><small>${done} von ${TOPICS.length} Themen geschafft</small></button>
+    <button class="mode b" onclick="startRound('mix')"><div class="ic">🎲</div><b>Bunt gemischt</b><small>${ROUND} Aufgaben aus allen Themen</small></button>
+  </div>
+  <p class="center"><button class="linkbtn" onclick="logout()">Abmelden</button></p>`;
+}
+function logout(){ loggedIn=false; try{ localStorage.removeItem(KEY+"-login"); }catch(e){} showLogin(); }
+
+function showTopics(){
+  setFoot(true);
+  const nx=nextTopic();
+  let h=`<div class="top"><button class="btn sec" onclick="showHome()">← Zurück</button><span class="stars">⭐ ${DB.stars}</span></div>
+  <h2>Thema für Thema</h2>
+  <p class="muted">Ein Thema ist geschafft, wenn du in einer Runde mindestens 8 von ${ROUND} richtig hast.</p>`;
+  if(nx) h+=`<button class="btn wide" style="margin-bottom:14px" onclick="startRound('${nx.id}')">▶ Weiter mit: ${nx.name}</button>`;
+  else h+=`<div class="card center"><b>🏆 Alle Themen geschafft!</b><br><span class="muted">Du kannst jedes Thema weiter üben.</span></div>`;
+  TOPICS.forEach((t,i)=>{ const p=DB.progress[t.id]||{}; const best=p.best||0;
+    h+=`<button class="topic ${nx&&nx.id===t.id?"next":""}" onclick="startRound('${t.id}')"><span class="ic">${t.icon}</span>
+      <span class="nm">${i+1}. ${t.name}<small>${p.rounds?`Beste Runde: ${best} von ${ROUND}`:"noch nicht geübt"}</small>
+      <div class="bar"><i style="width:${best*10}%"></i></div></span><span class="badge">${p.done?"⭐":""}</span></button>`; });
+  app.innerHTML=h;
+}
+
+function startRound(mode){
+  const tasks=[];
+  if(mode==="mix"){ // jedes Thema mindestens einmal, Rest zufällig (schwächere Themen etwas häufiger)
+    const ids=shuffle(TOPICS.map(t=>t.id)).slice(0,Math.min(ROUND,TOPICS.length));
+    while(ids.length<ROUND){ const w=TOPICS.map(t=>{ const p=topicPct(t.id); return p===null?1:1+(100-p)/50; }); let x=Math.random()*w.reduce((a,b)=>a+b,0);
+      for(let i=0;i<TOPICS.length;i++){ x-=w[i]; if(x<0){ ids.push(TOPICS[i].id); break; } } }
+    shuffle(ids).forEach(id=>tasks.push(genTask(id)));
+  } else {
+    const seen=new Set();
+    for(let i=0;i<ROUND;i++){ let t, tries=0; do{ t=genTask(mode); tries++; }while(seen.has(t.q+(t.extra||""))&&tries<20); seen.add(t.q+(t.extra||"")); tasks.push(t); }
+  }
+  S={mode, tasks, i:0, res:[], input:"", place:["","",""], pi:0, answered:false};
+  showTask();
+}
+
+function progBar(){ return `<div class="prog">${S.tasks.map((_,i)=>`<span class="${i<S.res.length?(S.res[i]?"ok":"bad"):i===S.i?"cur":""}"></span>`).join("")}</div>`; }
+
+function showTask(){
+  setFoot(false);
+  const t=S.tasks[S.i]; S.input=""; S.place=["","",""]; S.pi=0; S.answered=false;
+  let h=`<div class="top"><button class="btn sec" onclick="quitRound()">✕</button><span class="tname">${S.mode==="mix"?"🎲 Bunt gemischt":TOPIC[S.mode].icon+" "+TOPIC[S.mode].name}</span><span class="stars">${S.i+1}/${S.tasks.length}</span></div>
+  ${progBar()}
+  <div class="card">
+    ${S.mode==="mix"?`<div class="tname">${TOPIC[t.topic].icon} ${TOPIC[t.topic].name}</div>`:""}
+    <div class="q ${t.small?"small":""}">${t.q}</div>
+    ${t.extra||""}
+    <div id="ansArea"></div>
+    <div id="fb"></div>
+  </div>`;
+  app.innerHTML=h;
+  renderAnswer();
+}
+
+function renderAnswer(){
+  const t=S.tasks[S.i], a=document.getElementById("ansArea");
+  if(t.type==="num"){
+    a.innerHTML=`<div class="answer"><div class="ansfield" id="af">${esc(S.input)}</div></div>${keypad()}`;
+  } else if(t.type==="place"){
+    a.innerHTML=`<table class="st"><tr><th>H</th><th>Z</th><th>E</th></tr><tr>${[0,1,2].map(i=>`<td class="inp ${i===S.pi?"sel":""}" onclick="selPlace(${i})">${S.place[i]}</td>`).join("")}</tr></table>${keypad()}`;
+  } else if(t.type==="cmp"){
+    a.innerHTML=`<div class="opts" style="grid-template-columns:1fr 1fr 1fr">${["<","=",">"].map(o=>`<button class="opt big" data-v="${o}" onclick="answer('${o}',this)">${o==="<"?"&lt;":o===">"?"&gt;":"="}</button>`).join("")}</div>`;
+  } else if(t.type==="mc"){
+    a.innerHTML=`<div class="opts ${t.one?"one":""}">${t.opts.map(o=>`<button class="opt" data-v="${esc(o)}" onclick="answer(this.dataset.v,this)">${esc(o)}</button>`).join("")}</div>`;
+  }
+}
+function keypad(){ return `<div class="keypad" id="kp">${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="key" onclick="key('${n}')">${n}</button>`).join("")}
+  <button class="key del" onclick="key('del')">⌫</button><button class="key" onclick="key('0')">0</button><button class="key ok" onclick="key('ok')">✓</button></div>`; }
+function selPlace(i){ if(S.answered) return; S.pi=i; renderAnswer(); }
+function key(k){
+  if(S.answered){ if(k==="ok") nextTask(); return; }
+  const t=S.tasks[S.i];
+  if(t.type==="place"){
+    if(k==="del"){ if(S.place[S.pi]==="" && S.pi>0) S.pi--; S.place[S.pi]=""; }
+    else if(k==="ok"){ if(S.place.some(x=>x==="")) { flash("Fülle alle drei Felder aus."); return; } answer(S.place.map(Number)); return; }
+    else { S.place[S.pi]=k; if(S.pi<2) S.pi++; }
+    renderAnswer(); return;
+  }
+  if(k==="del") S.input=S.input.slice(0,-1);
+  else if(k==="ok"){ if(S.input==="") return; answer(Number(S.input)); return; }
+  else if(S.input.length<4) S.input+=k;
+  document.getElementById("af").textContent=S.input;
+}
+function flash(msg){ const f=document.getElementById("fb"); f.innerHTML=`<div class="fb bad">${msg}</div>`; setTimeout(()=>{ if(!S.answered) f.innerHTML=""; },1500); }
+
+const PRAISE=["Super! 🎉","Richtig! ⭐","Klasse! 👍","Toll gemacht! 🌟","Genau! 💪","Prima! 😊"];
+function answer(v, btn){
+  if(S.answered) return; S.answered=true;
+  const t=S.tasks[S.i];
+  let ok; if(t.type==="place") ok=v.every((x,i)=>x===t.ans[i]); else ok=String(v)===String(t.ans);
+  S.res.push(ok); record(t, ok, Array.isArray(v)?v.join(" | "):v);
+  if(btn){ document.querySelectorAll(".opt").forEach(b=>{ if(b.dataset.v===String(t.ans)) b.classList.add("right"); }); if(!ok) btn.classList.add("wrong"); }
+  const show = t.type==="place" ? `H ${t.ans[0]}, Z ${t.ans[1]}, E ${t.ans[2]}` : esc(t.type==="cmp"?t.ans:t.ans);
+  document.getElementById("fb").innerHTML = ok
+    ? `<div class="fb ok"><b class="big">${pick(PRAISE)}</b><br>${t.ex}</div>`
+    : `<div class="fb bad"><b class="big">Nicht ganz.</b> Richtig ist: <b>${show}</b><br>${t.ex}</div>`;
+  document.getElementById("fb").insertAdjacentHTML("beforeend",`<button class="btn wide" style="margin-top:12px" onclick="nextTask()">${S.i+1<S.tasks.length?"Weiter →":"Fertig!"}</button>`);
+  if(t.type==="num"||t.type==="place"){ const kp=document.getElementById("kp"); if(kp) kp.classList.add("hide"); }
+  document.getElementById("fb").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function nextTask(){ S.i++; if(S.i>=S.tasks.length) showResult(); else showTask(); }
+function quitRound(){ showHome(); }
+
+function showResult(){
+  setFoot(true);
+  const n=S.res.filter(Boolean).length;
+  let extra="";
+  if(S.mode!=="mix"){ const p=DB.progress[S.mode] ||= {rounds:0,best:0,done:false}; p.rounds++; p.best=Math.max(p.best,n); const wasDone=p.done; if(n>=8) p.done=true; save();
+    extra = n>=8 ? (wasDone?`<p>Das Thema hattest du schon geschafft – stark wiederholt!</p>`:`<p><b>Thema geschafft! ⭐</b></p>`) : `<p>Für das Thema brauchst du 8 von ${ROUND}. Probier's gleich nochmal!</p>`; }
+  const emo = n===ROUND?"🏆":n>=8?"🎉":n>=5?"👍":"💪";
+  const nx=nextTopic();
+  app.innerHTML=`<div class="card center"><div class="done-emoji">${emo}</div><h2>${n} von ${ROUND} richtig!</h2>${extra}
+    <div class="row" style="justify-content:center;margin-top:10px">
+      <button class="btn" onclick="startRound('${S.mode}')">Nochmal</button>
+      ${S.mode!=="mix"&&n>=8&&nx?`<button class="btn blue" onclick="startRound('${nx.id}')">Nächstes Thema</button>`:""}
+      <button class="btn sec" onclick="${S.mode==="mix"?"showHome()":"showTopics()"}">Übersicht</button>
+    </div></div>`;
+}
+
+/* ================= Elternbereich ================= */
+function showParentLogin(){
+  setFoot(false);
+  app.innerHTML=`<div class="top"><button class="btn sec" onclick="loggedIn?showHome():showLogin()">← Zurück</button></div>
+  <div class="card"><h2>👪 Elternbereich</h2>
+  <label>Eltern-Passwort</label><input class="txt" id="pp" type="password" inputmode="numeric">
+  <div class="err" id="pe"></div><button class="btn wide" id="pb">Öffnen</button></div>`;
+  const go=()=>{ if(document.getElementById("pp").value.trim()===PARENT_PW) showStats(); else document.getElementById("pe").textContent="Falsches Passwort."; };
+  document.getElementById("pb").onclick=go; document.getElementById("pp").onkeydown=e=>{ if(e.key==="Enter") go(); };
+  document.getElementById("pp").focus();
+}
+function pctCell(ok,n){ if(!n) return `<span class="muted">–</span>`; const p=Math.round(100*ok/n); const c=p>=80?"g":p>=60?"m":"b"; return `<span class="pct ${c}">${p} %</span>`; }
+function showStats(){
+  setFoot(false);
+  let tot=0, tok=0; Object.values(DB.stats).forEach(s=>{ tot+=s.n; tok+=s.ok; });
+  let h=`<div class="top"><button class="btn sec" onclick="loggedIn?showHome():showLogin()">← Zurück</button><span class="stars">⭐ ${DB.stars}</span></div>
+  <div class="card"><h2>📊 Statistik</h2>
+  <p>Insgesamt <b>${tot}</b> Aufgaben bearbeitet, davon richtig: ${pctCell(tok,tot)} · Fehler: ${tot?Math.round(100*(tot-tok)/tot)+" %":"–"}</p>
+  <table class="stat"><tr><th>Thema</th><th class="n">Aufg.</th><th class="n">Richtig</th><th class="n">Fehler</th></tr>`;
+  TOPICS.forEach(t=>{ const s=DB.stats[t.id]||{n:0,ok:0}; const p=DB.progress[t.id]||{};
+    h+=`<tr><td>${t.icon} ${t.name}${p.done?" ⭐":""}</td><td class="n">${s.n}</td><td class="n">${pctCell(s.ok,s.n)}</td><td class="n">${s.n?Math.round(100*(s.n-s.ok)/s.n)+" %":"–"}</td></tr>`; });
+  h+=`</table><p class="muted" style="font-size:.9rem">Grün ab 80 %, gelb ab 60 %, rot darunter. ⭐ = Thema im Thema-Modus geschafft.</p></div>`;
+  // Details pro Aufgabentyp
+  h+=`<div class="card"><h2>🔍 Genauer: einzelne Aufgabentypen</h2>`;
+  TOPICS.forEach(t=>{ const rows=t.gens.map(g=>{ const s=DB.sub[t.id+"|"+g.sub]||{n:0,ok:0}; return {g,s}; }); if(!rows.some(x=>x.s.n)) return;
+    h+=`<details><summary>${t.icon} ${t.name}</summary><table class="stat">`+rows.map(({g,s})=>`<tr class="sub"><td>${g.label}</td><td class="n">${s.n}</td><td class="n">${pctCell(s.ok,s.n)}</td></tr>`).join("")+`</table></details>`; });
+  if(!tot) h+=`<p class="muted">Noch keine Aufgaben bearbeitet.</p>`;
+  h+=`</div>`;
+  // Verlauf
+  const days=Object.entries(DB.days).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,10);
+  if(days.length){ h+=`<div class="card"><h2>📅 Letzte Übungstage</h2><table class="stat"><tr><th>Datum</th><th class="n">Aufg.</th><th class="n">Richtig</th></tr>`+
+    days.map(([d,s])=>`<tr><td>${d.split("-").reverse().join(".")}</td><td class="n">${s.n}</td><td class="n">${pctCell(s.ok,s.n)}</td></tr>`).join("")+`</table></div>`; }
+  // letzte Fehler
+  if(DB.errors.length){ h+=`<div class="card"><h2>❌ Letzte Fehler</h2><ul class="errlist">`+DB.errors.slice(0,15).map(e=>`<li><b>${esc(e.q)}</b><br><span class="muted">${esc(TOPIC[e.topic]?TOPIC[e.topic].name:e.topic)} · ${esc(e.sub)} – eingegeben: ${esc(e.given)}, richtig: ${esc(e.correct)}</span></li>`).join("")+`</ul></div>`; }
+  h+=`<div class="card"><p class="muted" style="font-size:.9rem">Die Daten werden nur auf diesem Gerät gespeichert.</p><button class="btn sec" id="rs">Statistik zurücksetzen</button></div>`;
+  app.innerHTML=h;
+  const rs=document.getElementById("rs"); let armed=false;
+  rs.onclick=()=>{ if(!armed){ armed=true; rs.textContent="Wirklich alles löschen? Nochmal tippen"; rs.style.color="var(--bad)"; return; }
+    const st=DB.stars; DB={stats:{},sub:{},errors:[],progress:{},days:{},stars:0}; save(); showStats(); };
+}
+
+/* Start */
+loggedIn ? showHome() : showLogin();
+</script>
+</body>
+</html>
