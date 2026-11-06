@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Schulleitungssimulator</title>
+<title>Lehrersimulator</title>
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#0d0f16;font-family:system-ui,-apple-system,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 canvas{display:block}
@@ -153,7 +153,7 @@ const ROOMS=[
  {id:'lz',n:'Lehrerzimmer',ic:'☕',x1:-20,x2:-10,s:-1,door:-13,floor:'wood2'},
  {id:'k6',n:'Klasse 6b',ic:'6b',x1:-10,x2:-2,s:-1,door:-6,floor:'wood',board:['Bruchrechnung','3/4 + 1/8 = ?']},
  {id:'putz',n:'Putzraum',ic:'🧹',x1:-2,x2:2,s:-1,door:0,floor:'tile2',lock:3},
- {id:'k7',n:'Klasse 7c',ic:'7c',x1:2,x2:10,s:-1,door:6,floor:'wood',board:['Ohmsches Gesetz','U = R · I']},
+ {id:'k7',n:'Deine 7c',ic:'7c',x1:2,x2:10,s:-1,door:6,floor:'wood',board:['Ohmsches Gesetz','U = R · I']},
  {id:'sl',n:'Schulleitung',ic:'🪑',x1:10,x2:20,s:-1,door:13,floor:'carpet'},
  {id:'nawi',n:'Naturwissenschaften',ic:'🧪',x1:20,x2:30,s:-1,door:25,floor:'lab',board:['Chemie','2 H₂ + O₂ → 2 H₂O']},
  {id:'nws',n:'NaWi-Sammlung',ic:'🦴',x1:30,x2:34,s:-1,door:32,floor:'tile2',lock:0},
@@ -509,7 +509,7 @@ for(let i=0;i<8;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({depthTes
 function popup(txt,pos,col='#ff4d4d'){const p=POPS.find(p=>p.t<=0)||POPS[0];p.s.material.map=popTex(txt,col);p.s.material.needsUpdate=true;p.s.position.set(pos.x,2.3,pos.z);p.t=1.6;p.s.visible=true;}
 
 // Spieler
-const player=person({skin:0xf1c9a5,shirt:0x1f2a44,pants:0x1a1a2a,hair:0x3a2a1a,tie:true});
+const player=person({skin:0xf1c9a5,shirt:0x8d6e63,pants:0x3e4a5c,hair:0x3a2a1a,glasses:true});
 const pItem=new THREE.Group();pItem.position.set(0,-.48,.07);player.userData.P.armR.add(pItem);
 const ITEMS={cup:cyl(.06,.05,.12,0xffffff,0,0,0,{parent:pItem}),phone:box(.08,.15,.02,0x111111,0,0,.02,{parent:pItem}),copies:box(.22,.08,.3,0xfafafa,0,0,.05,{parent:pItem}),
  mail:box(.24,.12,.3,0xf4e1b8,0,0,.05,{parent:pItem}),bag:box(.3,.25,.1,0x5a3a22,0,-.08,.03,{parent:pItem}),folder:box(.06,.3,.25,0x1f618d,0,0,.05,{parent:pItem}),
@@ -530,14 +530,14 @@ const cakeIc=sprite(.9,.5);cakeIc.material.map=icon('🍰','#ffe0f0');cake.add(c
 
 /* ================= Gegner-Typen ================= */
 const LINES={
- kollege:['„Hast du mal kurz fünf Minuten?“','„Wegen der Vertretung morgen…“','„Der Kopierer ist schon wieder kaputt!“','„Nur ganz kurz, versprochen!“','„Hast du meine Mail gelesen?“','„Die 8a war heute wieder…“','„Können wir über den Stundenplan reden?“','„Ich hätte da eine Projektidee!“','„Wann ist die nächste Konferenz?“','„Mein Beamer geht nicht!“'],
- dezernent:['„Ich hätte gern mal die Statistik gesehen.“','„Wie steht es um das Schulprogramm?“','„Haben Sie kurz Zeit für eine Hospitation?“','„Die Unterrichtsverteilung, bitte!“'],
+ kollege:['„Kannst du meine Aufsicht übernehmen?“','„Machst du heute das Protokoll?“','„Fährst du mit auf Klassenfahrt? Nur fünf Tage!“','„Hast du die Noten schon eingetragen?“','„Nur ganz kurz, versprochen!“','„Hast du meine Mail gelesen? Und die davor?“','„Die 8a war heute wieder…“','„Kannst du mir mal eben den Beamer einrichten?“','„Ich hätte da eine Projektidee – mit dir!“','„Tauschst du am Freitag mit mir die Stunde?“'],
+ dezernent:['„Ach, gut dass ich Sie treffe – Vertretung in der 6b!“','„Sie hätten doch sicher Lust, die Schach-AG zu übernehmen?“','„Könnten Sie das Konferenzprotokoll schreiben?“','„Ich bräuchte bis morgen noch Ihre Fortbildungsplanung.“','„Hätten Sie kurz Zeit für einen Unterrichtsbesuch?“','„Der Elternabend der 7c ist übrigens heute.“'],
  eltern:['„Mein Kind ist unterfordert!“','„Warum hat Lukas eine Vier?“','„Wir müssen über die Klassenfahrt reden!“','„Sind Sie hier zuständig?“'],
  vertreter:['„Darf ich Ihnen unsere neue Reihe zeigen?“','„Nur ein Katalog – ganz unverbindlich!“','„Sonderrabatt nur heute!“','„Haben Sie schon an Digitallizenzen gedacht?“'],
 };
 const TYPES={
  kollege:{n:'Kollege',spd:1.8,cspd:2.5,r:5.5,f:1.75,talk:2.5,pen:10,cmax:9,spots:true,wander:null},
- dezernent:{n:'Dezernent',spd:2.1,cspd:2.8,r:7,f:1.9,talk:4,pen:20,cmax:11,busy:'inspektion',wander:['cor','cor','cor','foy','sl','lz','caf','ph','nawi']},
+ dezernent:{n:'Schulleiter',spd:2.2,cspd:3.0,r:7.5,f:1.95,talk:4,pen:25,cmax:13,busy:'inspektion',wander:['cor','cor','cor','foy','sl','sl','lz','caf','ph','k7']},
  eltern:{n:'Elternteil',spd:1.3,cspd:2.0,r:4.5,f:1.5,talk:3,pen:15,cmax:6,busy:'plausch',wander:['foy','foy','cor','caf','ph','cor']},
  vertreter:{n:'Schulbuchvertreter',spd:2.0,cspd:2.9,r:5.5,f:1.8,talk:3.5,pen:15,cmax:16,busy:'katalog',wander:['cor','cor','foy','lz','caf','sl']},
 };
@@ -692,30 +692,30 @@ function updHazards(dt,t){hzNext-=dt;if(hzNext<=0){if(HZ.length<3)spawnHazard();
 
 /* ================= Spieltage & Missionen ================= */
 // Schritte: [Symbol, Text, Ziel, Gegenstand danach, Zeit in s]
-const PT={buero:V(16.5,-8.2),kaffee:V(-18.8,-9.4),auto:V(-40,-10.5),sekr:V(-24,-5.05),wc:V(4,8.5),fach:V(-15.5,-12.05),
+const PT={buero:V(6,-10.25),kaffee:V(-18.8,-9.4),auto:V(-40,-10.5),sekr:V(-24,-5.05),wc:V(4,8.5),fach:V(-15.5,-12.05),
  archiv:V(42,9.5),kunst:V(35.4,10.6),nawis:V(32,-9.5),nawi:V(25,-10.3),caf:V(39,-10.9),werk:V(25,8.8),hof:V(54,-3)};
 const DAYS=[
  {n:'Montag',ic:'☕',missions:[
-  {n:'Kaffee ist alle',start:[14,-6.5],min:450,npc:{kollege:3},intro:'Die Kanne im Büro ist leer. Hol Kaffee aus dem Lehrerzimmer.',
-   steps:[['☕','Kaffee holen (Lehrerzimmer)',PT.kaffee,'cup',75],['🪑','Zurück an den Schreibtisch',PT.buero,null,60]]},
-  {n:'Handy im Auto vergessen',start:[14,-6.5],min:560,npc:{kollege:4,eltern:1},intro:'Das Handy liegt noch im Auto. Durchs Foyer zum Parkplatz – und zurück.',
-   steps:[['📱','Handy aus dem Auto holen',PT.auto,'phone',110],['🪑','Zurück ins Büro',PT.buero,null,100]]},
-  {n:'Frisch kopiert',start:[-11.9,-6.4],min:640,item:'copies',npc:{kollege:5,eltern:2},intro:'Du stehst am Kopierer. Die Kopien müssen ins Sekretariat – dann schnell ins Büro.',
-   steps:[['📄','Kopien ins Sekretariat bringen',PT.sekr,null,70],['🪑','Ab ins Büro',PT.buero,null,90]]},
-  {n:'Dringend aufs Klo',start:[-17.5,4.6],min:720,npc:{kollege:6},intro:'Der Unterrichtsbesuch in der 8a ist vorbei – und du musst DRINGEND. Das WC ist abgeschlossen…',
-   steps:[['🚽','Ab aufs WC (Schlüssel!)',PT.wc,null,32],['🪑','Erleichtert zurück ins Büro',PT.buero,null,70]]},
-  {n:'Feierabend!',start:[16.5,-8.2],min:930,npc:{kollege:7,dezernent:1},intro:'Endlich Schluss! Aber Vorsicht: Der Dezernent ist im Haus.',
-   steps:[['📬','Postfach im Lehrerzimmer leeren',PT.fach,'mail',90],['🗂️','Im Sekretariat abmelden',PT.sekr,'bag',60],['🚗','Ab zum Auto!',PT.auto,null,80]]}]},
+  {n:'Kaffee ist alle',start:[6.2,-4.6],min:450,npc:{kollege:3},intro:'Die Thermoskanne ist leer. Hol Kaffee aus dem Lehrerzimmer – der Höhle des Löwen.',
+   steps:[['☕','Kaffee holen (Lehrerzimmer)',PT.kaffee,'cup',75],['🍎','Zurück an dein Pult in der 7c',PT.buero,null,60]]},
+  {n:'Handy im Auto vergessen',start:[6.2,-4.6],min:560,npc:{kollege:4,eltern:1},intro:'Das Handy liegt noch im Auto. Durchs Foyer zum Parkplatz – und zurück.',
+   steps:[['📱','Handy aus dem Auto holen',PT.auto,'phone',110],['🍎','Zurück in deine 7c',PT.buero,null,100]]},
+  {n:'Kopien vor dem Gong',start:[-11.9,-6.4],min:640,item:'copies',npc:{kollege:5,eltern:2},intro:'Der Kopierer hat endlich gedruckt. Kopierkarte im Sekretariat abgeben und ab in die 7c, bevor der Gong kommt!',
+   steps:[['💳','Kopierkarte im Sekretariat abgeben',PT.sekr,null,70],['📄','Kopien in deine 7c bringen',PT.buero,null,90]]},
+  {n:'Dringend aufs Klo',start:[-17.5,4.6],min:720,npc:{kollege:6},intro:'Die Doppelstunde in der 8a ist vorbei – und du musst DRINGEND. Das Lehrer-WC ist abgeschlossen…',
+   steps:[['🚽','Ab aufs WC (Schlüssel!)',PT.wc,null,32],['🍎','Erleichtert zurück in deine 7c',PT.buero,null,70]]},
+  {n:'Feierabend!',start:[6,-12.1],min:930,npc:{kollege:7,dezernent:1},intro:'Endlich Schluss! Aber Vorsicht: Der Schulleiter sucht noch jemanden fürs Konferenzprotokoll.',
+   steps:[['📬','Postfach im Lehrerzimmer leeren',PT.fach,'mail',90],['🗂️','Klassenbuch im Sekretariat abgeben',PT.sekr,'bag',60],['🚗','Ab zum Auto!',PT.auto,null,80]]}]},
  {n:'Dienstag',ic:'📚',missions:[
-  {n:'Der Dezernent kommt',start:[14,-6.5],min:465,npc:{kollege:4,dezernent:1},intro:'Der Dezernent will eine Akte sehen. Sie liegt im abgeschlossenen Archiv im Ostflügel.',
-   steps:[['🗄️','Akte aus dem Archiv holen (Schlüssel!)',PT.archiv,'folder',100],['🪑','Akte ins Büro bringen',PT.buero,null,90]]},
-  {n:'Elternsprechtag',start:[-26.5,0],min:560,npc:{kollege:4,eltern:3},intro:'Das Foyer ist voller Eltern. Schau dir kurz die Kunstausstellung an, hol dir was in der Cafeteria und ab ins Büro.',
-   steps:[['🎨','Ausstellung im Kunstraum ansehen',PT.kunst,null,120],['🍝','Stärkung in der Cafeteria',PT.caf,'cup',70],['🪑','Ins Büro',PT.buero,null,80]]},
-  {n:'Experiment!',start:[14,-6.5],min:650,npc:{kollege:5,vertreter:1},intro:'Die Physik braucht den Versuchskasten aus der NaWi-Sammlung. Der Schulbuchvertreter streift durchs Haus…',
-   steps:[['🧪','Versuchskasten aus der NaWi-Sammlung (Schlüssel!)',PT.nawis,'kit',90],['🔬','Kasten in den NaWi-Raum bringen',PT.nawi,null,50],['🪑','Zurück ins Büro',PT.buero,null,70]]},
-  {n:'Vertreterbesuch',start:[40,-6.8],min:735,npc:{kollege:5,vertreter:1,eltern:1},intro:'Mittagspause in der Cafeteria vorbei. Werkstück abholen, Bestellliste abgeben – und dem Vertreter entkommen!',
-   steps:[['🔨','Werkstück im Werkraum abholen',PT.werk,'box',80],['📝','Bestellliste ins Sekretariat',PT.sekr,'list',120],['🪑','Ab ins Büro',PT.buero,null,110]]},
-  {n:'Endspurt',start:[14,-6.5],min:900,npc:{kollege:8,dezernent:1,vertreter:1,eltern:2},intro:'Letzte Mission! Ball auf den Pausenhof, kurz aufs Klo – und dann ab in den Feierabend.',
+  {n:'Klassenarbeiten holen',start:[6.2,-4.6],min:465,npc:{kollege:4,dezernent:1},intro:'Deine korrigierten Klassenarbeiten liegen im Archiv im Ostflügel. Der Schulleiter streift durchs Haus und verteilt Vertretungsstunden…',
+   steps:[['🗄️','Klassenarbeiten aus dem Archiv (Schlüssel!)',PT.archiv,'folder',100],['🍎','Ab in deine 7c',PT.buero,null,90]]},
+  {n:'Elternsprechtag',start:[-26.5,0],min:560,npc:{kollege:4,eltern:3},intro:'Elternsprechtag! Das Foyer ist voller Eltern. Flüchte über den Kunstraum und die Cafeteria in deine 7c.',
+   steps:[['🎨','Ausstellung im Kunstraum ansehen',PT.kunst,null,120],['🍝','Stärkung in der Cafeteria',PT.caf,'cup',70],['🍎','In deine 7c',PT.buero,null,80]]},
+  {n:'Experiment!',start:[6.2,-4.6],min:650,npc:{kollege:5,vertreter:1},intro:'Für deine Physikstunde brauchst du den Versuchskasten aus der NaWi-Sammlung. Der Schulbuchvertreter lauert schon…',
+   steps:[['🧪','Versuchskasten aus der NaWi-Sammlung (Schlüssel!)',PT.nawis,'kit',90],['🔬','Kasten in den NaWi-Raum bringen',PT.nawi,null,50],['🍎','Zurück in deine 7c',PT.buero,null,70]]},
+  {n:'Vertreterbesuch',start:[40,-6.8],min:735,npc:{kollege:5,vertreter:1,eltern:1},intro:'Mittagspause vorbei. Werkstück abholen, Bestellliste abgeben – und dem Vertreter entkommen!',
+   steps:[['🔨','Werkstück im Werkraum abholen',PT.werk,'box',80],['📝','Bestellliste ins Sekretariat',PT.sekr,'list',120],['🍎','Ab in deine 7c',PT.buero,null,110]]},
+  {n:'Endspurt',start:[6.2,-4.6],min:900,npc:{kollege:8,dezernent:1,vertreter:1,eltern:2},intro:'Letzte Mission! Ball auf den Pausenhof, schnell aufs Klo – und ab in den Feierabend, bevor der Schulleiter dich findet.',
    steps:[['⚽','Ball auf den Pausenhof bringen',PT.hof,'ball',100],['🚽','Schnell aufs WC!',PT.wc,null,42],['🚗','Feierabend – ab zum Auto!',PT.auto,null,130]]}]},
 ];
 let unlocked=1;try{unlocked=Math.max(1,+localStorage.getItem('slsim_day')||1);}catch(e){}
@@ -730,15 +730,15 @@ const menu=$('menu');
 const SB_URL='https://xzhxqbyobdlyqkyyjcxc.supabase.co',SB_KEY='sb_publishable_TlasNLd2Yxq8nxrkgHMnlA_J5-IezYg';
 const sbHead=()=>{const h={apikey:SB_KEY,'Content-Type':'application/json'};if(SB_KEY.startsWith('eyJ'))h.Authorization='Bearer '+SB_KEY;return h;};
 async function hsSave(e){const r=await fetch(SB_URL+'/rest/v1/sls_scores',{method:'POST',headers:Object.assign(sbHead(),{Prefer:'return=minimal'}),body:JSON.stringify(e)});if(!r.ok)throw new Error(r.status);}
-async function hsLoad(day){const r=await fetch(SB_URL+`/rest/v1/sls_scores?select=name,score,talks,lives,seconds,created_at&day=eq.${day}&order=score.desc,created_at.asc&limit=300`,{headers:sbHead()});if(!r.ok)throw new Error(r.status);
+async function hsLoad(day){const r=await fetch(SB_URL+`/rest/v1/sls_scores?select=name,score,talks,lives,seconds,created_at&day=eq.${day}&created_at=gte.2026-11-06T17:00:00Z&order=score.desc,created_at.asc&limit=300`,{headers:sbHead()});if(!r.ok)throw new Error(r.status);
  const seen=new Set(),out=[];for(const e of await r.json()){const k=e.name.toLowerCase();if(seen.has(k))continue;seen.add(k);out.push(e);}return out;}
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let pname='';try{pname=localStorage.getItem('slsim_name')||'';}catch(e){}
-function introScreen(){menu.innerHTML=`<h2>🏫 Schulleitungssimulator</h2><h3>⚠️ Satire-Hinweis</h3>
- <p>Alle Figuren in diesem Spiel sind frei erfunden. Ähnlichkeiten mit real existierenden Kolleginnen und Kollegen, Dezernenten oder Schulbuchvertretern wären rein zufällig – und vermutlich sehr unterhaltsam.</p>
- <p>Dieses Spiel zeigt nur, wie es aussehen <i>könnte</i>, wenn man mal fünf Minuten Zeit hätte. 😉</p>
+function introScreen(){menu.innerHTML=`<h2>🏫 Lehrersimulator</h2><h3>⚠️ Satire-Hinweis</h3>
+ <p>Alle Figuren in diesem Spiel sind frei erfunden. Ähnlichkeiten mit real existierenden Kolleginnen und Kollegen, Schulleitungen oder Schulbuchvertretern wären rein zufällig – und vermutlich sehr unterhaltsam.</p>
+ <p>Dieses Spiel zeigt nur, wie es aussehen <i>könnte</i>, wenn man als Lehrkraft einfach mal fünf Minuten Ruhe haben will. 😉</p>
  <div class="lv"><button id="introOk">Verstanden – los geht's!</button></div>`;$('introOk').onclick=()=>mainMenu();menu.style.display='flex';}
-function nameScreen(){menu.innerHTML=`<h2>🏫 Schulleitungssimulator</h2><p>Mit welchem Namen willst du in der Highscore-Liste stehen?</p>
+function nameScreen(){menu.innerHTML=`<h2>🏫 Lehrersimulator</h2><p>Mit welchem Namen willst du in der Highscore-Liste stehen?</p>
  <div class="lv"><input id="nm" maxlength="20" placeholder="Dein Name" value="${esc(pname)}"><button id="nmOk">Speichern</button></div><p id="nmErr" style="color:#ff8a80"></p>`;
  const ok=()=>{const v=$('nm').value.trim().replace(/\s+/g,' ');if(v.length<2){$('nmErr').textContent='Bitte mindestens 2 Zeichen.';return;}pname=v;try{localStorage.setItem('slsim_name',v);}catch(e){}mainMenu();};
  $('nmOk').onclick=ok;$('nm').addEventListener('keydown',e=>{if(e.key==='Enter')ok();});menu.style.display='flex';}
@@ -747,7 +747,7 @@ async function hsScreen(day=0,head=''){menu.innerHTML=head+`<h2>🏆 Highscores<
  try{const L=(await hsLoad(day+1)).slice(0,20);$('hsBox').innerHTML=L.length?`<table><tr><th>#</th><th style="text-align:left">Name</th><th>Punkte</th><th>🗣️</th><th>❤️</th><th>⏱️</th></tr>${L.map((e,i)=>`<tr class="${e.name.toLowerCase()===pname.toLowerCase()?'me':''}"><td>${i<3?['🥇','🥈','🥉'][i]:i+1}</td><td style="text-align:left">${esc(e.name)}</td><td><b>${e.score}</b></td><td>${e.talks}</td><td>${e.lives}</td><td>${Math.floor(e.seconds/60)}:${String(e.seconds%60).padStart(2,'0')}</td></tr>`).join('')}</table>`:'<p>Noch keine Einträge – sei die/der Erste!</p>';}
  catch(e){$('hsBox').innerHTML='<p style="color:#ff8a80">Highscore-Liste gerade nicht erreichbar.</p>';}}
 const HELPTXT=`<p style="opacity:.7;margin-top:14px;font-size:13px">Stick/Pfeiltasten laufen · <b>A</b> sprinten · <b>B</b> Zeitung vors Gesicht · <b>🗺️</b>/M Karte<br>Rote Kegel = Blickfeld. Versteck dich hinter Schränken, Stellwänden, Türen, Tafelflügeln, Hecken und Autos.<br>Jedes Gespräch kostet Zeit – das 3. Gespräch einer Mission kostet ein ❤️. Kuchen 🍰 im Lehrerzimmer gibt ein ❤️ zurück.<br>Vorsicht vor Pfützen 🤮, Feuer 🔥, Wasser 🌊 und weinenden Kindern 😭.<br>Zum Aufschließen die Tür berühren. Die Schlüsselfarben bleiben immer gleich.<br>Punkte gibt's für Restzeit, wenige Gespräche, unentdeckt bleiben, kurze Wege und übrige Herzen.</p>`;
-function mainMenu(head){if(!pname){nameScreen();return;}menu.innerHTML=(head||'<h2>🏫 Schulleitungssimulator</h2><p>Arbeite so wenig wie möglich – und lass dich nicht vollquatschen.</p>')+
+function mainMenu(head){if(!pname){nameScreen();return;}menu.innerHTML=(head||'<h2>🏫 Lehrersimulator</h2><p>Du willst nur deine Ruhe. Alle anderen wollen „nur ganz kurz“ was von dir.</p>')+
  `<p>Spieler: <b>${esc(pname)}</b> · <a href="#" id="chName" style="color:#f5b941">ändern</a></p>`+
  `<div class="lv">${DAYS.map((d,i)=>`<button data-d="${i}" ${i+1>unlocked?'disabled':''}>${i+1>unlocked?'🔒':d.ic}  Spieltag ${i+1}: ${d.n}</button>`).join('')}<button class="sec" id="hsBtn">🏆 Highscores</button></div>`+HELPTXT+`<p style="font-size:12px;opacity:.6"><a href="#" id="satire" style="color:#ccc">ℹ️ Satire-Hinweis</a></p>`;
  menu.querySelectorAll('button[data-d]').forEach(b=>b.onclick=()=>startDay(+b.dataset.d));$('hsBtn').onclick=()=>hsScreen(S.day||0);$('chName').onclick=e=>{e.preventDefault();nameScreen();};$('satire').onclick=e=>{e.preventDefault();introScreen();};menu.style.display='flex';}
