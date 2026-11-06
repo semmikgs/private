@@ -48,7 +48,7 @@ html,body,canvas,#stick,.btn,#keys,.key{touch-action:none}
 #menu .ml{list-style:none;padding:0;margin:6px 0;font-size:14px;text-align:left}
 #menu .ml li{padding:2px 0;opacity:.55}#menu .ml li.cur{opacity:1;font-weight:700}#menu .ml li.done{opacity:.8}
 </style></head><body>
-<div id="hud"><span class="pill" id="lives">❤️❤️❤️</span><span class="pill" id="talks">🗣️ 0/3</span><span class="pill" id="sand">⏳</span><span class="pill" id="clock">07:30</span><span class="pill" id="task">–</span><span class="pill" id="hide">🙈 Versteckt</span></div>
+<div id="hud"><span class="pill" id="lives">❤️❤️❤️</span><span class="pill" id="talks">🗣️ 0/3</span><span class="pill" id="sand">⏳</span><span class="pill" id="clock">07:30</span><span class="pill" id="task">–</span><span class="pill" id="hide">🙈 Versteckt</span><span class="pill" id="online" style="display:none">👥 1</span></div>
 <canvas id="fog"></canvas><canvas id="map"></canvas><div id="msg"></div>
 <div id="keys"><div>🔒 <b id="keysRoom"></b> – welcher Schlüssel passt?</div><div id="tryRow"><span id="tryKey"></span><span id="lockIc">🔒</span><span id="tryTxt"></span></div><div id="keyRow"></div></div>
 <div id="stick"><div id="knob"></div></div>
@@ -627,7 +627,7 @@ function canSee(c,d,R,fov){if(S.hidden||d>R)return false;const dx=player.positio
  if(d>.9&&Math.abs(wrapA(Math.atan2(dx,dz)-c.rotation.y))>fov/2)return false;return rayHit(c.position.x,c.position.z,dx/d,dz/d,d)>=d-.1;}
 function startTalk(c){const u=c.userData,T=u.T;if(u.state==='busy')endBusy(c,true);else if(u.act&&u.act.spot){u.act.spot.used=null;u.act=null;}
  if(u.type==='kollege'&&Math.random()<.15){u.cool=6;u.sus=0;u.state='walk';u.route=[];say('…nickt nur freundlich. Glück gehabt! 😅',1.6);return;}
- u.state='talk';u.talkT=T.talk;S.frozen=T.talk;S.sand-=T.pen;S.enc++;S.talksDay++;S.ms.talks++;
+ u.state='talk';u.talkT=T.talk;S.frozen=T.talk;S.talkUntil=performance.now()+T.talk*1000;S.sand-=T.pen;S.enc++;S.talksDay++;S.ms.talks++;
  popup(`−${T.pen} s`,c.position);say(`🗣️ ${T.n}: ${pick(LINES[u.type])}`,T.talk);blah(u.type==='dezernent'?120:180,u.type==='dezernent'?240:380);
  if(S.enc>=3){S.enc=0;loseLife('3 Gespräche – ein Herz verloren!');}}
 function loseLife(msg){S.lives--;setTimeout(()=>popup('💔',player.position,'#ff4d4d'),500);snd(300,.4,'sawtooth',.05,80);
@@ -746,7 +746,7 @@ async function hsScreen(day=0,head=''){menu.innerHTML=head+`<h2>🏆 Highscores<
  menu.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>hsScreen(+b.dataset.t));$('hsBack').onclick=()=>mainMenu();menu.style.display='flex';
  try{const L=(await hsLoad(day+1)).slice(0,20);$('hsBox').innerHTML=L.length?`<table><tr><th>#</th><th style="text-align:left">Name</th><th>Punkte</th><th>🗣️</th><th>❤️</th><th>⏱️</th></tr>${L.map((e,i)=>`<tr class="${e.name.toLowerCase()===pname.toLowerCase()?'me':''}"><td>${i<3?['🥇','🥈','🥉'][i]:i+1}</td><td style="text-align:left">${esc(e.name)}</td><td><b>${e.score}</b></td><td>${e.talks}</td><td>${e.lives}</td><td>${Math.floor(e.seconds/60)}:${String(e.seconds%60).padStart(2,'0')}</td></tr>`).join('')}</table>`:'<p>Noch keine Einträge – sei die/der Erste!</p>';}
  catch(e){$('hsBox').innerHTML='<p style="color:#ff8a80">Highscore-Liste gerade nicht erreichbar.</p>';}}
-const HELPTXT=`<p style="opacity:.7;margin-top:14px;font-size:13px">Stick/Pfeiltasten laufen · <b>A</b> sprinten · <b>B</b> Zeitung vors Gesicht · <b>🗺️</b>/M Karte<br>Rote Kegel = Blickfeld. Versteck dich hinter Schränken, Stellwänden, Türen, Tafelflügeln, Hecken und Autos.<br>Jedes Gespräch kostet Zeit – das 3. Gespräch einer Mission kostet ein ❤️. Kuchen 🍰 im Lehrerzimmer gibt ein ❤️ zurück.<br>Vorsicht vor Pfützen 🤮, Feuer 🔥, Wasser 🌊 und weinenden Kindern 😭.<br>Zum Aufschließen die Tür berühren. Die Schlüsselfarben bleiben immer gleich.<br>Punkte gibt's für Restzeit, wenige Gespräche, unentdeckt bleiben, kurze Wege und übrige Herzen.</p>`;
+const HELPTXT=`<p style="opacity:.7;margin-top:14px;font-size:13px">Stick/Pfeiltasten laufen · <b>A</b> sprinten · <b>B</b> Zeitung vors Gesicht · <b>🗺️</b>/M Karte<br>Rote Kegel = Blickfeld. Versteck dich hinter Schränken, Stellwänden, Türen, Tafelflügeln, Hecken und Autos.<br>Jedes Gespräch kostet Zeit – das 3. Gespräch einer Mission kostet ein ❤️. Kuchen 🍰 im Lehrerzimmer gibt ein ❤️ zurück.<br>Vorsicht vor Pfützen 🤮, Feuer 🔥, Wasser 🌊 und weinenden Kindern 😭.<br>Zum Aufschließen die Tür berühren. Die Schlüsselfarben bleiben immer gleich.<br>👥 Andere Spieler siehst du als Geister mit Namen – sie stören dich nicht.<br>Punkte gibt's für Restzeit, wenige Gespräche, unentdeckt bleiben, kurze Wege und übrige Herzen.</p>`;
 function mainMenu(head){if(!pname){nameScreen();return;}menu.innerHTML=(head||'<h2>🏫 Lehrersimulator</h2><p>Du willst nur deine Ruhe. Alle anderen wollen „nur ganz kurz“ was von dir.</p>')+
  `<p>Spieler: <b>${esc(pname)}</b> · <a href="#" id="chName" style="color:#f5b941">ändern</a></p>`+
  `<div class="lv">${DAYS.map((d,i)=>`<button data-d="${i}" ${i+1>unlocked?'disabled':''}>${i+1>unlocked?'🔒':d.ic}  Spieltag ${i+1}: ${d.n}</button>`).join('')}<button class="sec" id="hsBtn">🏆 Highscores</button></div>`+HELPTXT+`<p style="font-size:12px;opacity:.6"><a href="#" id="satire" style="color:#ccc">ℹ️ Satire-Hinweis</a></p>`;
@@ -818,6 +818,7 @@ function drawMap(t){const w=innerWidth,h=innerHeight;mx.clearRect(0,0,w,h);mx.fi
  for(const c of CARS){R(c.x-.85,c.z-1.7,c.x+.85,c.z+1.7,'#'+c.col.toString(16).padStart(6,'0'),c.mine?'#ffffff':null);}
  for(const a of ALC)R(a.x1,a.s*2.15,a.x2,a.s*a.d,'#cfc6b0');
  for(const h of HZ){mx.fillStyle='#fff';T(HZINFO[h.type].ic,h.x,h.z,0,14);}
+ for(const o of GH.list.values()){const q=P(o.x,o.z);mx.fillStyle=o.col;mx.strokeStyle='#fff';mx.lineWidth=1.5;mx.beginPath();mx.arc(q[0],q[1],Math.max(4,sc*.35),0,7);mx.fill();mx.stroke();mx.fillStyle='#fff';mx.font='bold 10px system-ui';mx.fillText(o.name.slice(0,10),q[0],q[1]-8);}
  if(S.cakeOn){mx.fillStyle='#fff';T('🍰',cake.position.x,cake.position.z,0,16);}
  const pul=1+Math.sin(t*6)*.25,g=P(goal.position.x,goal.position.z);mx.fillStyle='#ffb300';mx.beginPath();mx.arc(g[0],g[1],Math.max(5,sc*.5)*pul,0,7);mx.fill();mx.font='16px system-ui';mx.fillText(st[0],g[0],g[1]-12);
  const p=P(player.position.x,player.position.z),a=player.rotation.y,e=P(player.position.x+Math.sin(a)*14/sc,player.position.z+Math.cos(a)*14/sc);
@@ -860,6 +861,40 @@ function updNPC(c,dt,t,crowd){const u=c.userData,T=u.T;if(!u.active)return;
 function spawnStudents(){const regs=[REG.cor,REG.cor,REG.hof,REG.hof,REG.hof,REG.hall,REG.foy,REG.caf];students.forEach((s,i)=>{const reg=regs[i%regs.length];s.userData.reg=reg;
  for(let k=0;k<12;k++){s.position.set(rand(reg.x1,reg.x2),0,rand(reg.z1,reg.z2));if(!blocked(s.position.x,s.position.z,.2))break;}
  s.userData.t=V(rand(reg.x1,reg.x2),rand(reg.z1,reg.z2));s.userData.spd=s.userData.hyper?rand(2.2,3):rand(.8,1.8);s.visible=true;});}
+
+/* ================= Geister-Modus: andere Spieler live sehen ================= */
+const GH={me:Math.random().toString(36).slice(2,10),list:new Map(),send:null,ready:false,tx:0,last:''};
+function ghostName(t){return ctex(256,64,(c)=>{c.font='bold 30px system-ui';c.textAlign='center';c.textBaseline='middle';c.lineWidth=7;c.strokeStyle='rgba(0,0,0,.7)';c.strokeText(t,128,34);c.fillStyle='#fff';c.fillText(t,128,34);});}
+function hueOf(id){let h=0;for(const ch of id)h=(h*31+ch.charCodeAt(0))%360;return h;}
+function makeGhost(id,name){const col=new THREE.Color().setHSL(hueOf(id)/360,.65,.55);
+ const g=person({skin:0xf1c9a5,shirt:col.getHex(),pants:0x3e4a5c,hair:0x3a2a1a,glasses:true,fade:true,shadow:false});g.userData.mats.forEach(m=>{m.opacity=.5;m.depthWrite=false;});
+ const nl=new THREE.Sprite(new THREE.SpriteMaterial({map:ghostName(name),depthTest:false,transparent:true}));nl.scale.set(1.6,.4,1);nl.position.y=1.95;nl.renderOrder=7;g.add(nl);
+ const ic=sprite(2.45,.45);g.add(ic);return {g,nl,ic,name,col:'#'+col.getHexString(),x:0,z:0,r:0,tx:0,tz:0,tr:0,st:'',seen:0,init:false};}
+function onGhost(p){if(!p||p.id===GH.me)return;let o=GH.list.get(p.id);
+ if(p.bye){if(o){scene.remove(o.g);GH.list.delete(p.id);}return;}
+ const name=String(p.n||'?').slice(0,20);if(!o){o=makeGhost(p.id,name);GH.list.set(p.id,o);}
+ else if(o.name!==name){o.name=name;o.nl.material.map=ghostName(name);}
+ o.tx=+p.x||0;o.tz=+p.z||0;o.tr=+p.r||0;o.st=p.st||'';o.seen=performance.now();if(!o.init){o.x=o.tx;o.z=o.tz;o.r=o.tr;o.init=true;}}
+function updGhosts(dt){const now=performance.now();let n=0;
+ for(const [id,o] of GH.list){if(now-o.seen>4500){scene.remove(o.g);GH.list.delete(id);continue;}n++;
+  const k=Math.min(1,dt*9),ox=o.x,oz=o.z;o.x+=(o.tx-o.x)*k;o.z+=(o.tz-o.z)*k;o.r=lerpA(o.r,o.tr,k);o.g.position.x=o.x;o.g.position.z=o.z;o.g.rotation.y=o.r;
+  anim(o.g,Math.hypot(o.x-ox,o.z-oz)/Math.max(dt,1e-3),dt);o.g.position.y=0;
+  const ic={t:'🗣️',h:'🙈',m:'🗺️'}[o.st];o.ic.visible=!!ic;if(ic)o.ic.material.map=icon(ic);}
+ const el=$('online');el.style.display=(GH.ready||n)?'inline':'none';el.textContent='👥 '+(n+1);
+}
+setInterval(()=>{if(!S.running||!GH.send)return;GH.tx-=.2;const st=performance.now()<(S.talkUntil||0)?'t':S.hidden?'h':S.map?'m':'';
+ const pl={id:GH.me,n:pname,x:+player.position.x.toFixed(2),z:+player.position.z.toFixed(2),r:+player.rotation.y.toFixed(2),st};const key=pl.x+'|'+pl.z+'|'+pl.r+'|'+st;
+ if(key!==GH.last||GH.tx<=0){GH.send(pl);GH.last=key;GH.tx=2;}},200);
+function ghostBye(){if(GH.send)try{GH.send({id:GH.me,bye:1});}catch(e){}}
+addEventListener('pagehide',ghostBye);document.addEventListener('visibilitychange',()=>{if(document.hidden)ghostBye();});
+(async()=>{let bc=null;try{bc=new BroadcastChannel('lehrersim-ghosts');bc.onmessage=e=>onGhost(e.data);}catch(e){}
+ const local=p=>{if(bc)bc.postMessage(p);};GH.send=local;
+ try{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm');
+  const sb=createClient(SB_URL,SB_KEY,{realtime:{params:{eventsPerSecond:20}}});
+  const ch=sb.channel('lehrersim-ghosts',{config:{broadcast:{self:false}}});
+  ch.on('broadcast',{event:'pos'},({payload})=>onGhost(payload));
+  ch.subscribe(st=>{if(st==='SUBSCRIBED'){GH.ready=true;GH.send=p=>{local(p);ch.send({type:'broadcast',event:'pos',payload:p});};}});
+ }catch(e){console.warn('Geister-Modus offline',e);}})();
 
 /* ================= Hauptschleife ================= */
 const clock=new THREE.Clock();let lastHidden=false;
@@ -911,6 +946,7 @@ function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.
   $('clock').textContent=(S.pause?'🔔 ':'🕗 ')+hm();$('talks').textContent='🗣️ '+S.enc+'/3';$('lives').textContent=hearts();
   const sEl=$('sand');sEl.textContent='⏳ '+Math.max(0,Math.ceil(S.sand))+' s';sEl.classList.toggle('low',S.sand<10);
  }
+ updGhosts(dt);
  for(const p of POPS)if(p.t>0){p.t-=dt;p.s.position.y+=dt*.8;p.s.material.opacity=Math.min(1,p.t/.6);if(p.t<=0)p.s.visible=false;}
  for(const k of sitters)anim(k,0,dt);
  goal.rotation.y+=dt;gIc.position.y=1.9+Math.sin(t*3)*.12;gRing.scale.setScalar(1+Math.sin(t*4)*.1);
