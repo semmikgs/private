@@ -446,6 +446,33 @@ dialog::backdrop { background: rgba(15, 20, 60, .55); }
   </div>
 </dialog>
 
+<!-- Lehrkraft -->
+<dialog id="lehrerDialog" aria-labelledby="ldlTitel">
+  <div class="fenster-kopf">
+    <h2><span id="ldlTitel">Lehrkraft</span>
+      <button class="schliessen" type="button" data-schliessen aria-label="Schließen">×</button></h2>
+  </div>
+  <div class="fenster-inhalt">
+    <div class="zeile">
+      <div><label class="label" for="ldlNach">Nachname</label><input class="feld" id="ldlNach" type="text" maxlength="60"></div>
+      <div><label class="label" for="ldlVor">Vorname</label><input class="feld" id="ldlVor" type="text" maxlength="60"></div>
+    </div>
+    <div class="zeile feldgruppe">
+      <div class="schmal"><label class="label" for="ldlK">Kürzel</label><input class="feld" id="ldlK" type="text" maxlength="10"></div>
+      <div><label class="label" for="ldlStd">Stundenverpflichtung (leer = volle Stelle)</label><input class="feld" id="ldlStd" type="text" inputmode="decimal" maxlength="6"></div>
+    </div>
+    <hr class="trenner">
+    <h3 class="abschnitt">Einsatz in der Projektwoche</h3>
+    <ul class="buchungsliste" id="ldlEinsatz"></ul>
+  </div>
+  <div class="fenster-fuss">
+    <div class="links"><button class="knopf gefahr" id="ldlLoeschen" type="button">Löschen</button></div>
+    <button class="knopf zurueck" type="button" data-schliessen>Abbrechen</button>
+    <button class="knopf" id="ldlSpeichern" type="button">Speichern</button>
+  </div>
+</dialog>
+<datalist id="dlVertretung"></datalist>
+
 <!-- Löschen -->
 <dialog id="loeschDialog" aria-labelledby="ldTitel">
   <div class="fenster-kopf">
@@ -521,11 +548,12 @@ const KRANK_SVG = '<svg class="krankicon" viewBox="0 0 20 20" aria-hidden="true"
 const TAGE = ["", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const TAGE_KURZ = ["", "Mo", "Di", "Mi", "Do", "Fr"];
 const REITER = [
-  ["planung", "Planung"], ["raeume", "Räume"], ["gruppen", "Gruppen"],
+  ["planung", "Planung"], ["lehrer", "Lehrkräfte"], ["raeume", "Räume"], ["gruppen", "Gruppen"],
   ["export", "Aushänge"], ["einstellungen", "Einstellungen"]
 ];
 
-const daten = { raeume: [], gruppen: [], raumGruppen: [], projekte: [], buchungen: [], status: {}, abwesend: [] };
+const daten = { raeume: [], gruppen: [], raumGruppen: [], projekte: [], buchungen: [], status: {}, abwesend: [],
+  lehrer: [], lehrerSoll: { voll_stunden: 25.5, pw_stunden: 30 }, lehrerFehlt: false };
 const rw = { gebaeude: "alle", gruppe: null, suche: "", nurFrei: false };   // Raumauswahl-Filter
 let abwTag = 1;
 let PW = "";
@@ -606,16 +634,19 @@ async function admin(funktion, parameter) {
 }
 
 async function laden() {
-  const [raeume, gruppen, raumGruppen, projekte, buchungen, status, abwesend] = await Promise.all([
+  const [raeume, gruppen, raumGruppen, projekte, buchungen, status, abwesend, lehrerDaten] = await Promise.all([
     lesen("pw_rooms?select=*&order=nummer"),
     lesen("pw_groups?select=*&order=name"),
     lesen("pw_room_groups?select=*"),
     lesen("pw_projects?select=*&order=thema"),
     lesen("pw_bookings?select=*&order=tag,std_von"),
     rpc("pw_get_status"),
-    PW ? rpc("pw_admin_get_abwesend", { p_pw: PW }).catch(() => []) : Promise.resolve([])
+    PW ? rpc("pw_admin_get_abwesend", { p_pw: PW }).catch(() => []) : Promise.resolve([]),
+    PW ? rpc("pw_admin_get_lehrer", { p_pw: PW }).catch(() => null) : Promise.resolve(null)
   ]);
-  Object.assign(daten, { raeume, gruppen, raumGruppen, projekte, buchungen, status: status || {}, abwesend: abwesend || [] });
+  Object.assign(daten, { raeume, gruppen, raumGruppen, projekte, buchungen, status: status || {}, abwesend: abwesend || [],
+    lehrer: (lehrerDaten && lehrerDaten.lehrer) || [], lehrerFehlt: !!PW && !lehrerDaten,
+    lehrerSoll: { voll_stunden: lehrerDaten ? lehrerDaten.voll_stunden : 25.5, pw_stunden: lehrerDaten ? lehrerDaten.pw_stunden : 30 } });
 }
 
 /* Admin-Aktion: ausführen, neu laden, alles neu zeichnen */
@@ -787,7 +818,7 @@ function renderAlles() {
 
   const inhalt = $("inhalt");
   inhalt.innerHTML = "";
-  ({ planung: renderPlanung, raeume: renderRaeume, gruppen: renderGruppen,
+  ({ planung: renderPlanung, lehrer: renderLehrer, raeume: renderRaeume, gruppen: renderGruppen,
      export: renderExport, einstellungen: renderEinstellungen })[reiter](inhalt);
 
   if (offenesProjekt !== null && $("projektDialog").open) renderProjektDialog();
@@ -927,6 +958,7 @@ function renderAbwListe() {
     td3.style.minWidth = "170px";
     if (b.krank) {
       const f = input(b.vertretung || "", "Kürzel/Name");
+      vertretungsFeld(f, t, p.kuerzel);
       f.maxLength = 60;
       f.setAttribute("aria-label", "Vertretung für " + p.kuerzel);
       f.onchange = () => { if (f.value.trim() !== (b.vertretung || "")) krankSchnell(b, true, f.value.trim()); };
@@ -1321,6 +1353,7 @@ function renderBuchungDialog() {
     box.appendChild(sch);
     if (bd.krank) {
       const fV = input(bd.vertretung, "Kürzel oder Name der Vertretung");
+      vertretungsFeld(fV, bd.tag, (projektVon(bd.pid) || {}).kuerzel);
       fV.oninput = () => { bd.vertretung = fV.value; };
       const zv = el("div", "feldgruppe");
       zv.appendChild(feldMitLabel("Vertretung", fV));
@@ -1384,6 +1417,7 @@ async function loeschenAusfuehren() {
 /* ---------- Krankmeldung (Schnellzugriff) ---------- */
 
 let krankId = null;
+let krankTag = 1, krankAusser = "";
 
 function krankOeffnen(buchungId) {
   const b = daten.buchungen.find((x) => x.id === buchungId);
@@ -1393,6 +1427,8 @@ function krankOeffnen(buchungId) {
   $("kdTitel").textContent = "Krankmeldung · " + TAGE[b.tag];
   $("kdText").textContent = p.kuerzel + " – „" + p.thema + "“ · " + ortText(b, true) + " · " + stundenText(b.std_von, b.std_bis);
   $("kdVertretung").value = b.vertretung || "";
+  krankTag = b.tag;
+  krankAusser = p.kuerzel;
   $("kdAufheben").hidden = !b.krank;
   $("kdSpeichern").textContent = b.krank ? "Speichern" : "Krank melden";
   $("krankDialog").showModal();
@@ -1900,6 +1936,448 @@ function raeumeExportieren() {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   meldung((zeilen.length - 1) + " Räume exportiert.");
+}
+
+/* =========================================================
+   6b · Lehrkräfte
+   ========================================================= */
+
+const lv = { tage: [1, 2, 3, 4, 5], filter: "alle", suche: "", sort: "name" };
+let lehrerAlt = null;
+
+const kkey = (k) => String(k || "").trim().toLowerCase();
+
+function kuerzelTokens(text) {
+  return String(text || "").split(/[,;\/+&]|\s+und\s+|\s+/i).map(kkey).filter(Boolean);
+}
+
+function lehrerVon(k) {
+  return (daten.lehrer || []).find((l) => l.kkey === kkey(k));
+}
+
+function lehrerName(k) {
+  const l = lehrerVon(k);
+  return l ? [l.vorname, l.nachname].filter(Boolean).join(" ") : "";
+}
+
+/* Wer ist an welchem Tag in welchen Stunden eingesetzt (Projektleitung und Mithelfende, geplant) */
+function einsatzIndex() {
+  const idx = new Map();
+  const eintrag = (k, t) => {
+    if (!idx.has(k)) idx.set(k, { tage: {} });
+    const e = idx.get(k);
+    if (!e.tage[t]) e.tage[t] = { std: new Set(), liste: [], krank: false, vertritt: [] };
+    return e.tage[t];
+  };
+  daten.buchungen.forEach((b) => {
+    const p = projektVon(b.project_id);
+    if (!p) return;
+    [kkey(p.kuerzel)].concat(kuerzelTokens(p.mitwirkende)).forEach((k, i) => {
+      const d = eintrag(k, b.tag);
+      for (let s = b.std_von; s <= b.std_bis; s++) d.std.add(s);
+      d.liste.push({ b, p, rolle: i === 0 ? "Leitung" : "Mithilfe" });
+      if (b.krank && i === 0) d.krank = true;
+    });
+    if (b.krank && b.vertretung) kuerzelTokens(b.vertretung).forEach((k) => eintrag(k, b.tag).vertritt.push({ b, p }));
+  });
+  return idx;
+}
+
+function lehrerSoll(l) {
+  const voll = Number(daten.lehrerSoll.voll_stunden) || 25.5;
+  const pw = Number(daten.lehrerSoll.pw_stunden) || 30;
+  const st = l && l.stunden !== null && l.stunden !== undefined && l.stunden !== "" ? Number(l.stunden) : voll;
+  return Math.round(st / voll * pw * 2) / 2;
+}
+
+function zahlDe(n) {
+  return Number(n).toLocaleString("de-DE", { maximumFractionDigits: 2 });
+}
+
+/* ---------- Vorschläge für Vertretungen ---------- */
+function vertretungVorschlaege(tag, ausser) {
+  const dl = $("dlVertretung");
+  dl.innerHTML = "";
+  const idx = einsatzIndex();
+  const ohne = new Set(kuerzelTokens(ausser));
+  const zeilen = (daten.lehrer || []).filter((l) => !ohne.has(l.kkey)).map((l) => {
+    const d = (idx.get(l.kkey) || { tage: {} }).tage[tag];
+    let info, rang;
+    if (!d || (!d.std.size && !d.vertritt.length)) { info = "frei"; rang = 0; }
+    else if (d.krank) { info = "selbst krank gemeldet"; rang = 3; }
+    else if (d.vertritt.length) { info = "vertritt bereits " + d.vertritt.map((x) => x.p.kuerzel).join(", "); rang = 2; }
+    else {
+      const frei = [1, 2, 3, 4, 5, 6].filter((s) => !d.std.has(s));
+      info = frei.length ? "teilweise frei (" + frei.join(".,") + ". Std.)" : "eingesetzt: " + d.liste.map((x) => ortText(x.b)).join(", ");
+      rang = frei.length ? 1 : 2;
+    }
+    return { l, info, rang };
+  }).sort((a, b) => a.rang - b.rang || (a.l.nachname || "").localeCompare(b.l.nachname || "", "de"));
+  zeilen.forEach(({ l, info }) => {
+    const o = document.createElement("option");
+    o.value = l.kuerzel;
+    o.label = [l.vorname, l.nachname].filter(Boolean).join(" ") + " · " + info;
+    dl.appendChild(o);
+  });
+}
+
+function vertretungsFeld(inputEl, tag, ausser) {
+  inputEl.setAttribute("list", "dlVertretung");
+  inputEl.setAttribute("autocomplete", "off");
+  inputEl.addEventListener("focus", () => vertretungVorschlaege(tag, ausser));
+  /* Ganzer Name getippt? Dann Kürzel einsetzen */
+  inputEl.addEventListener("change", () => {
+    const v = inputEl.value.trim().toLowerCase();
+    if (!v || lehrerVon(v)) return;
+    const treffer = (daten.lehrer || []).filter((l) =>
+      [l.vorname + " " + l.nachname, l.nachname + " " + l.vorname, l.nachname, l.nachname + ", " + l.vorname]
+        .some((n) => String(n).toLowerCase() === v));
+    if (treffer.length === 1) inputEl.value = treffer[0].kuerzel;
+  }, true);
+}
+
+/* ---------- Import / Export ---------- */
+function csvTeile(zeile, trenner) {
+  const teile = [];
+  let feld = "", inQ = false;
+  for (let i = 0; i < zeile.length; i++) {
+    const c = zeile[i];
+    if (inQ) {
+      if (c === '"' && zeile[i + 1] === '"') { feld += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else feld += c;
+    } else if (c === '"') inQ = true;
+    else if (c === trenner) { teile.push(feld.trim()); feld = ""; }
+    else feld += c;
+  }
+  teile.push(feld.trim());
+  return teile;
+}
+
+function lehrerZeilen(text) {
+  const zeilen = String(text || "").replace(/^﻿/, "").split(/\r?\n/).filter((z) => z.trim());
+  const erg = { lehrer: [], uebersprungen: 0 };
+  if (!zeilen.length) return erg;
+  const erste = zeilen[0];
+  const trenner = erste.includes("\t") ? "\t" : erste.includes(";") ? ";" : ",";
+  const kopf = csvTeile(erste, trenner).map((x) => x.toLowerCase().replace(/[^a-zäöüß]/g, ""));
+  const finde = (namen) => kopf.findIndex((h) => namen.includes(h));
+  let iK = finde(["kürzel", "kuerzel", "kurzname", "kurz", "name"]);
+  let iN = finde(["nachname", "longname", "familienname"]);
+  let iV = finde(["vorname", "forename", "firstname"]);
+  let iS = finde(["stunden", "stundenverpflichtung", "verpflichtung", "deputat", "soll", "regelstunden"]);
+  let start = 1;
+  if (iK < 0 || (iN < 0 && iV < 0)) { iN = 0; iV = 1; iK = 2; iS = 3; start = 0; }   /* ohne Kopfzeile: Nachname;Vorname;Kürzel;Stunden */
+  const gesehen = new Set();
+  zeilen.slice(start).forEach((z) => {
+    const t = csvTeile(z, trenner);
+    const k = (t[iK] || "").trim();
+    const v = iV >= 0 ? (t[iV] || "").trim() : "";
+    const n = iN >= 0 ? (t[iN] || "").trim() : "";
+    if (!k || !v || gesehen.has(kkey(k))) { erg.uebersprungen++; return; }   /* ohne Vorname = keine Person (Dummy, FSJ, Mensa …) */
+    gesehen.add(kkey(k));
+    const sRoh = iS >= 0 ? String(t[iS] || "").trim().replace(",", ".") : "";
+    const s = sRoh === "" || isNaN(Number(sRoh)) ? null : Number(sRoh);
+    erg.lehrer.push({ kuerzel: k, vorname: v, nachname: n, stunden: s });
+  });
+  return erg;
+}
+
+function lehrerExportieren() {
+  const zeilen = ["Nachname;Vorname;Kürzel;Stundenverpflichtung"];
+  (daten.lehrer || []).slice().sort((a, b) => (a.nachname || "").localeCompare(b.nachname || "", "de")).forEach((l) => {
+    zeilen.push([l.nachname || "", l.vorname || "", l.kuerzel,
+      l.stunden === null || l.stunden === undefined ? "" : String(l.stunden).replace(".", ",")]
+      .map((x) => String(x).replace(/[;\r\n]/g, " ")).join(";"));
+  });
+  const blob = new Blob(["﻿" + zeilen.join("\r\n") + "\r\n"], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "lehrkraefte_projektwoche_" + new Date().toISOString().slice(0, 10) + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  meldung((zeilen.length - 1) + " Lehrkräfte exportiert.");
+}
+
+/* ---------- Reiter ---------- */
+function renderLehrer(ziel) {
+  if (daten.lehrerFehlt) {
+    const k = karte("Lehrkräfte");
+    k.appendChild(el("p", "hinweisbox warnung", "Die Lehrkräfte-Funktionen fehlen noch in Supabase. Bitte zuerst Schritt 9 (projektwoche_schritt9_lehrkraefte.sql) ausführen und die Seite neu laden."));
+    ziel.appendChild(k);
+    return;
+  }
+  const idx = einsatzIndex();
+  const lehrer = daten.lehrer || [];
+
+  /* --- Einsatzübersicht --- */
+  const k = karte("Einsatz der Lehrkräfte", "Stunden pro Tag aus Projektleitung und Mithilfe (geplant). Soll = Stundenverpflichtung im Verhältnis zur vollen Stelle, umgerechnet auf die Projektwoche.");
+  if (!lehrer.length) {
+    k.appendChild(el("p", "hinweisbox info", "Noch keine Lehrkräfte importiert – unten bei „Lehrerliste pflegen“ die Liste einlesen."));
+  }
+
+  const tagReihe = el("div", "filterreihe");
+  tagReihe.style.marginTop = "0";
+  [1, 2, 3, 4, 5].forEach((t) => {
+    const b = el("button", "filter", TAGE_KURZ[t] + (datum(t) ? " " + datum(t).slice(0, 6) : ""));
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(lv.tage.includes(t)));
+    b.onclick = () => {
+      lv.tage = lv.tage.includes(t) ? lv.tage.filter((x) => x !== t) : lv.tage.concat(t).sort();
+      if (!lv.tage.length) lv.tage = [t];
+      renderAlles();
+    };
+    tagReihe.appendChild(b);
+  });
+  const alleB = el("button", "filter", "Alle Tage");
+  alleB.type = "button";
+  alleB.setAttribute("aria-pressed", String(lv.tage.length === 5));
+  alleB.onclick = () => { lv.tage = [1, 2, 3, 4, 5]; renderAlles(); };
+  tagReihe.appendChild(alleB);
+  const wb = el("div", "feldgruppe");
+  wb.style.marginTop = "0";
+  wb.append(el("span", "label", "Tage"), tagReihe);
+  k.appendChild(wb);
+
+  const z = el("div", "zeile feldgruppe");
+  const sF = auswahl([["alle", "Alle Lehrkräfte"], ["ohne", "Ohne Eintrag an den gewählten Tagen"], ["mit", "Mit Eintrag an den gewählten Tagen"],
+    ["unter", "Unter Soll (Woche)"], ["ueber", "Über Soll (Woche)"], ["krank", "Krank an den gewählten Tagen"]], lv.filter);
+  sF.onchange = () => { lv.filter = sF.value; zeichne(); };
+  const sS = auswahl([["name", "Nachname"], ["kuerzel", "Kürzel"], ["ist", "Stunden (wenig zuerst)"], ["diff", "Abweichung vom Soll"]], lv.sort);
+  sS.onchange = () => { lv.sort = sS.value; zeichne(); };
+  const fS = input(lv.suche, "Kürzel oder Name …", "search");
+  fS.oninput = () => { lv.suche = fS.value; zeichne(); };
+  z.append(feldMitLabel("Anzeigen", sF), feldMitLabel("Sortieren", sS), feldMitLabel("Suche", fS));
+  k.appendChild(z);
+
+  const info = el("p", "abschnitt-hinweis");
+  info.style.margin = "14px 0 8px";
+  const huelle = el("div", "tabellenhuelle");
+  const rDruck = el("div", "buttonreihe");
+  rDruck.appendChild(knopf("Liste drucken / PDF", "zurueck", () => {
+    $("druck").innerHTML = '<div class="d-seite"><h1>Einsatz der Lehrkräfte · ' + esc(wochenText()) + "</h1>" +
+      '<p class="d-unter">' + esc(info.textContent) + " · " + stand() + "</p>" +
+      huelle.innerHTML.replace('class="tabelle"', 'class="d-tabelle"') + "</div>";
+    $("seitenstil").textContent = "@page { size: A4 landscape; margin: 12mm; }";
+    window.print();
+  }));
+  k.append(info, huelle, rDruck);
+
+  /* Kürzel in Projekten, die nicht in der Liste stehen */
+  if (lehrer.length) {
+    const unbekannt = [...idx.keys()].filter((x) => !lehrerVon(x));
+    if (unbekannt.length) {
+      k.appendChild(el("p", "hinweisbox warnung", "Diese Kürzel stehen in Projekten, aber nicht in der Lehrerliste (Tippfehler?): " +
+        unbekannt.map((x) => {
+          const p = daten.projekte.find((pp) => kkey(pp.kuerzel) === x || kuerzelTokens(pp.mitwirkende).includes(x));
+          return x + (p ? " („" + p.thema + "“)" : "");
+        }).join(", ")));
+    }
+  }
+  ziel.appendChild(k);
+
+  function zeichne() {
+    const q = lv.suche.trim().toLowerCase();
+    const zeilen = lehrer.map((l) => {
+      const e = idx.get(l.kkey) || { tage: {} };
+      const proTag = {};
+      let ist = 0;
+      for (let t = 1; t <= 5; t++) {
+        const d = e.tage[t];
+        proTag[t] = d ? d.std.size : 0;
+        ist += proTag[t];
+      }
+      const soll = lehrerSoll(l);
+      const gewMit = lv.tage.filter((t) => proTag[t] > 0).length;
+      const krank = lv.tage.some((t) => e.tage[t] && e.tage[t].krank);
+      return { l, e, proTag, ist, soll, diff: ist - soll, gewMit, krank };
+    }).filter((x) => {
+      if (q && !(x.l.kuerzel + " " + (x.l.vorname || "") + " " + (x.l.nachname || "")).toLowerCase().includes(q)) return false;
+      if (lv.filter === "ohne") return x.gewMit < lv.tage.length;
+      if (lv.filter === "mit") return x.gewMit > 0;
+      if (lv.filter === "unter") return x.diff < 0;
+      if (lv.filter === "ueber") return x.diff > 0;
+      if (lv.filter === "krank") return x.krank;
+      return true;
+    }).sort((a, b) => {
+      if (lv.sort === "kuerzel") return a.l.kuerzel.localeCompare(b.l.kuerzel, "de");
+      if (lv.sort === "ist") return a.ist - b.ist || (a.l.nachname || "").localeCompare(b.l.nachname || "", "de");
+      if (lv.sort === "diff") return a.diff - b.diff;
+      return (a.l.nachname || "").localeCompare(b.l.nachname || "", "de") || (a.l.vorname || "").localeCompare(b.l.vorname || "", "de");
+    });
+
+    const t = el("table", "tabelle");
+    let h = "<thead><tr><th>Kürzel</th><th>Name</th><th>Verpfl.</th>";
+    for (let d = 1; d <= 5; d++) h += "<th" + (lv.tage.includes(d) ? ' style="color:var(--indigo)"' : "") + ">" + TAGE_KURZ[d] + "</th>";
+    h += "<th>Ist</th><th>Soll</th><th>±</th></tr></thead><tbody>";
+    zeilen.forEach((x) => {
+      h += '<tr class="klickbar" data-k="' + esc(x.l.kkey) + '"><td class="nr">' + esc(x.l.kuerzel) + "</td><td>" +
+        esc([x.l.nachname, x.l.vorname].filter(Boolean).join(", ")) + "</td><td>" +
+        (x.l.stunden === null || x.l.stunden === undefined ? '<span class="leise">voll</span>' : zahlDe(x.l.stunden)) + "</td>";
+      for (let d = 1; d <= 5; d++) {
+        const tg = x.e.tage[d];
+        const titel = tg ? tg.liste.map((y) => y.rolle + ": " + y.p.thema + " (" + ortText(y.b) + ")").join(" | ") +
+          (tg.vertritt.length ? " | Vertretung für " + tg.vertritt.map((y) => y.p.kuerzel).join(", ") : "") : "";
+        const leerMarkiert = lv.tage.includes(d) && !x.proTag[d];
+        h += '<td title="' + esc(titel) + '"' + (leerMarkiert ? ' style="background:#fdf0ef"' : "") + ">" +
+          (x.proTag[d] ? x.proTag[d] + (tg.krank ? ' <span class="krankmarke">k</span>' : "") : '<span class="leise">–</span>') +
+          (tg && tg.vertritt.length ? ' <span class="leise">+V</span>' : "") + "</td>";
+      }
+      const farbe = x.diff < 0 ? "var(--rot)" : x.diff > 0 ? "var(--gruen)" : "var(--tinte-leise)";
+      h += "<td><b>" + zahlDe(x.ist) + "</b></td><td>" + zahlDe(x.soll) + '</td><td style="color:' + farbe + ';font-weight:700">' +
+        (x.diff > 0 ? "+" : "") + zahlDe(x.diff) + "</td></tr>";
+    });
+    if (!zeilen.length) h += '<tr><td colspan="11" class="leise">Keine Lehrkräfte für diese Auswahl.</td></tr>';
+    t.innerHTML = h + "</tbody>";
+    huelle.innerHTML = "";
+    huelle.appendChild(t);
+    t.querySelectorAll("tr.klickbar").forEach((tr) => { tr.onclick = () => lehrerOeffnen(tr.dataset.k); });
+    const tageText = lv.tage.length === 5 ? "alle Tage" : lv.tage.map((d) => TAGE_KURZ[d]).join(", ");
+    const ohne = lehrer.filter((l) => {
+      const e = idx.get(l.kkey);
+      return lv.tage.some((d) => !(e && e.tage[d] && e.tage[d].std.size));
+    }).length;
+    info.textContent = zeilen.length + " von " + lehrer.length + " Lehrkräften angezeigt · " + ohne +
+      " ohne Eintrag an mindestens einem gewählten Tag (" + tageText + ")";
+  }
+  zeichne();
+
+  /* --- Pflege --- */
+  const raster = el("div", "raster2");
+  raster.style.marginBottom = "22px";
+
+  const kImp = karte("Lehrerliste pflegen", "Import aus Untis (Spalten name, longName, foreName) oder aus der eigenen Exportdatei (Nachname;Vorname;Kürzel;Stundenverpflichtung). Übernommen werden nur Kürzel, Vor- und Nachname sowie Stunden. Zeilen ohne Vorname (Dummy, FSJ, Mensa …) werden übersprungen.");
+  const ta = el("textarea", "feld");
+  ta.placeholder = "Nachname;Vorname;Kürzel;Stundenverpflichtung\nHähne;Thomas;Hä;25,5";
+  const erkannt = el("p", "abschnitt-hinweis");
+  erkannt.style.margin = "8px 0 0";
+  const zeigeErkannt = () => {
+    const e = lehrerZeilen(ta.value);
+    erkannt.textContent = ta.value.trim() ? e.lehrer.length + " Lehrkräfte erkannt" + (e.uebersprungen ? ", " + e.uebersprungen + " Zeilen übersprungen" : "") + "." : "";
+  };
+  ta.oninput = zeigeErkannt;
+  const datei = input(null, null, "file");
+  datei.accept = ".csv,.txt,text/csv,text/plain";
+  datei.style.marginTop = "10px";
+  datei.onchange = async () => {
+    const f = datei.files[0];
+    if (!f) return;
+    const roh = await f.arrayBuffer();
+    let text;
+    try { text = new TextDecoder("utf-8", { fatal: true }).decode(roh); }
+    catch (e) { text = new TextDecoder("windows-1252").decode(roh); }
+    ta.value = text.replace(/^﻿/, "");
+    zeigeErkannt();
+  };
+  let ersetzen = false;
+  const modus = el("div", "filterreihe");
+  const erkl = el("p", "abschnitt-hinweis");
+  erkl.style.margin = "8px 0 0";
+  const zeichneModus = () => {
+    modus.innerHTML = "";
+    [[false, "Ergänzen"], [true, "Ersetzen"]].forEach(([w, t]) => {
+      const b = el("button", "filter", t);
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(ersetzen === w));
+      b.onclick = () => { ersetzen = w; zeichneModus(); };
+      modus.appendChild(b);
+    });
+    erkl.textContent = ersetzen ? "Ersetzen: Lehrkräfte, die nicht in der Liste stehen, werden gelöscht."
+      : "Ergänzen: Neue kommen hinzu, vorhandene (gleiches Kürzel, Groß-/Kleinschreibung egal) werden aktualisiert.";
+  };
+  zeichneModus();
+  const r1 = el("div", "buttonreihe");
+  r1.appendChild(knopf("Importieren", "", async () => {
+    const e = lehrerZeilen(ta.value);
+    if (!e.lehrer.length) { meldung("Keine Lehrkräfte erkannt.", true); return; }
+    if (ersetzen && !confirm("Alle Lehrkräfte, die nicht in der Liste stehen, werden gelöscht. Fortfahren?")) return;
+    const erg = await aktion("pw_admin_import_lehrer", { p_daten: e.lehrer, p_ersetzen: ersetzen });
+    if (erg !== undefined) meldung(erg.importiert + " Lehrkräfte übernommen" + (erg.geloescht ? ", " + erg.geloescht + " gelöscht." : "."));
+  }));
+  r1.appendChild(knopf("Aktuelle Liste als CSV exportieren", "zurueck", lehrerExportieren));
+  const r2 = el("div", "buttonreihe");
+  r2.appendChild(knopf("Alle Lehrkräfte löschen …", "gefahr", async () => {
+    if (!confirm("Alle " + lehrer.length + " Lehrkräfte aus der Liste löschen? Projekte bleiben erhalten.")) return;
+    await aktion("pw_admin_lehrer_delete_all", {}, "Lehrerliste gelöscht.");
+  }));
+  kImp.append(ta, erkannt, datei, modus, erkl, r1, r2);
+  raster.appendChild(kImp);
+
+  const kNeu = karte("Lehrkraft anlegen", "Zum Bearbeiten oder Löschen eine Zeile in der Übersicht oben anklicken.");
+  const fN = input("", "Nachname"), fV = input("", "Vorname"), fK = input("", "z. B. Hä"), fS2 = input("", "leer = volle Stelle");
+  fK.maxLength = 10; fS2.inputMode = "decimal";
+  const zN = el("div", "zeile");
+  zN.append(feldMitLabel("Nachname", fN), feldMitLabel("Vorname", fV));
+  const zK = el("div", "zeile feldgruppe");
+  const kk = feldMitLabel("Kürzel", fK); kk.className = "schmal";
+  zK.append(kk, feldMitLabel("Stundenverpflichtung", fS2));
+  const r3 = el("div", "buttonreihe");
+  r3.appendChild(knopf("Anlegen", "", async () => {
+    if (!fK.value.trim() || !fN.value.trim()) { meldung("Kürzel und Nachname sind nötig.", true); return; }
+    if (lehrerVon(fK.value)) { meldung("Das Kürzel gibt es schon.", true); return; }
+    const st = kostenZahl(fS2.value);
+    if (isNaN(st)) { meldung("Bitte bei den Stunden eine Zahl eingeben.", true); return; }
+    await aktion("pw_admin_lehrer_save", { p_alt: null, p_kuerzel: fK.value.trim(), p_vorname: fV.value.trim(),
+      p_nachname: fN.value.trim(), p_stunden: fS2.value.trim() ? st : null }, "Lehrkraft angelegt.");
+  }));
+  kNeu.append(zN, zK, r3);
+
+  kNeu.appendChild(el("hr", "trenner"));
+  kNeu.appendChild(el("h3", "abschnitt", "Soll-Berechnung"));
+  kNeu.appendChild(el("p", "abschnitt-hinweis", "Soll in der Projektwoche = Stundenverpflichtung ÷ volle Stelle × Stunden bei voller Stelle (auf halbe Stunden gerundet). Ohne Eintrag gilt die volle Stelle."));
+  const fVoll = input(zahlDe(daten.lehrerSoll.voll_stunden || 25.5), "25,5");
+  const fPw = input(zahlDe(daten.lehrerSoll.pw_stunden || 30), "30");
+  fVoll.inputMode = fPw.inputMode = "decimal";
+  const zS = el("div", "zeile");
+  zS.append(feldMitLabel("Volle Stelle (Std./Woche)", fVoll), feldMitLabel("Projektwoche bei voller Stelle (Std.)", fPw));
+  const r4 = el("div", "buttonreihe");
+  r4.appendChild(knopf("Speichern", "", () => {
+    const a = kostenZahl(fVoll.value), b = kostenZahl(fPw.value);
+    if (!(a > 0) || !(b > 0)) { meldung("Bitte zwei Zahlen größer 0 eingeben.", true); return; }
+    aktion("pw_admin_set_soll", { p_voll: a, p_pw_stunden: b }, "Soll-Berechnung gespeichert.");
+  }));
+  kNeu.append(zS, r4);
+  raster.appendChild(kNeu);
+  ziel.appendChild(raster);
+}
+
+/* ---------- Dialog: Lehrkraft bearbeiten ---------- */
+function lehrerOeffnen(k) {
+  const l = lehrerVon(k);
+  if (!l) return;
+  lehrerAlt = l.kuerzel;
+  $("ldlTitel").textContent = l.kuerzel + " · " + [l.vorname, l.nachname].filter(Boolean).join(" ");
+  $("ldlNach").value = l.nachname || "";
+  $("ldlVor").value = l.vorname || "";
+  $("ldlK").value = l.kuerzel;
+  $("ldlStd").value = l.stunden === null || l.stunden === undefined ? "" : zahlDe(l.stunden);
+  const e = einsatzIndex().get(l.kkey);
+  const box = $("ldlEinsatz");
+  box.innerHTML = "";
+  for (let t = 1; t <= 5; t++) {
+    const d = e && e.tage[t];
+    const li = el("li");
+    li.innerHTML = '<span class="t">' + TAGE_KURZ[t] + "</span>" + (d && d.liste.length
+      ? d.liste.map((x) => esc(x.rolle + ": " + x.p.thema + " · " + ortText(x.b, true) + " · " + stundenText(x.b.std_von, x.b.std_bis)) +
+          (x.b.krank && x.rolle === "Leitung" ? ' <span class="krankmarke">krank' + (x.b.vertretung ? " → " + esc(x.b.vertretung) : "") + "</span>" : "")).join("<br>")
+      : '<span class="leise">kein Eintrag</span>') +
+      (d && d.vertritt.length ? '<br><span class="leise">Vertretung für ' + esc(d.vertritt.map((x) => x.p.kuerzel + " (" + x.p.thema + ")").join(", ")) + "</span>" : "");
+    box.appendChild(li);
+  }
+  $("lehrerDialog").showModal();
+}
+
+async function lehrerSpeichern() {
+  const st = $("ldlStd").value.trim();
+  const n = kostenZahl(st);
+  if (!$("ldlK").value.trim() || !$("ldlNach").value.trim()) { meldung("Kürzel und Nachname sind nötig.", true); return; }
+  if (st && (isNaN(n) || n < 0 || n > 40)) { meldung("Stunden zwischen 0 und 40 eingeben.", true); return; }
+  if (kkey($("ldlK").value) !== kkey(lehrerAlt) && lehrerVon($("ldlK").value)) { meldung("Das neue Kürzel gibt es schon.", true); return; }
+  const ok = await aktion("pw_admin_lehrer_save", { p_alt: lehrerAlt, p_kuerzel: $("ldlK").value.trim(), p_vorname: $("ldlVor").value.trim(),
+    p_nachname: $("ldlNach").value.trim(), p_stunden: st ? n : null }, "Lehrkraft gespeichert.");
+  if (ok !== undefined) $("lehrerDialog").close();
 }
 
 /* =========================================================
@@ -2512,6 +2990,14 @@ function bedienung() {
   $("ldPw").onkeydown = (e) => { if (e.key === "Enter") loeschenAusfuehren(); };
   $("abwAnzahl").onkeydown = (e) => { if (e.key === "Enter") abwSpeichern(); };
   $("abwSuche").oninput = renderAbwListe;
+  vertretungsFeld($("kdVertretung"), 0, "");
+  $("kdVertretung").addEventListener("focus", () => vertretungVorschlaege(krankTag, krankAusser));
+  $("ldlSpeichern").onclick = lehrerSpeichern;
+  $("ldlLoeschen").onclick = async () => {
+    if (!confirm("Lehrkraft " + lehrerAlt + " aus der Liste löschen? Projekte bleiben erhalten.")) return;
+    const ok = await aktion("pw_admin_lehrer_delete", { p_kuerzel: lehrerAlt }, "Lehrkraft gelöscht.");
+    if (ok !== undefined) $("lehrerDialog").close();
+  };
   $("rdSuche").oninput = (e) => { rw.suche = e.target.value; renderRaumwahl(); };
   $("rdNurFrei").onchange = (e) => { rw.nurFrei = e.target.checked; renderRaumwahl(); };
   $("kdSpeichern").onclick = () => krankSpeichern(true);
