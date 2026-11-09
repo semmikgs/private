@@ -422,7 +422,7 @@ dialog::backdrop { background: rgba(15, 20, 60, .55); }
 </dialog>
 
 <!-- Abwesende -->
-<dialog id="abwDialog" aria-labelledby="abwTitel">
+<dialog id="abwDialog" aria-labelledby="abwTitel" style="width:min(860px, calc(100vw - 24px))">
   <div class="fenster-kopf">
     <h2><span id="abwTitel">Abwesende Kollegen</span>
       <button class="schliessen" type="button" data-schliessen aria-label="Schließen">×</button></h2>
@@ -432,12 +432,17 @@ dialog::backdrop { background: rgba(15, 20, 60, .55); }
     <input class="feld" id="abwAnzahl" type="number" min="0" max="200" step="1" style="max-width:160px">
     <div class="feldgruppe">
       <label class="label" for="abwNotiz">Wer? (optional, nur im Admin sichtbar)</label>
-      <textarea class="feld" id="abwNotiz" style="min-height:90px;font-family:inherit" placeholder="z. B. Kürzel, Grund"></textarea>
+      <textarea class="feld" id="abwNotiz" style="min-height:70px;font-family:inherit" placeholder="z. B. Kürzel, Grund"></textarea>
     </div>
+    <hr class="trenner">
+    <h3 class="abschnitt" id="abwListeTitel">Eingesetzte Kollegen</h3>
+    <p class="abschnitt-hinweis">Rotes Kreuz anklicken = krank melden. Vertretung eintragen und mit Enter oder Klick daneben speichern.</p>
+    <input class="feld" id="abwSuche" type="search" placeholder="Kürzel, Name, Thema oder Raum suchen …" style="margin-bottom:10px">
+    <div class="tabellenhuelle"><table class="tabelle" id="abwListe"></table></div>
   </div>
   <div class="fenster-fuss">
-    <button class="knopf zurueck" type="button" data-schliessen>Abbrechen</button>
-    <button class="knopf" id="abwSpeichern" type="button">Speichern</button>
+    <button class="knopf zurueck" type="button" data-schliessen>Schließen</button>
+    <button class="knopf" id="abwSpeichern" type="button">Anzahl speichern</button>
   </div>
 </dialog>
 
@@ -879,8 +884,86 @@ function abwOeffnen(t) {
   $("abwTitel").textContent = "Abwesende Kollegen · " + TAGE[t] + (datum(t) ? ", " + datum(t) : "");
   $("abwAnzahl").value = a.anzahl || 0;
   $("abwNotiz").value = a.notiz || "";
+  $("abwSuche").value = "";
+  renderAbwListe();
   $("abwDialog").showModal();
   $("abwAnzahl").select();
+}
+
+/* Kollegen mit Einsatz an diesem Tag – Krankmeldung direkt in der Liste */
+function renderAbwListe() {
+  const t = abwTag;
+  const q = $("abwSuche").value.trim().toLowerCase();
+  const liste = daten.buchungen.filter((b) => b.tag === t)
+    .map((b) => ({ b, p: projektVon(b.project_id) })).filter((x) => x.p)
+    .filter(({ b, p }) => !q || (p.kuerzel + " " + p.name + " " + (p.mitwirkende || "") + " " + p.thema + " " + b.room + " " + (b.vertretung || "")).toLowerCase().includes(q))
+    .sort((x, y) => x.p.kuerzel.localeCompare(y.p.kuerzel, "de"));
+  const krank = daten.buchungen.filter((b) => b.tag === t && b.krank).length;
+  $("abwListeTitel").textContent = "Eingesetzte Kollegen · " + liste.length + (krank ? " · " + krank + " krank" : "");
+
+  const tab = $("abwListe");
+  tab.innerHTML = "<thead><tr><th></th><th>Lehrkraft</th><th>Projekt · Raum</th><th>Vertretung</th></tr></thead>";
+  const tb = el("tbody");
+  liste.forEach(({ b, p }) => {
+    const tr = el("tr");
+    const td0 = el("td");
+    td0.style.width = "1%";
+    const k = knopf("", "zurueck mini krankknopf" + (b.krank ? " krankaktiv" : ""));
+    k.innerHTML = KRANK_SVG;
+    k.title = b.krank ? "Krankmeldung aufheben" : "Krank melden";
+    k.setAttribute("aria-label", (b.krank ? "Krankmeldung aufheben: " : "Krank melden: ") + p.kuerzel);
+    k.onclick = () => krankSchnell(b, !b.krank, b.krank ? "" : null);
+    td0.appendChild(k);
+
+    const td1 = el("td");
+    td1.innerHTML = "<b>" + esc(p.kuerzel) + "</b>" + (p.mitwirkende ? ' <span class="leise">+ ' + esc(p.mitwirkende) + "</span>" : "") +
+      '<div class="leise">' + esc(p.name) + "</div>";
+    if (b.krank) td1.querySelector("b").classList.add("krankmarke");
+
+    const td2 = el("td");
+    td2.innerHTML = esc(p.thema) + '<div class="leise">' + esc(ortText(b, true)) + " · " + esc(stundenText(b.std_von, b.std_bis)) + "</div>";
+
+    const td3 = el("td");
+    td3.style.minWidth = "170px";
+    if (b.krank) {
+      const f = input(b.vertretung || "", "Kürzel/Name");
+      f.maxLength = 60;
+      f.setAttribute("aria-label", "Vertretung für " + p.kuerzel);
+      f.onchange = () => { if (f.value.trim() !== (b.vertretung || "")) krankSchnell(b, true, f.value.trim()); };
+      f.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); f.blur(); } };   /* blur löst change aus */
+      td3.appendChild(f);
+      if (!b.vertretung) td3.appendChild(el("div", "leise krankmarke", "noch offen"));
+    } else {
+      td3.appendChild(el("span", "leise", "–"));
+    }
+    tr.append(td0, td1, td2, td3);
+    tb.appendChild(tr);
+  });
+  if (!liste.length) {
+    const tr = el("tr");
+    const td = el("td", "leise", q ? "Keine Treffer." : "An diesem Tag sind keine Projekte gebucht.");
+    td.colSpan = 4;
+    tr.appendChild(td);
+    tb.appendChild(tr);
+  }
+  tab.appendChild(tb);
+}
+
+async function krankSchnell(b, krank, vertretung) {
+  try {
+    await admin("pw_admin_set_krank", { p_booking: b.id, p_krank: krank, p_vertretung: krank ? (vertretung || b.vertretung || null) : null });
+    await laden();
+    renderAlles();
+    renderAbwListe();
+    const p = projektVon(b.project_id);
+    meldung((p ? p.kuerzel + ": " : "") + (krank ? (vertretung ? "Vertretung " + vertretung + " eingetragen." : "krank gemeldet.") : "Krankmeldung aufgehoben."));
+    if (krank && vertretung === null) {
+      const feld = document.querySelector('#abwListe input[aria-label="Vertretung für ' + (p ? p.kuerzel.replace(/"/g, "") : "") + '"]');
+      if (feld) feld.focus();
+    }
+  } catch (e) {
+    meldung(e.message, true);
+  }
 }
 
 async function abwSpeichern() {
@@ -2428,6 +2511,7 @@ function bedienung() {
   $("ldOk").onclick = loeschenAusfuehren;
   $("ldPw").onkeydown = (e) => { if (e.key === "Enter") loeschenAusfuehren(); };
   $("abwAnzahl").onkeydown = (e) => { if (e.key === "Enter") abwSpeichern(); };
+  $("abwSuche").oninput = renderAbwListe;
   $("rdSuche").oninput = (e) => { rw.suche = e.target.value; renderRaumwahl(); };
   $("rdNurFrei").onchange = (e) => { rw.nurFrei = e.target.checked; renderRaumwahl(); };
   $("kdSpeichern").onclick = () => krankSpeichern(true);
