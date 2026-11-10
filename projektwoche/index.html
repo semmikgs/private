@@ -186,6 +186,18 @@ select.feld { padding-right: 8px; }
 .plan-leer { color: var(--tinte-leise); text-align: center; padding: 30px 0; }
 .plan-stand { margin: 10px 0 0; font-size: 13px; color: var(--tinte-leise); }
 
+/* ---------- Bestätigung ---------- */
+.erfolg { border-top: 6px solid var(--gruen); }
+.erfolg-kopf { display: flex; gap: 16px; align-items: center; margin-bottom: 18px; }
+.erfolg-haken {
+  display: grid; place-items: center; flex: none;
+  width: 56px; height: 56px; border-radius: 999px;
+  background: #e3f3ea; color: var(--gruen); font-size: 30px; font-weight: 700;
+}
+.erfolg h2 { margin: 0; font-size: 24px; color: var(--gruen); }
+.erfolg-kopf p { margin: 2px 0 0; color: var(--tinte-leise); }
+.erfolg-hinweis { margin: 18px 0 0; padding: 12px 14px; background: var(--chip); border-radius: var(--radius-klein); font-size: 15px; }
+
 /* ---------- Werkbank ---------- */
 .werkbank {
   display: grid;
@@ -392,6 +404,22 @@ dialog.breit[open] { display: flex; flex-direction: column; }
     <p class="plan-stand" id="planStand"></p>
   </section>
 
+  <!-- Bestätigung nach dem Speichern -->
+  <section class="karte erfolg" id="erfolg" hidden aria-live="polite">
+    <div class="erfolg-kopf">
+      <span class="erfolg-haken" aria-hidden="true">✓</span>
+      <div>
+        <h2 id="erfolgTitel">Eingaben gespeichert</h2>
+        <p id="erfolgUnter">Dein Projekt ist verbindlich eingetragen.</p>
+      </div>
+    </div>
+    <div id="erfolgInhalt"></div>
+    <p class="erfolg-hinweis">Du kannst dieses Fenster jetzt schließen – oder ein weiteres Projekt eintragen.</p>
+    <div class="buttonreihe">
+      <button class="knopf" id="btnFertig" type="button">＋ Weiteres Projekt eintragen</button>
+    </div>
+  </section>
+
   <div class="karte" id="geschlossen" hidden>
     <h2 class="abschnitt">Die Buchungsphase ist beendet</h2>
     <p class="abschnitt-hinweis" style="margin:0">Neue Projekte können nicht mehr angelegt werden.
@@ -527,14 +555,6 @@ dialog.breit[open] { display: flex; flex-direction: column; }
   </div>
 </dialog>
 
-<!-- Erfolg -->
-<dialog id="erfolg" aria-labelledby="erfolgTitel">
-  <div class="fenster-kopf"><h2 id="erfolgTitel">Projekt gebucht</h2></div>
-  <div class="fenster-inhalt" id="erfolgInhalt"></div>
-  <div class="fenster-fuss">
-    <button class="knopf" id="btnFertig" type="button">Fertig</button>
-  </div>
-</dialog>
 
 <div class="meldung" id="meldung" role="status" hidden></div>
 
@@ -559,7 +579,8 @@ const KLASSEN_VORLAGEN = [
 
 const daten = { raeume: [], gruppen: [], raumGruppen: [], projekte: [], buchungen: [], status: {} };
 let form = null;
-let bearbeiten = null;           // { id, code } beim Ändern per Code
+let bearbeiten = null;
+let gespeichert = false;          // Bestätigung nach dem Speichern anzeigen           // { id, code } beim Ändern per Code
 const picker = { tag: 1, trakt: "alle", gruppe: null, suche: "", nurFrei: false };
 
 function leeresFormular() {
@@ -752,9 +773,10 @@ function renderKopf() {
     ? "Projektwoche vom " + datum(1) + " bis " + datum(5)
     : "Projekt anlegen, Tage wählen, Raum buchen.";
 
-  const planAn = !offen && !bearbeiten && daten.status.plan_sichtbar === true;
-  $("werkbank").hidden = !(offen || bearbeiten);
-  $("geschlossen").hidden = offen || !!bearbeiten || planAn;
+  const planAn = !gespeichert && !offen && !bearbeiten && daten.status.plan_sichtbar === true;
+  $("erfolg").hidden = !gespeichert;
+  $("werkbank").hidden = gespeichert || !(offen || bearbeiten);
+  $("geschlossen").hidden = gespeichert || offen || !!bearbeiten || planAn;
   $("plan").hidden = !planAn;
   $("zaehler").hidden = planAn;
   $("schrittreihe").hidden = planAn;
@@ -1326,7 +1348,8 @@ async function absenden() {
 }
 
 function erfolgZeigen(code, geaendert) {
-  $("erfolgTitel").textContent = geaendert ? "Änderungen gespeichert" : "Projekt gebucht";
+  $("erfolgTitel").textContent = geaendert ? "Änderungen gespeichert" : "Eingaben gespeichert";
+  $("erfolgUnter").textContent = geaendert ? "Dein Projekt wurde aktualisiert." : "Dein Projekt ist verbindlich eingetragen.";
   const box = $("erfolgInhalt");
   box.innerHTML = "";
 
@@ -1355,7 +1378,11 @@ function erfolgZeigen(code, geaendert) {
     box.appendChild(el("p", "abschnitt-hinweis",
       "Die Buchung ist fest. Änderungen bitte über die Projektwochen-Leitung."));
   }
-  $("erfolg").showModal();
+  gespeichert = true;
+  bearbeiten = null;
+  laden().catch(() => {}).then(() => renderKopf());   /* Zähler aktualisieren */
+  renderKopf();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 async function zuruecksetzen() {
@@ -1509,12 +1536,11 @@ function bedienungEinrichten() {
   $("btnLoeschen").addEventListener("click", projektLoeschen);
 
   /* Erfolg */
-  $("btnFertig").addEventListener("click", () => { $("erfolg").close(); zuruecksetzen(); });
-  $("erfolg").addEventListener("cancel", (e) => e.preventDefault());
+  $("btnFertig").addEventListener("click", () => { gespeichert = false; zuruecksetzen(); });
 
   /* Dialoge: Schließen-Knöpfe und Klick auf den Hintergrund */
   document.querySelectorAll("dialog").forEach((d) => {
-    d.addEventListener("click", (e) => { if (e.target === d && d.id !== "erfolg") d.close(); });
+    d.addEventListener("click", (e) => { if (e.target === d) d.close(); });
   });
   document.querySelectorAll("[data-schliessen]").forEach((b) => {
     b.addEventListener("click", () => b.closest("dialog").close());

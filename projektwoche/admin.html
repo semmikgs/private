@@ -295,9 +295,17 @@ dialog::backdrop { background: rgba(15, 20, 60, .55); }
 .d-tabelle td small { display: block; color: #555; }
 .d-tabelle .thema { font-weight: 700; }
 .d-tabelle .beschr { font-weight: 400; font-size: 9.5px; line-height: 1.25; color: #333; }
-.d-tabelle.d-liste { table-layout: fixed; font-size: 11px; }
-.d-tabelle.d-liste td, .d-tabelle.d-liste th { padding: 3px 5px; line-height: 1.25; overflow-wrap: break-word; }
+.d-tabelle.d-liste { font-size: 11px; border: 1.5px solid #8f95ab; }
+.d-tabelle.d-liste th, .d-tabelle.d-liste td { padding: 4px 6px; line-height: 1.3; border-color: #c9cddb; }
+.d-tabelle.d-liste th { background: #e4e6f4; color: #1e2a78; font-size: 10.5px; white-space: nowrap; border-bottom: 1.5px solid #8f95ab; }
+.d-tabelle.d-liste tbody tr:nth-child(even) td { background: #f7f8fc; }
 .d-tabelle.d-liste td small { font-size: 9.5px; }
+.d-tabelle.d-liste .eng { white-space: nowrap; }
+.d-tabelle.d-liste .thema { font-size: 11.5px; }
+.d-tabelle.d-liste .ort b { display: block; white-space: nowrap; }
+.d-tabelle.d-liste .ort small { white-space: nowrap; }
+.d-tabelle.d-liste .ort + .ort { margin-top: 4px; }
+.d-tabelle.d-liste .vertr { display: block; white-space: nowrap; color: var(--rot); font-weight: 700; font-size: 9.5px; }
 .d-krank { color: var(--rot); font-weight: 700; }
 .d-schild { text-align: center; padding: 10px 0 18px; }
 .d-schild .raumnr { font-size: 80px; font-weight: 800; color: var(--indigo); line-height: 1; letter-spacing: -.02em; }
@@ -715,8 +723,18 @@ function projektHtml(p) {
 /* Raum in einer Zeile: „3117 · NW1“ */
 function ortKurzHtml(b) {
   const r = raumInfo(b.room);
-  if (istExkursion(b.room)) return "<b>Exkursion</b>" + (b.ort ? " · " + esc(b.ort) : "");
-  return "<b>" + esc(b.room) + "</b>" + (r && r.beschreibung ? " · " + esc(r.beschreibung) : "");
+  if (istExkursion(b.room)) return "<b>Exkursion</b>" + (b.ort ? "<small>" + esc(b.ort) + "</small>" : "");
+  return "<b>" + esc(b.room) + "</b>" + (r && r.beschreibung ? "<small>" + esc(r.beschreibung) + "</small>" : "");
+}
+
+/* kurze Vertretungsangabe für die Listen */
+function vertrKurz(b) {
+  if (!b.krank) return "";
+  return '<span class="vertr">' + (b.vertretung ? "Vertr.: " + esc(b.vertretung) : "erkrankt") + "</span>";
+}
+
+function stdKurz(b) {
+  return b.std_von === 1 && b.std_bis === 6 ? "1.–6." : b.std_von === b.std_bis ? b.std_von + "." : b.std_von + ".–" + b.std_bis + ".";
 }
 
 function kostenPasst(p) {
@@ -2191,7 +2209,7 @@ function renderLehrer(ziel) {
       '<p class="d-unter">' + esc(info.textContent) + " · " + stand() + "</p>" +
       huelle.innerHTML.replace('class="tabelle"', 'class="d-tabelle"') + "</div>";
     $("seitenstil").textContent = "@page { size: A4 landscape; margin: 12mm; }";
-    window.print();
+    drucken("Projektwoche_Einsatz_Lehrkraefte");
   }));
   k.append(info, huelle, rDruck);
 
@@ -2540,7 +2558,7 @@ function renderExport(ziel) {
   const reihe = el("div", "buttonreihe");
   reihe.appendChild(knopf("Drucken / Als PDF speichern", "", () => {
     vorschau();
-    window.print();
+    drucken(aushangName());
   }));
   const info = el("span", "leise");
   info.style.alignSelf = "center";
@@ -2650,21 +2668,18 @@ function htmlListe() {
   let h = '<div class="d-seite"><h1>Projektwoche ' + esc(wochenText()) + "</h1>" +
     '<p class="d-unter">Übersicht aller Projekte · sortiert nach ' + sortText() +
     (filterText() ? " · " + esc(filterText()) : "") + " · " + stand() + "</p>";
-  h += '<table class="d-tabelle d-liste"><colgroup><col style="width:' + (v.beschr ? 49 : 30) + '%"><col style="width:4%"><col style="width:6.5%"><col style="width:8%">' +
-    '<col span="5" style="width:' + (v.beschr ? 6.5 : 10.3) + '%"></colgroup><thead><tr><th>Projekt</th><th>Kl.</th><th>Kosten</th><th>Lehrkräfte</th>';
-  for (let t = 1; t <= 5; t++) h += "<th>" + TAGE[t] + (datum(t) ? "<br>" + datum(t) : "") + "</th>";
+  h += '<table class="d-tabelle d-liste"><thead><tr><th style="width:100%">Projekt</th><th>Kl.</th><th>Kosten</th><th>Lehrkräfte</th>';
+  for (let t = 1; t <= 5; t++) h += "<th>" + TAGE_KURZ[t] + (datum(t) ? " " + datum(t) : "") + "</th>";
   h += "</tr></thead><tbody>";
   projekte.forEach((p) => {
     const bs = buchungenVon(p.id);
-    h += "<tr><td>" + projektHtml(p) + "</td><td>" + esc(klassenText(p).replace("Kl. ", "")) + "</td><td>" + kostenHtml(p) +
-      "</td><td>" + esc(lehrkraefte(p)) + "</td>";
+    h += "<tr><td>" + projektHtml(p) + '</td><td class="eng">' + esc(klassenText(p).replace("Kl. ", "")) + '</td><td class="eng">' + kostenHtml(p) +
+      '</td><td class="eng">' + esc(lehrkraefte(p)) + "</td>";
     for (let t = 1; t <= 5; t++) {
       const tb = bs.filter((b) => b.tag === t);
-      h += "<td>" + (tb.length ? tb.map((b) => {
-        return ortKurzHtml(b) +
-          (b.std_von === 1 && b.std_bis === 6 ? "" : "<small>" + esc(stundenText(b.std_von, b.std_bis)) + "</small>") +
-          vertretungHtml(b);
-      }).join("<br>") : '<span class="d-leer">–</span>') + "</td>";
+      h += '<td class="eng">' + (tb.length ? tb.map((b) => '<div class="ort">' + ortKurzHtml(b) +
+          (b.std_von === 1 && b.std_bis === 6 ? "" : "<small>" + esc(stdKurz(b)) + " Std.</small>") +
+          vertrKurz(b) + "</div>").join("") : '<span class="d-leer">–</span>') + "</td>";
     }
     h += "</tr>";
   });
@@ -2680,12 +2695,11 @@ function htmlListeTag(t) {
   let h = '<div class="d-seite"><h1>Projekte am ' + TAGE[t] + (datum(t) ? ", " + datum(t, true) : "") + "</h1>" +
     '<p class="d-unter">Sortiert nach ' + sortText() + (filterText() ? " · " + esc(filterText()) : "") + " · " + stand() + "</p>";
   const b2 = ansicht.export.beschr;
-  h += '<table class="d-tabelle d-liste"><colgroup><col style="width:' + (b2 ? 9.5 : 14) + '%"><col style="width:' + (b2 ? 64 : 40) + '%"><col style="width:4%"><col style="width:' + (b2 ? 7 : 12) + '%">' +
-    '<col style="width:' + (b2 ? 10 : 18) + '%"><col style="width:' + (b2 ? 5.5 : 12) + '%"></colgroup><thead><tr><th>Raum / Ort</th><th>Projekt</th><th>Kl.</th><th>Kosten</th><th>Lehrkräfte</th><th>Std.</th></tr></thead><tbody>';
+  h += '<table class="d-tabelle d-liste"><thead><tr><th>Raum / Ort</th><th style="width:100%">Projekt</th><th>Kl.</th><th>Kosten</th><th>Lehrkräfte</th><th>Std.</th></tr></thead><tbody>';
   liste.forEach(({ b, p }) => {
     const r = raumInfo(b.room);
-    h += "<tr><td>" + ortKurzHtml(b) + "</td><td>" + projektHtml(p) + "</td><td>" + esc(klassenText(p).replace("Kl. ", "")) + "</td><td>" + kostenHtml(p) +
-      "</td><td>" + esc(lehrkraefte(p)) + vertretungHtml(b) + "</td><td>" + (b.std_von === 1 && b.std_bis === 6 ? "1.–6." : esc(stundenText(b.std_von, b.std_bis).replace(" Std.", ""))) + "</td></tr>";
+    h += '<tr><td class="eng"><div class="ort">' + ortKurzHtml(b) + "</div></td><td>" + projektHtml(p) + '</td><td class="eng">' + esc(klassenText(p).replace("Kl. ", "")) +
+      '</td><td class="eng">' + kostenHtml(p) + "</td><td class=\"eng\">" + esc(lehrkraefte(p)) + vertrKurz(b) + '</td><td class="eng">' + esc(stdKurz(b)) + "</td></tr>";
   });
   if (!liste.length) h += '<tr><td colspan="6" class="d-leer">Keine Projekte für diese Auswahl.</td></tr>';
   h += "</tbody></table>";
@@ -2837,6 +2851,26 @@ function htmlLeer() {
   const seiten = v.tag === -1 ? tage.map((t) => htmlLeerSeite([t], true)) : [htmlLeerSeite(tage, true)];
   const frei = tage.reduce((n, t) => n + leerAmTag(t, true).frei.length, 0);
   return { html: seiten.join(""), anzahl: (tage.length === 1 ? frei + " ganztägig freie Räume" : frei + " freie Raum-Tage") + " · " + seiten.length + (seiten.length === 1 ? " Seite" : " Seiten"), quer: false };
+}
+
+/* Druck mit sprechendem Dateinamen: der Browser nimmt den Seitentitel als PDF-Namen */
+function drucken(name) {
+  const d = new Date();
+  const z = (n) => String(n).padStart(2, "0");
+  const stempel = d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate()) + "_" + z(d.getHours()) + "-" + z(d.getMinutes());
+  const alt = document.title;
+  document.title = name.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, "_") + "_" + stempel;
+  const zurueck = () => { document.title = alt; window.removeEventListener("afterprint", zurueck); };
+  window.addEventListener("afterprint", zurueck);
+  window.print();
+  setTimeout(zurueck, 60000);   /* falls afterprint ausbleibt */
+}
+
+function aushangName() {
+  const v = ansicht.export;
+  const art = { liste: "Projektliste", schild: "Tuerschilder", tag: "Tagesplan_Lehrkraefte", leer: "Leere_Raeume" }[v.art];
+  const tag = v.tag === -1 ? "alle_Tage_einzeln" : v.tag > 0 ? TAGE[v.tag] : "Woche";
+  return "Projektwoche_" + art + "_" + tag;
 }
 
 function vorschau() {
