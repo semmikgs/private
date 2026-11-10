@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-09T11:51:58+00:00",
+  "generated": "2026-11-10T08:21:32+00:00",
   "projects": [
     {
       "folder": "alma-mathe",
@@ -46,19 +46,19 @@
     },
     {
       "folder": "projektwoche",
-      "title": "Projektwoche – Raumbuchung",
-      "description": "Kollegen legen ihr Projekt für die Projektwoche an, wählen Tage und buchen Räume. Daten liegen in Supabase. Testversion.",
+      "title": "Projektwoche – Projektplanung",
+      "description": "Kollegen planen ihre Projekte für die Projektwoche, wählen Tage und buchen Räume. Daten liegen in Supabase. Testversion.",
       "icon": "🗓️",
       "tags": [
         "Schule",
         "Projektwoche",
-        "Raumbuchung"
+        "Projektplanung"
       ],
       "hasIndex": true,
       "files": [
         "admin.html"
       ],
-      "updated": "2026-11-09T12:51:49+01:00"
+      "updated": "2026-11-10T09:21:23+01:00"
     },
     {
       "folder": "trading-strategien",
