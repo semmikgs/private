@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Projektwoche · Raumbuchung</title>
+<title>Projektwoche · Projektplanung</title>
 <meta name="description" content="Projekt für die Projektwoche anlegen, Tage wählen und Räume buchen.">
 
 <!-- =========================================================
@@ -355,7 +355,7 @@ dialog.breit[open] { display: flex; flex-direction: column; }
 <div class="huelle">
 
   <div class="karte">
-    <h1 class="kopf-titel"><span class="symbol">🗓️</span> Projektwoche · Raumbuchung</h1>
+    <h1 class="kopf-titel"><span class="symbol">🗓️</span> Projektwoche · Projektplanung</h1>
     <p class="kopf-untertitel" id="untertitel">Projekt anlegen, Tage wählen, Raum buchen.</p>
     <div class="schrittreihe" id="schrittreihe">
       <span><b>1</b>Projekt beschreiben</span>
@@ -408,6 +408,13 @@ dialog.breit[open] { display: flex; flex-direction: column; }
       <div class="feldgruppe">
         <label for="fThema">Thema des Projekts <span class="pflicht">*</span></label>
         <input class="feld" id="fThema" type="text" maxlength="120" placeholder="z. B. Wir bauen ein Insektenhotel">
+      </div>
+
+      <div class="feldgruppe">
+        <label for="fBeschr">Kurzbeschreibung <span style="font-weight:400">(für den Aushang, max. 300 Zeichen ≈ 3 Sätze)</span></label>
+        <textarea class="feld" id="fBeschr" maxlength="300" rows="3" style="resize:vertical;font-family:inherit"
+          placeholder="Worum geht es? Was machen die Schüler? Was sollen sie mitbringen?"></textarea>
+        <div id="beschrZaehler" style="text-align:right;font-size:12.5px;color:var(--tinte-leise);margin-top:4px">0 / 300</div>
       </div>
 
       <div class="feldgruppe nebeneinander">
@@ -558,7 +565,7 @@ const picker = { tag: 1, trakt: "alle", gruppe: null, suche: "", nurFrei: false 
 function leeresFormular() {
   const tage = {};
   for (let t = 1; t <= 5; t++) tage[t] = { aktiv: true, raum: null, ort: "", ganz: true, von: 1, bis: 6 };
-  return { thema: "", kuerzel: "", name: "", mitwirkende: "", kosten: "", kostenInfo: "", kVon: 5, kBis: 10, code: false, tage };
+  return { thema: "", kuerzel: "", name: "", mitwirkende: "", kosten: "", kostenInfo: "", beschreibung: "", kVon: 5, kBis: 10, code: false, tage };
 }
 
 const $ = (id) => document.getElementById(id);
@@ -651,6 +658,13 @@ function belegungen(raum, tag) {
 function konflikt(raum, tag, von, bis) {
   if (istExkursion(raum)) return null;
   return belegungen(raum, tag).find((b) => b.std_von <= bis && b.std_bis >= von) || null;
+}
+
+function beschrZaehlen() {
+  const n = $("fBeschr").value.length;
+  const z = $("beschrZaehler");
+  z.textContent = n + " / 300";
+  z.style.color = n >= 280 ? "var(--orange)" : "var(--tinte-leise)";
 }
 
 function kostenZahl(text) {
@@ -763,6 +777,8 @@ function formularFuellen() {
   $("fMit").value = form.mitwirkende;
   $("fKosten").value = form.kosten;
   $("fKostenInfo").value = form.kostenInfo;
+  $("fBeschr").value = form.beschreibung;
+  beschrZaehlen();
   $("fVon").value = form.kVon;
   $("fBis").value = form.kBis;
   $("cbCode").checked = form.code;
@@ -1038,7 +1054,7 @@ function planInhalt() {
     anzahl = liste.length;
     h = "<thead><tr><th>Raum / Ort</th><th>Projekt</th><th>Klassen</th><th>Kosten</th><th>Lehrkräfte</th><th>Zeit</th></tr></thead><tbody>";
     liste.forEach(({ b, p }) => {
-      h += "<tr><td>" + ortHtml(b) + '</td><td class="thema">' + esc(p.thema) + "</td><td>" + klassenKurz(p) + "</td><td>" +
+      h += "<tr><td>" + ortHtml(b) + '</td><td><span class="thema">' + esc(p.thema) + "</span>" + (p.beschreibung ? "<small>" + esc(p.beschreibung) + "</small>" : "") + "</td><td>" + klassenKurz(p) + "</td><td>" +
         esc(kostenText(p.kosten, p.kosten_info)) + "</td><td>" + lehrkraftHtml(p, b) + "</td><td>" + esc(stundenText(b.std_von, b.std_bis)) + "</td></tr>";
     });
     if (!anzahl) h += '<tr><td colspan="6" class="plan-leer">Keine Projekte für diese Auswahl.</td></tr>';
@@ -1052,7 +1068,7 @@ function planInhalt() {
     for (let d = 1; d <= 5; d++) h += '<th class="' + (d === heute ? "heute" : "") + '">' + TAGE[d] + (datum(d) ? "<br>" + datum(d).slice(0, 6) : "") + "</th>";
     h += "</tr></thead><tbody>";
     liste.forEach(({ p }) => {
-      h += '<tr><td class="thema">' + esc(p.thema) + "</td><td>" + klassenKurz(p) + "</td><td>" + esc(kostenText(p.kosten, p.kosten_info)) +
+      h += '<tr><td><span class="thema">' + esc(p.thema) + "</span>" + (p.beschreibung ? "<small>" + esc(p.beschreibung) + "</small>" : "") + "</td><td>" + klassenKurz(p) + "</td><td>" + esc(kostenText(p.kosten, p.kosten_info)) +
         "</td><td>" + lehrkraftHtml(p) + "</td>";
       for (let d = 1; d <= 5; d++) {
         const bs = daten.buchungen.filter((b) => b.project_id === p.id && b.tag === d);
@@ -1285,6 +1301,7 @@ async function absenden() {
     p_mitwirkende: form.mitwirkende.trim() || null,
     p_kosten: kostenZahl(form.kosten),
     p_kosten_info: form.kostenInfo.trim() || null,
+    p_beschreibung: form.beschreibung.trim() || null,
     p_klasse_von: form.kVon,
     p_klasse_bis: form.kBis,
     p_buchungen: buchungsDaten()
@@ -1373,7 +1390,7 @@ async function codeLaden() {
     form = leeresFormular();
     Object.assign(form, {
       thema: p.thema, kuerzel: p.kuerzel, name: p.name, mitwirkende: p.mitwirkende || "",
-      kosten: Number(p.kosten) ? String(p.kosten).replace(".", ",") : "", kostenInfo: p.kosten_info || "",
+      kosten: Number(p.kosten) ? String(p.kosten).replace(".", ",") : "", kostenInfo: p.kosten_info || "", beschreibung: p.beschreibung || "",
       kVon: p.klasse_von, kBis: p.klasse_bis
     });
     for (let t = 1; t <= 5; t++) form.tage[t].aktiv = false;
@@ -1437,6 +1454,8 @@ function bedienungEinrichten() {
   feld("fMit", "mitwirkende");
   feld("fKosten", "kosten", (v) => v.replace(/[^0-9,.]/g, ""));
   feld("fKostenInfo", "kostenInfo");
+  feld("fBeschr", "beschreibung", (v) => v.replace(/\s*\n\s*/g, " ").slice(0, 300));
+  $("fBeschr").addEventListener("input", beschrZaehlen);
 
   ["fVon", "fBis"].forEach((id) => {
     const s = $(id);
@@ -1509,7 +1528,7 @@ function bedienungEinrichten() {
 function startfehler(text) {
   const box = $("startfehler");
   box.innerHTML = "";
-  box.appendChild(el("h2", "abschnitt", "Die Raumbuchung ist gerade nicht erreichbar"));
+  box.appendChild(el("h2", "abschnitt", "Die Projektplanung ist gerade nicht erreichbar"));
   box.appendChild(el("p", "abschnitt-hinweis", text));
   box.hidden = false;
 }

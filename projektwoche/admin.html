@@ -294,6 +294,10 @@ dialog::backdrop { background: rgba(15, 20, 60, .55); }
 .d-tabelle th { background: #eceef6; font-size: 11.5px; }
 .d-tabelle td small { display: block; color: #555; }
 .d-tabelle .thema { font-weight: 700; }
+.d-tabelle .beschr { font-weight: 400; font-size: 9.5px; line-height: 1.25; color: #333; }
+.d-tabelle.d-liste { table-layout: fixed; font-size: 11px; }
+.d-tabelle.d-liste td, .d-tabelle.d-liste th { padding: 3px 5px; line-height: 1.25; overflow-wrap: break-word; }
+.d-tabelle.d-liste td small { font-size: 9.5px; }
 .d-krank { color: var(--rot); font-weight: 700; }
 .d-schild { text-align: center; padding: 10px 0 18px; }
 .d-schild .raumnr { font-size: 80px; font-weight: 800; color: var(--indigo); line-height: 1; letter-spacing: -.02em; }
@@ -561,7 +565,7 @@ let reiter = "planung";
 const ansicht = {
   plan: { modus: "raster", suche: "", alleRaeume: false },
   raeume: { suche: "", versteckte: true, zuordnung: null },
-  export: { art: "liste", klasse: "alle", kosten: "alle", gruppe: "", trakt: "", tag: 0, suche: "", sort: "thema", leerAnhang: true }
+  export: { art: "liste", klasse: "alle", kosten: "alle", gruppe: "", trakt: "", tag: 0, suche: "", sort: "thema", leerAnhang: true, beschr: true }
 };
 let offenesProjekt = null;
 let bd = null;                  // Zustand des Buchungsdialogs
@@ -696,6 +700,23 @@ function euro(n) {
 function kostenKurz(p) {
   const n = Number(p.kosten) || 0;
   return n ? euro(n) + (p.kosten_info ? " (" + p.kosten_info + ")" : "") : "kostenlos";
+}
+
+function kostenHtml(p) {
+  const n = Number(p.kosten) || 0;
+  return n ? esc(euro(n)) + (p.kosten_info ? "<small>" + esc(p.kosten_info) + "</small>" : "") : "kostenlos";
+}
+
+function projektHtml(p) {
+  const mit = ansicht.export.beschr && p.beschreibung;
+  return '<span class="thema">' + esc(p.thema) + "</span>" + (mit ? ' <span class="beschr">– ' + esc(p.beschreibung) + "</span>" : "");
+}
+
+/* Raum in einer Zeile: „3117 · NW1“ */
+function ortKurzHtml(b) {
+  const r = raumInfo(b.room);
+  if (istExkursion(b.room)) return "<b>Exkursion</b>" + (b.ort ? " · " + esc(b.ort) : "");
+  return "<b>" + esc(b.room) + "</b>" + (r && r.beschreibung ? " · " + esc(r.beschreibung) : "");
 }
 
 function kostenPasst(p) {
@@ -1141,6 +1162,14 @@ function renderProjektDialog() {
   const fKo = input(Number(p.kosten) ? String(p.kosten).replace(".", ",") : "", "0"); fKo.id = "pdKosten";
   fKo.inputMode = "decimal"; fKo.maxLength = 7;
   const fKi = input(p.kosten_info || "", "z. B. Material, Eintritt"); fKi.id = "pdKostenInfo"; fKi.maxLength = 80;
+  const zB = el("div", "feldgruppe");
+  const fBe = el("textarea", "feld"); fBe.id = "pdBeschr"; fBe.maxLength = 300; fBe.rows = 3;
+  fBe.style.fontFamily = "inherit"; fBe.style.minHeight = "70px"; fBe.value = p.beschreibung || "";
+  fBe.placeholder = "Kurzbeschreibung für den Aushang (max. 300 Zeichen)";
+  const zz = el("div", "leise", fBe.value.length + " / 300"); zz.style.textAlign = "right"; zz.style.fontSize = "12.5px";
+  fBe.oninput = () => { fBe.value = fBe.value.replace(/\s*\n\s*/g, " "); zz.textContent = fBe.value.length + " / 300"; };
+  zB.append(feldMitLabel("Kurzbeschreibung", fBe), zz);
+  box.appendChild(zB);
   const kk = feldMitLabel("Kosten pro Schüler (€)", fKo); kk.className = "schmal"; kk.style.flexBasis = "170px";
   zK.append(kk, feldMitLabel("wofür?", fKi));
   box.appendChild(zK);
@@ -1203,6 +1232,7 @@ async function projektSpeichern() {
     p_mitwirkende: $("pdMit").value.trim() || null,
     p_kosten: kostenZahl($("pdKosten").value),
     p_kosten_info: $("pdKostenInfo").value.trim() || null,
+    p_beschreibung: $("pdBeschr").value.trim() || null,
     p_klasse_von: Number($("pdVon").value),
     p_klasse_bis: Number($("pdBis").value)
   };
@@ -2498,6 +2528,13 @@ function renderExport(ziel) {
     cb.onchange = () => { v.leerAnhang = cb.checked; vorschau(); };
     sch.append(cb, el("span", "", "Übersicht der leeren Räume am Ende anhängen"));
     k.appendChild(sch);
+    const sch2 = el("label", "schalter");
+    sch2.style.marginTop = "10px";
+    const cb2 = input(null, null, "checkbox");
+    cb2.checked = v.beschr;
+    cb2.onchange = () => { v.beschr = cb2.checked; vorschau(); };
+    sch2.append(cb2, el("span", "", "Kurzbeschreibungen der Projekte anzeigen"));
+    k.appendChild(sch2);
   }
 
   const reihe = el("div", "buttonreihe");
@@ -2601,7 +2638,7 @@ function htmlListe() {
   const v = ansicht.export;
   if (v.tag !== 0) {
     const seiten = tageAuswahl().map(htmlListeTag);
-    return { html: seiten.map((x) => x.html).join(""), anzahl: seiten.reduce((n, x) => n + x.n, 0) + " Einträge auf " + seiten.length + (seiten.length === 1 ? " Seite" : " Seiten"), quer: false };
+    return { html: seiten.map((x) => x.html).join(""), anzahl: seiten.reduce((n, x) => n + x.n, 0) + " Einträge auf " + seiten.length + (seiten.length === 1 ? " Seite" : " Seiten"), quer: ansicht.export.beschr };
   }
   const q = v.suche.trim().toLowerCase();
   const raumFilter = v.gruppe || v.trakt !== "";
@@ -2613,20 +2650,18 @@ function htmlListe() {
   let h = '<div class="d-seite"><h1>Projektwoche ' + esc(wochenText()) + "</h1>" +
     '<p class="d-unter">Übersicht aller Projekte · sortiert nach ' + sortText() +
     (filterText() ? " · " + esc(filterText()) : "") + " · " + stand() + "</p>";
-  h += '<table class="d-tabelle"><thead><tr><th>Projekt</th><th>Klassen</th><th>Kosten</th><th>Lehrkräfte</th>';
+  h += '<table class="d-tabelle d-liste"><colgroup><col style="width:' + (v.beschr ? 49 : 30) + '%"><col style="width:4%"><col style="width:6.5%"><col style="width:8%">' +
+    '<col span="5" style="width:' + (v.beschr ? 6.5 : 10.3) + '%"></colgroup><thead><tr><th>Projekt</th><th>Kl.</th><th>Kosten</th><th>Lehrkräfte</th>';
   for (let t = 1; t <= 5; t++) h += "<th>" + TAGE[t] + (datum(t) ? "<br>" + datum(t) : "") + "</th>";
   h += "</tr></thead><tbody>";
   projekte.forEach((p) => {
     const bs = buchungenVon(p.id);
-    h += '<tr><td class="thema">' + esc(p.thema) + "</td><td>" + esc(klassenText(p).replace("Kl. ", "")) + "</td><td>" + esc(kostenKurz(p)) +
+    h += "<tr><td>" + projektHtml(p) + "</td><td>" + esc(klassenText(p).replace("Kl. ", "")) + "</td><td>" + kostenHtml(p) +
       "</td><td>" + esc(lehrkraefte(p)) + "</td>";
     for (let t = 1; t <= 5; t++) {
       const tb = bs.filter((b) => b.tag === t);
       h += "<td>" + (tb.length ? tb.map((b) => {
-        const r = raumInfo(b.room);
-        return "<b>" + esc(istExkursion(b.room) ? "Exkursion" : b.room) + "</b>" +
-          (istExkursion(b.room) ? (b.ort ? "<small>" + esc(b.ort) + "</small>" : "")
-            : (r && r.beschreibung ? "<small>" + esc(r.beschreibung) + "</small>" : "")) +
+        return ortKurzHtml(b) +
           (b.std_von === 1 && b.std_bis === 6 ? "" : "<small>" + esc(stundenText(b.std_von, b.std_bis)) + "</small>") +
           vertretungHtml(b);
       }).join("<br>") : '<span class="d-leer">–</span>') + "</td>";
@@ -2644,14 +2679,13 @@ function htmlListeTag(t) {
   const liste = tagesBuchungen(t);
   let h = '<div class="d-seite"><h1>Projekte am ' + TAGE[t] + (datum(t) ? ", " + datum(t, true) : "") + "</h1>" +
     '<p class="d-unter">Sortiert nach ' + sortText() + (filterText() ? " · " + esc(filterText()) : "") + " · " + stand() + "</p>";
-  h += '<table class="d-tabelle"><thead><tr><th>Raum / Ort</th><th>Projekt</th><th>Klassen</th><th>Kosten</th><th>Lehrkräfte</th><th>Zeit</th></tr></thead><tbody>';
+  const b2 = ansicht.export.beschr;
+  h += '<table class="d-tabelle d-liste"><colgroup><col style="width:' + (b2 ? 9.5 : 14) + '%"><col style="width:' + (b2 ? 64 : 40) + '%"><col style="width:4%"><col style="width:' + (b2 ? 7 : 12) + '%">' +
+    '<col style="width:' + (b2 ? 10 : 18) + '%"><col style="width:' + (b2 ? 5.5 : 12) + '%"></colgroup><thead><tr><th>Raum / Ort</th><th>Projekt</th><th>Kl.</th><th>Kosten</th><th>Lehrkräfte</th><th>Std.</th></tr></thead><tbody>';
   liste.forEach(({ b, p }) => {
     const r = raumInfo(b.room);
-    h += "<tr><td><b>" + esc(istExkursion(b.room) ? "Exkursion" : b.room) + "</b>" +
-      (istExkursion(b.room) ? (b.ort ? "<small>" + esc(b.ort) + "</small>" : "")
-        : (r && r.beschreibung ? "<small>" + esc(r.beschreibung) + "</small>" : "")) +
-      '</td><td class="thema">' + esc(p.thema) + "</td><td>" + esc(klassenText(p).replace("Kl. ", "")) + "</td><td>" + esc(kostenKurz(p)) +
-      "</td><td>" + esc(lehrkraefte(p)) + vertretungHtml(b) + "</td><td>" + esc(stundenText(b.std_von, b.std_bis)) + "</td></tr>";
+    h += "<tr><td>" + ortKurzHtml(b) + "</td><td>" + projektHtml(p) + "</td><td>" + esc(klassenText(p).replace("Kl. ", "")) + "</td><td>" + kostenHtml(p) +
+      "</td><td>" + esc(lehrkraefte(p)) + vertretungHtml(b) + "</td><td>" + (b.std_von === 1 && b.std_bis === 6 ? "1.–6." : esc(stundenText(b.std_von, b.std_bis).replace(" Std.", ""))) + "</td></tr>";
   });
   if (!liste.length) h += '<tr><td colspan="6" class="d-leer">Keine Projekte für diese Auswahl.</td></tr>';
   h += "</tbody></table>";

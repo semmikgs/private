@@ -1,6 +1,10 @@
 {
-  "title": "Projektwoche – Raumbuchung",
-  "description": "Kollegen legen ihr Projekt für die Projektwoche an, wählen Tage und buchen Räume. Daten liegen in Supabase. Testversion.",
+  "title": "Projektwoche – Projektplanung",
+  "description": "Kollegen planen ihre Projekte für die Projektwoche, wählen Tage und buchen Räume. Daten liegen in Supabase. Testversion.",
   "icon": "🗓️",
-  "tags": ["Schule", "Projektwoche", "Raumbuchung"]
+  "tags": [
+    "Schule",
+    "Projektwoche",
+    "Projektplanung"
+  ]
 }
