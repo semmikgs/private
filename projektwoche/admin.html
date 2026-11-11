@@ -565,7 +565,7 @@ const REITER = [
 ];
 
 const daten = { raeume: [], gruppen: [], raumGruppen: [], projekte: [], buchungen: [], status: {}, abwesend: [],
-  lehrer: [], lehrerSoll: { voll_stunden: 25.5, pw_stunden: 30 }, lehrerFehlt: false };
+  lehrer: [], lehrerSoll: { voll_stunden: 25.5, pw_stunden: 25 }, lehrerFehlt: false };
 const rw = { gebaeude: "alle", gruppe: null, suche: "", nurFrei: false };   // Raumauswahl-Filter
 let abwTag = 1;
 let PW = "";
@@ -658,7 +658,7 @@ async function laden() {
   ]);
   Object.assign(daten, { raeume, gruppen, raumGruppen, projekte, buchungen, status: status || {}, abwesend: abwesend || [],
     lehrer: (lehrerDaten && lehrerDaten.lehrer) || [], lehrerFehlt: !!PW && !lehrerDaten,
-    lehrerSoll: { voll_stunden: lehrerDaten ? lehrerDaten.voll_stunden : 25.5, pw_stunden: lehrerDaten ? lehrerDaten.pw_stunden : 30 } });
+    lehrerSoll: { voll_stunden: lehrerDaten ? lehrerDaten.voll_stunden : 25.5, pw_stunden: lehrerDaten ? lehrerDaten.pw_stunden : 25 } });
 }
 
 /* Admin-Aktion: ausführen, neu laden, alles neu zeichnen */
@@ -686,7 +686,7 @@ const buchungenVon = (pid) => daten.buchungen.filter((b) => b.project_id === pid
 const gruppenVon = (nr) => daten.raumGruppen.filter((x) => x.room === nr).map((x) => x.group_id);
 
 function stundenText(von, bis) {
-  return von === 1 && bis === 6 ? "ganztägig" : von === bis ? von + ". Std." : von + ".–" + bis + ". Std.";
+  return von <= 2 && bis === 6 ? "ganztägig" : von === bis ? von + ". Std." : von + ".–" + bis + ". Std.";
 }
 
 function klassenText(p) {
@@ -734,7 +734,7 @@ function vertrKurz(b) {
 }
 
 function stdKurz(b) {
-  return b.std_von === 1 && b.std_bis === 6 ? "1.–6." : b.std_von === b.std_bis ? b.std_von + "." : b.std_von + ".–" + b.std_bis + ".";
+  return b.std_von <= 2 && b.std_bis === 6 ? "2.–6." : b.std_von === b.std_bis ? b.std_von + "." : b.std_von + ".–" + b.std_bis + ".";
 }
 
 function kostenPasst(p) {
@@ -1084,7 +1084,7 @@ function wochenraster() {
         chip.type = "button";
         let html = "<b>" + esc(p.kuerzel) + "</b> " + esc(p.thema);
         const zusatz = [];
-        if (!(b.std_von === 1 && b.std_bis === 6)) zusatz.push(stundenText(b.std_von, b.std_bis));
+        if (!(b.std_von <= 2 && b.std_bis === 6)) zusatz.push(stundenText(b.std_von, b.std_bis));
         if (b.ort) zusatz.push(b.ort);
         if (b.krank) zusatz.push("krank" + (b.vertretung ? " → " + b.vertretung : " · keine Vertretung"));
         if (zusatz.length) html += "<small>" + esc(zusatz.join(" · ")) + "</small>";
@@ -1178,7 +1178,7 @@ function renderProjektDialog() {
 
   const zK = el("div", "zeile feldgruppe");
   const fKo = input(Number(p.kosten) ? String(p.kosten).replace(".", ",") : "", "0"); fKo.id = "pdKosten";
-  fKo.inputMode = "decimal"; fKo.maxLength = 7;
+  fKo.inputMode = "decimal"; fKo.maxLength = 4;
   const fKi = input(p.kosten_info || "", "z. B. Material, Eintritt"); fKi.id = "pdKostenInfo"; fKi.maxLength = 80;
   const zB = el("div", "feldgruppe");
   const fBe = el("textarea", "feld"); fBe.id = "pdBeschr"; fBe.maxLength = 300; fBe.rows = 3;
@@ -1188,7 +1188,7 @@ function renderProjektDialog() {
   fBe.oninput = () => { fBe.value = fBe.value.replace(/\s*\n\s*/g, " "); zz.textContent = fBe.value.length + " / 300"; };
   zB.append(feldMitLabel("Kurzbeschreibung", fBe), zz);
   box.appendChild(zB);
-  const kk = feldMitLabel("Kosten pro Schüler (€)", fKo); kk.className = "schmal"; kk.style.flexBasis = "170px";
+  const kk = feldMitLabel("Kosten pro Schüler (max. 5 €)", fKo); kk.className = "schmal"; kk.style.flexBasis = "170px";
   zK.append(kk, feldMitLabel("wofür?", fKi));
   box.appendChild(zK);
 
@@ -1256,7 +1256,7 @@ async function projektSpeichern() {
   };
   if (!werte.p_thema || !werte.p_name) { meldung("Thema und Name dürfen nicht leer sein.", true); return; }
   if (werte.p_kuerzel.length < 2 || werte.p_kuerzel.length > 5) { meldung("Das Kürzel muss 2 bis 5 Zeichen haben.", true); return; }
-  if (isNaN(werte.p_kosten) || werte.p_kosten < 0 || werte.p_kosten > 500) { meldung("Bitte bei den Kosten einen Betrag zwischen 0 und 500 eingeben.", true); return; }
+  if (isNaN(werte.p_kosten) || werte.p_kosten < 0 || werte.p_kosten > 5) { meldung("Die Kosten dürfen höchstens 5 € pro Schüler betragen.", true); return; }
   if (werte.p_klasse_von > werte.p_klasse_bis) { meldung("Klassenstufe „von“ ist größer als „bis“.", true); return; }
   const ok = await aktion("pw_admin_project_update", werte, "Projekt gespeichert.");
   if (ok !== undefined) $("projektDialog").close();
@@ -1271,7 +1271,7 @@ function umbuchen(buchungId) {
   if (!b || !p) return;
   bd = {
     id: b.id, pid: p.id, tag: b.tag, raum: b.room, ort: b.ort || "",
-    ganz: b.std_von === 1 && b.std_bis === 6, von: b.std_von, bis: b.std_bis,
+    ganz: b.std_von <= 2 && b.std_bis === 6, von: b.std_von, bis: b.std_bis,
     krank: b.krank, vertretung: b.vertretung || "", original: b, schnell: true
   };
   raumwahlOeffnen();
@@ -1304,14 +1304,14 @@ function buchungOeffnen(buchungId, projektId) {
     const b = daten.buchungen.find((x) => x.id === buchungId);
     bd = {
       id: b.id, pid: projektId, tag: b.tag, raum: b.room, ort: b.ort || "",
-      ganz: b.std_von === 1 && b.std_bis === 6, von: b.std_von, bis: b.std_bis,
+      ganz: b.std_von <= 2 && b.std_bis === 6, von: b.std_von, bis: b.std_bis,
       krank: b.krank, vertretung: b.vertretung || "", original: b
     };
     $("bdTitel").textContent = TAGE[b.tag] + " · " + p.thema;
   } else {
     const belegt = buchungenVon(projektId).map((b) => b.tag);
     const frei = [1, 2, 3, 4, 5].find((t) => !belegt.includes(t)) || 1;
-    bd = { id: null, pid: projektId, tag: frei, raum: "", ort: "", ganz: true, von: 1, bis: 6, krank: false, vertretung: "" };
+    bd = { id: null, pid: projektId, tag: frei, raum: "", ort: "", ganz: true, von: 2, bis: 6, krank: false, vertretung: "" };
     $("bdTitel").textContent = "Tag hinzufügen · " + p.thema;
   }
   renderBuchungDialog();
@@ -1321,7 +1321,7 @@ function buchungOeffnen(buchungId, projektId) {
 function renderBuchungDialog() {
   const box = $("bdInhalt");
   box.innerHTML = "";
-  const von = bd.ganz ? 1 : bd.von, bis = bd.ganz ? 6 : bd.bis;
+  const von = bd.ganz ? 2 : bd.von, bis = bd.ganz ? 6 : bd.bis;
   const andereTage = buchungenVon(bd.pid).filter((b) => b.id !== bd.id).map((b) => b.tag);
 
   /* Tag */
@@ -1338,12 +1338,12 @@ function renderBuchungDialog() {
   z1.appendChild(feldMitLabel("Tag", sTag));
 
   /* Stunden */
-  const sStd = auswahl([["ganz", "Ganztägig (1.–6. Std.)"], ["teil", "Einzelne Stunden"]], bd.ganz ? "ganz" : "teil");
+  const sStd = auswahl([["ganz", "Ganztägig (2.–6. Std.)"], ["teil", "Einzelne Stunden"]], bd.ganz ? "ganz" : "teil");
   sStd.onchange = () => { bd.ganz = sStd.value === "ganz"; renderBuchungDialog(); };
   z1.appendChild(feldMitLabel("Zeit", sStd));
 
   if (!bd.ganz) {
-    const stunden = [1, 2, 3, 4, 5, 6].map((i) => [i, i + ". Std."]);
+    const stunden = [2, 3, 4, 5, 6].map((i) => [i, i + ". Std."]);
     const sV = auswahl(stunden, bd.von);
     const sB = auswahl(stunden, bd.bis);
     sV.onchange = () => { bd.von = Number(sV.value); if (bd.bis < bd.von) bd.bis = bd.von; renderBuchungDialog(); };
@@ -1527,7 +1527,7 @@ function renderRaumFilter() {
     box.appendChild(b);
   };
   chip("Alle", rw.gebaeude === "alle" && rw.gruppe === null, () => { rw.gebaeude = "alle"; rw.gruppe = null; });
-  gebaeude.forEach((g) => chip("Gebäude " + g, rw.gebaeude === g, () => { rw.gebaeude = g; rw.gruppe = null; }));
+  gebaeude.forEach((g) => chip("Trakt " + g, rw.gebaeude === g, () => { rw.gebaeude = g; rw.gruppe = null; }));
   daten.gruppen.forEach((g) => chip(g.name, rw.gruppe === g.id, () => { rw.gruppe = g.id; rw.gebaeude = "alle"; }));
 }
 
@@ -1541,7 +1541,7 @@ function belegtListe(liste) {
 function renderRaumwahl() {
   const box = $("rdInhalt");
   box.innerHTML = "";
-  const von = bd.ganz ? 1 : bd.von, bis = bd.ganz ? 6 : bd.bis;
+  const von = bd.ganz ? 2 : bd.von, bis = bd.ganz ? 6 : bd.bis;
   const q = rw.suche.trim().toLowerCase();
   const gr = rw.gruppe === null ? null
     : new Set(daten.raumGruppen.filter((x) => x.group_id === rw.gruppe).map((x) => x.room));
@@ -1565,7 +1565,7 @@ function renderRaumwahl() {
       const andere = daten.buchungen.filter((x) => x.room === r.nummer && x.tag === bd.tag && x.id !== bd.id);
       if (konflikt(r.nummer, bd.tag, von, bis, bd.id)) { zustand = "belegt: " + belegtListe(andere); klasse = "belegt"; b.disabled = true; }
       else if (andere.length) { zustand = "frei · sonst belegt: " + belegtListe(andere); klasse = "teil"; }
-      else { zustand = von === 1 && bis === 6 ? "ganztägig frei" : "frei"; klasse = "frei"; }
+      else { zustand = von <= 2 && bis === 6 ? "ganztägig frei" : "frei"; klasse = "frei"; }
     }
     b.innerHTML = '<span class="rnr">' + (r.ist_exkursion ? "🚌 Exkursion" : esc(r.nummer)) + "</span>" +
       '<span class="bes">' + esc(r.ist_exkursion ? "Ziel danach eintragen" :
@@ -1600,13 +1600,13 @@ function renderRaumwahl() {
     gruppiert.get(s2).push(r);
   });
   [...gruppiert.keys()].sort().forEach((s2) =>
-    abschnitt(s2 === "9" ? "Weitere Räume" : "Gebäude " + s2, gruppiert.get(s2)));
+    abschnitt(s2 === "9" ? "Weitere Räume" : "Trakt " + s2, gruppiert.get(s2)));
 
   if (!box.children.length) box.appendChild(el("p", "leer-hinweis", "Keine passenden Räume gefunden."));
 }
 
 async function buchungSpeichern() {
-  const von = bd.ganz ? 1 : bd.von, bis = bd.ganz ? 6 : bd.bis;
+  const von = bd.ganz ? 2 : bd.von, bis = bd.ganz ? 6 : bd.bis;
   if (!bd.raum) { meldung("Bitte einen Raum wählen.", true); return; }
   if (istExkursion(bd.raum) && !bd.ort.trim()) { meldung("Bitte das Ziel der Exkursion eintragen.", true); return; }
   if (konflikt(bd.raum, bd.tag, von, bis, bd.id)) { meldung("Der Raum ist zu dieser Zeit belegt.", true); return; }
@@ -1717,7 +1717,7 @@ function renderRaeume(ziel) {
   oben.appendChild(kImp);
 
   /* Neuer Raum + neue Gruppe */
-  const kNeu = karte("Raum anlegen", "Vierstellige Nummer (Gebäude, Etage, Raum) – Gebäude und Etage ergeben sich daraus.");
+  const kNeu = karte("Raum anlegen", "Vierstellige Nummer (Trakt, Etage, Raum) – Trakt und Etage ergeben sich daraus.");
   const fNr = input("", "z. B. 3208");
   fNr.maxLength = 20;
   const fBes = input("", "z. B. Computerraum");
@@ -1803,7 +1803,7 @@ function renderRaeume(ziel) {
     });
     [...nachGebaeude.keys()].sort().forEach((s2) => {
       const blk = el("div", "feldgruppe");
-      blk.appendChild(el("span", "label", s2 === "9" ? "Weitere Räume" : "Gebäude " + s2));
+      blk.appendChild(el("span", "label", s2 === "9" ? "Weitere Räume" : "Trakt " + s2));
       const reiheR = el("div", "filterreihe");
       reiheR.style.marginTop = "0";
       reiheR.style.gap = "6px";
@@ -1858,7 +1858,7 @@ function renderRaeume(ziel) {
       const anz = daten.buchungen.filter((b) => b.room === r.nummer).length;
 
       const tdNr = el("td", "nr", r.ist_exkursion ? "Exkursion" : r.nummer);
-      const tdLage = el("td", "leise", r.ist_exkursion ? "–" : r.trakt === null ? "–" : "Gebäude " + r.trakt + ", " + etageText(r.etage));
+      const tdLage = el("td", "leise", r.ist_exkursion ? "–" : r.trakt === null ? "–" : "Trakt " + r.trakt + ", " + etageText(r.etage));
 
       const tdBes = el("td");
       if (r.ist_exkursion) tdBes.appendChild(el("span", "leise", "für Projekte außer Haus"));
@@ -2033,7 +2033,7 @@ function einsatzIndex() {
 
 function lehrerSoll(l) {
   const voll = Number(daten.lehrerSoll.voll_stunden) || 25.5;
-  const pw = Number(daten.lehrerSoll.pw_stunden) || 30;
+  const pw = Number(daten.lehrerSoll.pw_stunden) || 25;
   const st = l && l.stunden !== null && l.stunden !== undefined && l.stunden !== "" ? Number(l.stunden) : voll;
   return Math.round(st / voll * pw * 2) / 2;
 }
@@ -2055,7 +2055,7 @@ function vertretungVorschlaege(tag, ausser) {
     else if (d.krank) { info = "selbst krank gemeldet"; rang = 3; }
     else if (d.vertritt.length) { info = "vertritt bereits " + d.vertritt.map((x) => x.p.kuerzel).join(", "); rang = 2; }
     else {
-      const frei = [1, 2, 3, 4, 5, 6].filter((s) => !d.std.has(s));
+      const frei = [2, 3, 4, 5, 6].filter((s) => !d.std.has(s));
       info = frei.length ? "teilweise frei (" + frei.join(".,") + ". Std.)" : "eingesetzt: " + d.liste.map((x) => ortText(x.b)).join(", ");
       rang = frei.length ? 1 : 2;
     }
@@ -2376,7 +2376,7 @@ function renderLehrer(ziel) {
   kNeu.appendChild(el("h3", "abschnitt", "Soll-Berechnung"));
   kNeu.appendChild(el("p", "abschnitt-hinweis", "Soll in der Projektwoche = Stundenverpflichtung ÷ volle Stelle × Stunden bei voller Stelle (auf halbe Stunden gerundet). Ohne Eintrag gilt die volle Stelle."));
   const fVoll = input(zahlDe(daten.lehrerSoll.voll_stunden || 25.5), "25,5");
-  const fPw = input(zahlDe(daten.lehrerSoll.pw_stunden || 30), "30");
+  const fPw = input(zahlDe(daten.lehrerSoll.pw_stunden || 25), "25");
   fVoll.inputMode = fPw.inputMode = "decimal";
   const zS = el("div", "zeile");
   zS.append(feldMitLabel("Volle Stelle (Std./Woche)", fVoll), feldMitLabel("Projektwoche bei voller Stelle (Std.)", fPw));
@@ -2513,7 +2513,7 @@ function renderExport(ziel) {
   sG.onchange = () => { v.gruppe = sG.value; vorschau(); };
 
   const trakte = [...new Set(daten.raeume.filter((r) => r.trakt !== null).map((r) => r.trakt))].sort();
-  const sT = auswahl([["", "Alle Gebäude"]].concat(trakte.map((t) => [t, "Gebäude " + t])), v.trakt);
+  const sT = auswahl([["", "Alle Trakte"]].concat(trakte.map((t) => [t, "Trakt " + t])), v.trakt);
   sT.onchange = () => { v.trakt = sT.value; vorschau(); };
 
   const tagOpt = (v.art === "tag" ? [] : [[0, "Ganze Woche"]])
@@ -2532,7 +2532,7 @@ function renderExport(ziel) {
   fS.oninput = () => { v.suche = fS.value; vorschau(); };
 
   if (v.art !== "leer") z.append(feldMitLabel("Klassenstufe", sK), feldMitLabel("Kosten", sKo));
-  z.append(feldMitLabel("Raumgruppe", sG), feldMitLabel("Gebäude", sT), feldMitLabel("Tag", sD));
+  z.append(feldMitLabel("Raumgruppe", sG), feldMitLabel("Trakt", sT), feldMitLabel("Tag", sD));
   if (v.art !== "schild" && v.art !== "leer") z.appendChild(feldMitLabel("Sortieren nach", sS));
   fS.placeholder = v.art === "leer" ? "Raumnummer oder Beschreibung …" : "Thema, Kürzel, Raum …";
   z.appendChild(feldMitLabel("Textsuche", fS));
@@ -2600,7 +2600,7 @@ function filterText() {
   if (v.klasse !== "alle") teile.push(v.klasse === "sek1" ? "Sek I" : v.klasse === "sek2" ? "Sek II" : "Klasse " + v.klasse);
   if (v.kosten !== "alle") teile.push(v.kosten === "frei" ? "nur kostenlose" : "nur mit Kosten");
   if (v.gruppe) { const g = daten.gruppen.find((x) => String(x.id) === String(v.gruppe)); if (g) teile.push(g.name); }
-  if (v.trakt !== "") teile.push("Gebäude " + v.trakt);
+  if (v.trakt !== "") teile.push("Trakt " + v.trakt);
   if (v.tag > 0 && v.art === "schild") teile.push(TAGE[v.tag]);
   if (v.suche.trim()) teile.push("Suche „" + v.suche.trim() + "“");
   return teile.join(" · ");
@@ -2678,7 +2678,7 @@ function htmlListe() {
     for (let t = 1; t <= 5; t++) {
       const tb = bs.filter((b) => b.tag === t);
       h += '<td class="eng">' + (tb.length ? tb.map((b) => '<div class="ort">' + ortKurzHtml(b) +
-          (b.std_von === 1 && b.std_bis === 6 ? "" : "<small>" + esc(stdKurz(b)) + " Std.</small>") +
+          (b.std_von <= 2 && b.std_bis === 6 ? "" : "<small>" + esc(stdKurz(b)) + " Std.</small>") +
           vertrKurz(b) + "</div>").join("") : '<span class="d-leer">–</span>') + "</td>";
     }
     h += "</tr>";
@@ -2774,7 +2774,7 @@ function htmlTagSeite(t) {
 
 /* --- Leere Räume --- */
 
-/* Räume (ohne Exkursion, ohne ausgeblendete) nach Raumgruppe, Gebäude und – nur im Modus „Leere Räume“ – Textsuche */
+/* Räume (ohne Exkursion, ohne ausgeblendete) nach Raumgruppe, Trakt und – nur im Modus „Leere Räume“ – Textsuche */
 function leerKandidaten(mitSuche) {
   const q = mitSuche ? ansicht.export.suche.trim().toLowerCase() : "";
   return daten.raeume.filter((r) => !r.ist_exkursion && !r.versteckt && raumPasst(r.nummer) &&
@@ -2788,7 +2788,7 @@ function leerAmTag(t, mitSuche) {
     if (!bs.length) { frei.push(r); return; }
     const belegt = new Set();
     bs.forEach((b) => { for (let i = b.std_von; i <= b.std_bis; i++) belegt.add(i); });
-    const freiStd = [1, 2, 3, 4, 5, 6].filter((i) => !belegt.has(i));
+    const freiStd = [2, 3, 4, 5, 6].filter((i) => !belegt.has(i));
     if (freiStd.length) teil.push({ r, freiStd });
   });
   return { frei, teil };
@@ -2812,7 +2812,7 @@ function stdBereiche(liste) {
 function freiNachGebaeude(raeume) {
   const gruppen = new Map();
   raeume.forEach((r) => {
-    const g = r.trakt === null ? "Weitere" : "Gebäude " + r.trakt;
+    const g = r.trakt === null ? "Weitere" : "Trakt " + r.trakt;
     if (!gruppen.has(g)) gruppen.set(g, []);
     gruppen.get(g).push(raumName(r));
   });
@@ -2838,7 +2838,7 @@ function htmlLeerSeite(tage, mitSuche) {
   const ft = [];
   const v = ansicht.export;
   if (v.gruppe) { const g = daten.gruppen.find((x) => String(x.id) === String(v.gruppe)); if (g) ft.push(g.name); }
-  if (v.trakt !== "") ft.push("Gebäude " + v.trakt);
+  if (v.trakt !== "") ft.push("Trakt " + v.trakt);
   if (mitSuche && v.suche.trim()) ft.push("Suche „" + v.suche.trim() + "“");
   return '<div class="d-seite"><h1>' + esc(titel) + "</h1>" +
     '<p class="d-unter">Räume ohne Projekt' + (ft.length ? " · " + esc(ft.join(" · ")) : "") + " · ausgeblendete Räume nicht enthalten · " + stand() + "</p>" +
