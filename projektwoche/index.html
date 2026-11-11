@@ -186,6 +186,27 @@ select.feld { padding-right: 8px; }
 .plan-leer { color: var(--tinte-leise); text-align: center; padding: 30px 0; }
 .plan-stand { margin: 10px 0 0; font-size: 13px; color: var(--tinte-leise); }
 
+/* ---------- Belegungsmeldung ---------- */
+.hzeile {
+  display: grid; grid-template-columns: 110px 1fr auto; gap: 14px; align-items: center;
+  padding: 12px 14px; margin-bottom: 8px;
+  border: 1.5px solid var(--linie); border-radius: 12px;
+}
+.hzeile.voll { background: #fdf3f2; border-color: #f1c9c6; }
+.hzeile .hraum { font-size: 20px; font-weight: 700; color: var(--indigo); line-height: 1.2; }
+.hzeile .hraum small { display: block; font-size: 12.5px; font-weight: 500; color: var(--tinte-leise); }
+.hzeile .hthema { font-weight: 700; }
+.hzeile .hwer { font-size: 13.5px; color: var(--tinte-leise); }
+.hzeile .hknopf { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.hzeile .voll-text { color: var(--rot); font-weight: 700; font-size: 14px; white-space: nowrap; }
+.knopf.voll-melden { background: var(--rot); }
+.knopf.voll-melden:hover { background: #8e1e17; }
+.linkknopf { background: none; border: 0; padding: 0; color: var(--navy); text-decoration: underline; cursor: pointer; font-family: inherit; font-size: 13px; }
+@media (max-width: 640px) {
+  .hzeile { grid-template-columns: 1fr; }
+  .hzeile .hknopf { align-items: stretch; }
+}
+
 /* ---------- Bestätigung ---------- */
 .erfolg { border-top: 6px solid var(--gruen); }
 .erfolg-kopf { display: flex; gap: 16px; align-items: center; margin-bottom: 18px; }
@@ -396,6 +417,17 @@ dialog.breit[open] { display: flex; flex-direction: column; }
   <div class="karte" id="startfehler" hidden></div>
 
   <!-- Projektplan (nach der Buchungsphase) -->
+  <!-- Belegungsmeldung während der Projektwoche -->
+  <section class="karte" id="heute" hidden>
+    <h2 class="abschnitt" id="heuteTitel">Projekte heute</h2>
+    <p class="abschnitt-hinweis">Ist dein Projekt voll? Dann melde es hier – die Projektwochen-Leitung sieht es sofort.
+      Eine Meldung lässt sich jederzeit zurücknehmen.</p>
+    <div id="heuteTest"></div>
+    <input class="feld" id="heuteSuche" type="search" placeholder="Dein Kürzel, Thema oder Raum suchen …" style="margin:6px 0 14px">
+    <div id="heuteListe"></div>
+    <p class="plan-stand" id="heuteStand"></p>
+  </section>
+
   <section class="karte" id="plan" hidden>
     <h2 class="abschnitt">Projektplan</h2>
     <div class="filterreihe" id="planReiter" style="margin-top:8px"></div>
@@ -646,7 +678,7 @@ async function laden() {
     lesen("pw_groups?select=*&order=name"),
     lesen("pw_room_groups?select=*"),
     lesen("pw_projects?select=*"),
-    lesen("pw_bookings?select=id,project_id,room,tag,std_von,std_bis,ort,krank,vertretung"),
+    lesen("pw_bookings?select=*"),
     rpc("pw_get_status")
   ]);
   Object.assign(daten, { raeume, gruppen, raumGruppen, projekte, buchungen, status: status || {} });
@@ -775,19 +807,23 @@ function renderKopf() {
     ? "Projektwoche vom " + datum(1) + " bis " + datum(5)
     : "Projekt anlegen, Tage wählen, Raum buchen.";
 
-  const planAn = !gespeichert && !offen && !bearbeiten && daten.status.plan_sichtbar === true;
+  const laeuft = !gespeichert && daten.status.woche_laeuft === true;
+  if (laeuft) bearbeiten = null;
+  const planAn = !laeuft && !gespeichert && !offen && !bearbeiten && daten.status.plan_sichtbar === true;
   $("erfolg").hidden = !gespeichert;
-  $("werkbank").hidden = gespeichert || !(offen || bearbeiten);
-  $("geschlossen").hidden = gespeichert || offen || !!bearbeiten || planAn;
+  $("werkbank").hidden = laeuft || gespeichert || !(offen || bearbeiten);
+  $("geschlossen").hidden = laeuft || gespeichert || offen || !!bearbeiten || planAn;
   $("plan").hidden = !planAn;
-  $("zaehler").hidden = planAn;
-  $("schrittreihe").hidden = planAn;
+  $("heute").hidden = !laeuft;
+  $("zaehler").hidden = planAn || laeuft;
+  $("schrittreihe").hidden = planAn || laeuft;
   if (planAn) {
     $("untertitel").textContent = daten.status.woche_start
       ? "Projektplan · " + datum(1) + " bis " + datum(5) : "Projektplan";
     renderPlan();
   }
-  $("btnCode").hidden = !aenderbar || !!bearbeiten;
+  if (laeuft) renderHeute();
+  $("btnCode").hidden = laeuft || !aenderbar || !!bearbeiten;
   $("codeZeile").hidden = !aenderbar || !!bearbeiten;
   $("leiste").hidden = !bearbeiten;
   if (bearbeiten) $("leisteThema").textContent = "„" + form.thema + "“";
@@ -1142,9 +1178,90 @@ function planInhalt() {
     " · Stand " + new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr · aktualisiert sich automatisch";
 }
 
-/* Plan alle 2 Minuten aktualisieren, wenn er angezeigt wird */
+/* ---------- Belegungsmeldung „Projekt voll“ ---------- */
+let heuteWahl = null;   // nur im Testbetrieb außerhalb der Projektwoche
+
+function renderHeute() {
+  const echt = heuteTag();
+  const t = echt || heuteWahl || 1;
+  $("heuteTitel").textContent = "Projekte am " + TAGE[t] + (datum(t) ? ", " + datum(t) : "");
+  $("untertitel").textContent = "Die Projektwoche läuft · Belegung melden";
+
+  const test = $("heuteTest");
+  test.innerHTML = "";
+  if (!echt) {
+    test.appendChild(el("p", "warnung", "Heute ist kein Tag der Projektwoche – Testansicht. Tag wählen:"));
+    const reihe = el("div", "filterreihe");
+    reihe.style.margin = "8px 0 6px";
+    [1, 2, 3, 4, 5].forEach((d) => {
+      const b = el("button", "filter", TAGE[d]);
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(d === t));
+      b.onclick = () => { heuteWahl = d; renderHeute(); };
+      reihe.appendChild(b);
+    });
+    test.appendChild(reihe);
+  }
+
+  const q = $("heuteSuche").value.trim().toLowerCase();
+  const liste = daten.buchungen.filter((b) => b.tag === t)
+    .map((b) => ({ b, p: projektVon(b.project_id) })).filter((x) => x.p)
+    .filter(({ b, p }) => !q || (p.kuerzel + " " + (p.mitwirkende || "") + " " + p.thema + " " + b.room + " " + (b.ort || "") + " " + (b.vertretung || "")).toLowerCase().includes(q))
+    .sort((x, y) => (istExkursion(x.b.room) - istExkursion(y.b.room)) || x.b.room.localeCompare(y.b.room, "de", { numeric: true }));
+
+  const box = $("heuteListe");
+  box.innerHTML = "";
+  liste.forEach(({ b, p }) => {
+    const z = el("div", "hzeile" + (b.voll ? " voll" : ""));
+    const r = raumInfo(b.room);
+    const raum = el("div", "hraum");
+    raum.textContent = istExkursion(b.room) ? "Exkursion" : b.room;
+    const sub = istExkursion(b.room) ? (b.ort || "") : (r && r.beschreibung) || "";
+    if (sub) raum.appendChild(el("small", "", sub));
+    const mitte = el("div");
+    mitte.appendChild(el("div", "hthema", p.thema));
+    mitte.appendChild(el("div", "hwer", p.kuerzel + (p.mitwirkende ? ", " + p.mitwirkende : "") +
+      (b.krank && b.vertretung ? " · Vertretung: " + b.vertretung : "") +
+      (b.std_von <= 2 && b.std_bis === 6 ? "" : " · " + stundenText(b.std_von, b.std_bis))));
+    const rechts = el("div", "hknopf");
+    if (b.voll) {
+      rechts.appendChild(el("span", "voll-text", "● Als voll gemeldet"));
+      const zur = el("button", "linkknopf", "Meldung zurücknehmen");
+      zur.type = "button";
+      zur.onclick = () => vollMelden(b, p, false);
+      rechts.appendChild(zur);
+    } else {
+      const k = el("button", "knopf voll-melden", "Projekt ist voll");
+      k.type = "button";
+      k.onclick = () => vollMelden(b, p, true);
+      rechts.appendChild(k);
+    }
+    z.append(raum, mitte, rechts);
+    box.appendChild(z);
+  });
+  if (!liste.length) box.appendChild(el("p", "plan-leer", q ? "Keine Treffer." : "An diesem Tag sind keine Projekte eingetragen."));
+  $("heuteStand").textContent = liste.length + (liste.length === 1 ? " Projekt" : " Projekte") + " · Stand " +
+    new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr · aktualisiert sich automatisch";
+}
+
+async function vollMelden(b, p, voll) {
+  const frage = voll
+    ? "„" + p.thema + "“ (" + (istExkursion(b.room) ? "Exkursion" : b.room) + ") als VOLL melden?"
+    : "Meldung für „" + p.thema + "“ zurücknehmen? Das Projekt gilt dann wieder als frei.";
+  if (!confirm(frage)) return;
+  try {
+    await rpc("pw_set_voll", { p_booking: b.id, p_voll: voll });
+    await laden();
+    renderKopf();
+    meldung(voll ? "Gemeldet: „" + p.thema + "“ ist voll." : "Meldung zurückgenommen.");
+  } catch (e) {
+    meldung(e.message, true);
+  }
+}
+
+/* Plan bzw. Tagesansicht alle 2 Minuten aktualisieren */
 setInterval(async () => {
-  if ($("plan").hidden) return;
+  if ($("plan").hidden && $("heute").hidden) return;
   try { await laden(); renderKopf(); } catch (e) { /* nächster Versuch */ }
 }, 120000);
 
@@ -1478,6 +1595,7 @@ function feld(id, schluessel, umwandeln) {
 }
 
 function bedienungEinrichten() {
+  $("heuteSuche").addEventListener("input", renderHeute);
   feld("fThema", "thema");
   feld("fKuerzel", "kuerzel", (v) => v.replace(/\s/g, ""));
   feld("fName", "name");

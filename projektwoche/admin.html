@@ -237,6 +237,9 @@ dialog.breit { width: min(1000px, calc(100vw - 24px)); height: min(820px, calc(1
 .krankmarke { color: var(--rot); font-weight: 700; }
 .krankicon { width: 16px; height: 16px; vertical-align: -3px; flex: none; }
 .krankknopf .krankicon { width: 18px; height: 18px; }
+.punkt { display: inline-block; width: 11px; height: 11px; border-radius: 999px; vertical-align: -1px; flex: none; }
+.punkt.rot { background: #d93025; box-shadow: 0 0 0 2px #fbd5d1; }
+.punkt.gruen { background: #1e8e3e; box-shadow: 0 0 0 2px #cfeedd; }
 .knopf.krankaktiv { background: #fdf0ef; border-color: #f1c9c6; }
 
 /* ---------- Dialoge ---------- */
@@ -571,7 +574,7 @@ let abwTag = 1;
 let PW = "";
 let reiter = "planung";
 const ansicht = {
-  plan: { modus: "raster", suche: "", alleRaeume: false },
+  plan: { modus: "raster", suche: "", alleRaeume: false, tag: null },
   raeume: { suche: "", versteckte: true, zuordnung: null },
   export: { art: "liste", klasse: "alle", kosten: "alle", gruppe: "", trakt: "", tag: 0, suche: "", sort: "thema", leerAnhang: true, beschr: true }
 };
@@ -842,7 +845,8 @@ function renderAlles() {
   $("untertitel").textContent = "Projektwoche " + wochenText() + " · Buchung " +
     (st.buchung_offen === false ? "geschlossen" : "offen") + " · Änderungscodes " +
     (st.aenderung_offen === false ? "deaktiviert" : "aktiv") +
-    (st.buchung_offen === false && st.plan_sichtbar ? " · Projektplan öffentlich" : "");
+    (st.buchung_offen === false && st.plan_sichtbar ? " · Projektplan öffentlich" : "") +
+    (st.woche_laeuft ? " · Projektwoche läuft (Belegung melden)" : "");
 
   const leiste = $("reiter");
   leiste.innerHTML = "";
@@ -879,7 +883,7 @@ function renderPlanung(ziel) {
   const modi = el("div", "filterreihe");
   modi.style.margin = "0";
   modi.style.flex = "0 0 auto";
-  [["raster", "Wochenraster"], ["projekte", "Projektliste"]].forEach(([m, t]) => {
+  [["raster", "Wochenraster"], ["projekte", "Projektliste"], ["belegung", "Belegung"]].forEach(([m, t]) => {
     const b = el("button", "filter", t);
     b.type = "button";
     b.setAttribute("aria-pressed", String(v.modus === m));
@@ -911,7 +915,7 @@ function renderPlanung(ziel) {
 
   function zeichneListe() {
     liste.innerHTML = "";
-    liste.appendChild(v.modus === "raster" ? wochenraster() : projektliste());
+    liste.appendChild(v.modus === "raster" ? wochenraster() : v.modus === "belegung" ? belegungsliste() : projektliste());
   }
   zeichneListe();
 }
@@ -1051,6 +1055,89 @@ function projektTreffer(p, q) {
     .toLowerCase().includes(q);
 }
 
+/* ---------- Belegung (Projekt voll / frei) ---------- */
+function vollPunkt(b) {
+  return '<span class="punkt ' + (b.voll ? "rot" : "gruen") + '" title="' + (b.voll ? "voll gemeldet" : "noch Plätze frei") + '"></span>';
+}
+
+function heuteTagAdmin() {
+  const s = daten.status.woche_start;
+  if (!s) return null;
+  const heute = new Date(); heute.setHours(0, 0, 0, 0);
+  const d = Math.round((heute - new Date(s + "T00:00:00")) / 86400000);
+  return d >= 0 && d <= 4 ? d + 1 : null;
+}
+
+function belegungsliste() {
+  const v = ansicht.plan;
+  if (!v.tag) v.tag = heuteTagAdmin() || 1;
+  const t = v.tag;
+  const q = v.suche.trim().toLowerCase();
+  const wrap = el("div");
+  wrap.style.padding = "14px";
+
+  const kopf = el("div", "zeile");
+  kopf.style.alignItems = "center";
+  const tage = el("div", "filterreihe");
+  tage.style.margin = "0";
+  const heute = heuteTagAdmin();
+  [1, 2, 3, 4, 5].forEach((d) => {
+    const b = el("button", "filter", TAGE_KURZ[d] + (datum(d) ? " " + datum(d).slice(0, 6) : "") + (d === heute ? " · heute" : ""));
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(d === t));
+    b.onclick = () => { v.tag = d; renderAlles(); };
+    tage.appendChild(b);
+  });
+  kopf.appendChild(tage);
+  wrap.appendChild(kopf);
+
+  const alle = daten.buchungen.filter((b) => b.tag === t);
+  const voll = alle.filter((b) => b.voll).length;
+  const info = el("p", "abschnitt-hinweis");
+  info.style.margin = "12px 0";
+  info.innerHTML = '<span class="punkt rot"></span> <b>' + voll + "</b> voll gemeldet &nbsp; " +
+    '<span class="punkt gruen"></span> <b>' + (alle.length - voll) + "</b> noch frei" +
+    (daten.status.woche_laeuft ? "" : " &nbsp;·&nbsp; Hinweis: Meldungen sind erst möglich, wenn unter Einstellungen „Projektwoche läuft“ an ist.");
+  wrap.appendChild(info);
+
+  const liste = alle.map((b) => ({ b, p: projektVon(b.project_id) })).filter((x) => x.p)
+    .filter(({ b, p }) => !q || projektTreffer(p, q) || b.room.toLowerCase().includes(q))
+    .sort((x, y) => (y.b.voll - x.b.voll) || (istExkursion(x.b.room) - istExkursion(y.b.room)) ||
+      x.b.room.localeCompare(y.b.room, "de", { numeric: true }));
+  const t2 = el("table", "tabelle");
+  t2.innerHTML = "<thead><tr><th></th><th>Raum / Ort</th><th>Projekt</th><th>Lehrkräfte</th><th>gemeldet</th><th></th></tr></thead>";
+  const tb = el("tbody");
+  liste.forEach(({ b, p }) => {
+    const tr = el("tr");
+    tr.innerHTML = "<td>" + vollPunkt(b) + "</td><td class=\"nr\">" + esc(ortText(b, true)) + "</td><td><b>" + esc(p.thema) + "</b></td><td>" +
+      esc(lehrkraefte(p)) + (b.krank && b.vertretung ? '<div class="leise">Vertretung: ' + esc(b.vertretung) + "</div>" : "") + "</td><td class=\"leise\">" +
+      (b.voll && b.voll_um ? new Date(b.voll_um).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr" : "–") + "</td>";
+    const td = el("td");
+    td.style.textAlign = "right";
+    td.appendChild(knopf(b.voll ? "Auf frei setzen" : "Voll setzen", "zurueck mini", () =>
+      aktion("pw_admin_set_voll", { p_booking: b.id, p_voll: !b.voll }, b.voll ? "Wieder frei." : "Als voll markiert.")));
+    tr.appendChild(td);
+    tb.appendChild(tr);
+  });
+  if (!liste.length) {
+    const tr = el("tr");
+    const td = el("td", "leise", "Keine Projekte an diesem Tag.");
+    td.colSpan = 6;
+    tr.appendChild(td);
+    tb.appendChild(tr);
+  }
+  t2.appendChild(tb);
+  wrap.appendChild(t2);
+
+  const r = el("div", "buttonreihe");
+  r.appendChild(knopf("Alle Meldungen zurücksetzen …", "gefahr mini", async () => {
+    if (!confirm("Alle „voll“-Meldungen aller Tage zurücksetzen (z. B. nach einem Testlauf)?")) return;
+    await aktion("pw_admin_reset_voll", {}, "Alle Meldungen zurückgesetzt.");
+  }));
+  wrap.appendChild(r);
+  return wrap;
+}
+
 function wochenraster() {
   const v = ansicht.plan;
   const q = v.suche.trim().toLowerCase();
@@ -1082,7 +1169,7 @@ function wochenraster() {
         if (!p) return;
         const chip = el("button", "buchungschip" + (b.krank ? " krank" : ""));
         chip.type = "button";
-        let html = "<b>" + esc(p.kuerzel) + "</b> " + esc(p.thema);
+        let html = (daten.status.woche_laeuft || b.voll ? vollPunkt(b) + " " : "") + "<b>" + esc(p.kuerzel) + "</b> " + esc(p.thema);
         const zusatz = [];
         if (!(b.std_von <= 2 && b.std_bis === 6)) zusatz.push(stundenText(b.std_von, b.std_bis));
         if (b.ort) zusatz.push(b.ort);
@@ -2954,13 +3041,19 @@ function renderEinstellungen(ziel) {
   sch3.querySelector("span").appendChild(el("small", "", "Wirkt, sobald die Buchung geschlossen ist: Statt des Formulars erscheinen Tagesplan, Wochenübersicht und Raumbelegung."));
   const rP = el("div", "buttonreihe");
   rP.appendChild(knopf("Speichern", "", () =>
-    aktion("pw_admin_set_phasen", { p_buchung: c1.checked, p_aenderung: c2.checked, p_plan: c3.checked }, "Phasen gespeichert.")));
+    aktion("pw_admin_set_phasen", { p_buchung: c1.checked, p_aenderung: c2.checked, p_plan: c3.checked, p_laeuft: c4.checked }, "Phasen gespeichert.")));
   const zeigeHinweis = () => { hinw.hidden = !(c3.checked && c1.checked); };
   const hinw = el("p", "hinweisbox info", "Hinweis: Der Plan erscheint erst, wenn „Buchung offen“ ausgeschaltet ist.");
   c1.addEventListener("change", zeigeHinweis);
   c3.addEventListener("change", zeigeHinweis);
   zeigeHinweis();
-  kP.append(sch1, sch2, sch3, hinw, rP);
+  const sch4 = el("label", "schalter");
+  sch4.style.marginTop = "14px";
+  const c4 = input(null, null, "checkbox");
+  c4.checked = daten.status.woche_laeuft === true;
+  sch4.append(c4, el("span", "", "Projektwoche läuft (Belegung melden)"));
+  sch4.querySelector("span").appendChild(el("small", "", "Die Buchungsseite zeigt dann nur die Projekte des aktuellen Tages. Kollegen können „Projekt ist voll“ melden; du siehst es in der Planung unter „Belegung“."));
+  kP.append(sch1, sch2, sch3, sch4, hinw, rP);
   raster.appendChild(kP);
 
   /* Zurücksetzen */
@@ -3081,6 +3174,12 @@ function bedienung() {
 
   window.addEventListener("beforeprint", () => { if (reiter === "export") vorschau(); });
 }
+
+/* Belegung live halten: jede Minute neu laden, solange die Belegungsansicht offen ist */
+setInterval(async () => {
+  if (!PW || reiter !== "planung" || ansicht.plan.modus !== "belegung" || document.querySelector("dialog[open]")) return;
+  try { await laden(); renderAlles(); } catch (e) { /* nächster Versuch */ }
+}, 60000);
 
 async function start() {
   bedienung();
