@@ -390,7 +390,7 @@ dialog.breit[open] { display: flex; flex-direction: column; }
 <div class="huelle">
 
   <div class="karte">
-    <h1 class="kopf-titel"><span class="symbol">🗓️</span> Projektwoche · Projektplanung</h1>
+    <h1 class="kopf-titel"><span class="symbol">🗓️</span> <span>Projektwoche<span id="titelDatum" style="white-space:nowrap"></span> · Projektplanung</span></h1>
     <p class="kopf-untertitel" id="untertitel">Projekt anlegen, Tage wählen, Raum buchen.</p>
     <div class="schrittreihe" id="schrittreihe">
       <span><b>1</b>Projekt beschreiben</span>
@@ -805,9 +805,8 @@ function renderKopf() {
   const offen = daten.status.buchung_offen !== false;
   const aenderbar = daten.status.aenderung_offen !== false;
 
-  $("untertitel").textContent = daten.status.woche_start
-    ? "Projektwoche vom " + datum(1) + " bis " + datum(5)
-    : "Projekt anlegen, Tage wählen, Raum buchen.";
+  $("titelDatum").textContent = daten.status.woche_start ? " " + datum(1) + "–" + datum(5) : "";
+  $("untertitel").textContent = "Projekt anlegen, Tage wählen, Raum buchen.";
 
   const laeuft = !gespeichert && daten.status.woche_laeuft === true;
   if (laeuft) bearbeiten = null;
@@ -820,8 +819,7 @@ function renderKopf() {
   $("zaehler").hidden = planAn || laeuft;
   $("schrittreihe").hidden = planAn || laeuft;
   if (planAn) {
-    $("untertitel").textContent = daten.status.woche_start
-      ? "Projektplan · " + datum(1) + " bis " + datum(5) : "Projektplan";
+    $("untertitel").textContent = "Projektplan: alle Projekte, Räume und Lehrkräfte";
     renderPlan();
   }
   if (laeuft) renderHeute();
