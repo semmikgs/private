@@ -239,6 +239,18 @@ dialog.breit { width: min(1000px, calc(100vw - 24px)); height: min(820px, calc(1
 .krankknopf .krankicon { width: 18px; height: 18px; }
 .chipkopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
 .chipkopf .punkt { margin-top: 3px; }
+.modusliste { display: grid; gap: 8px; }
+.modus {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; text-align: left;
+  padding: 12px 14px; background: #fff; border: 1.5px solid var(--linie); border-radius: 12px;
+  font-family: inherit; color: var(--tinte); cursor: pointer;
+}
+.modus:hover { border-color: var(--indigo); }
+.modus.an { border-color: var(--indigo); background: var(--badge-bg); box-shadow: inset 4px 0 0 var(--indigo); }
+.modus b { font-size: 15px; }
+.modus span { grid-column: 1; font-size: 13.5px; color: var(--tinte-leise); }
+.modus em { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-style: normal; font-size: 12px; font-weight: 700;
+  color: var(--gruen); background: #e3f3ea; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
 .punkt { display: inline-block; width: 11px; height: 11px; border-radius: 999px; vertical-align: -1px; flex: none; }
 .punkt.rot { background: #d93025; box-shadow: 0 0 0 2px #fbd5d1; }
 .punkt.gruen { background: #1e8e3e; box-shadow: 0 0 0 2px #cfeedd; }
@@ -844,11 +856,9 @@ function auswahl(optionen, wert) {
 
 function renderAlles() {
   const st = daten.status;
-  $("untertitel").textContent = "Projektwoche " + wochenText() + " · Buchung " +
-    (st.buchung_offen === false ? "geschlossen" : "offen") + " · Änderungscodes " +
-    (st.aenderung_offen === false ? "deaktiviert" : "aktiv") +
-    (st.buchung_offen === false && st.plan_sichtbar ? " · Projektplan öffentlich" : "") +
-    (st.woche_laeuft ? " · Projektwoche läuft (Belegung melden)" : "");
+  $("untertitel").textContent = "Projektwoche " + wochenText() + " · Buchungsseite zeigt: " +
+    (st.woche_laeuft ? "Projektwoche läuft" : st.buchung_offen !== false ? "Planung offen" : st.plan_sichtbar ? "Projektplan" : "Infoseite") +
+    " · Änderungscodes " + (st.aenderung_offen === false ? "aus" : "an");
 
   const leiste = $("reiter");
   leiste.innerHTML = "";
@@ -3022,41 +3032,44 @@ function renderEinstellungen(ziel) {
   kZ.append(zz, zAlle, rZ);
   raster.appendChild(kZ);
 
-  /* Phasen */
-  const kP = karte("Phasen", "Nach der Planungsphase beides abschalten, dann kann niemand mehr etwas ändern – außer dir hier.");
-  const sch1 = el("label", "schalter");
-  const c1 = input(null, null, "checkbox");
-  c1.checked = daten.status.buchung_offen !== false;
-  sch1.append(c1, el("span", "", "Buchung offen"));
-  const s1 = sch1.querySelector("span");
-  s1.appendChild(el("small", "", "Kollegen können neue Projekte anlegen."));
+  /* Phasen: genau ein Modus für die Buchungsseite */
+  const kP = karte("Was zeigt die Buchungsseite?", "Genau ein Modus ist aktiv. Mit „Speichern“ wird er sofort für alle Kollegen sichtbar.");
+  const st = daten.status;
+  const MODI = [
+    ["info",     "⏳ Infoseite",            "„Die Projektplanung startet bald“ – noch nichts eintragbar.", { p_buchung: false, p_plan: false, p_laeuft: false }],
+    ["buchung",  "✏️ Planung offen",        "Kollegen tragen Projekte ein und buchen Räume.",               { p_buchung: true,  p_plan: false, p_laeuft: false }],
+    ["plan",     "📋 Projektplan",          "Nur ansehen: Tagesplan, Wochenübersicht und Raumbelegung.",   { p_buchung: false, p_plan: true,  p_laeuft: false }],
+    ["laeuft",   "🟢 Projektwoche läuft",   "Projekte des aktuellen Tages, Kollegen melden „Projekt voll“.", { p_buchung: false, p_plan: false, p_laeuft: true }]
+  ];
+  const aktuell = st.woche_laeuft ? "laeuft" : st.buchung_offen !== false ? "buchung" : st.plan_sichtbar ? "plan" : "info";
+  let gewaehlt = aktuell;
+  const modusBox = el("div", "modusliste");
+  const zeichneModi = () => {
+    modusBox.innerHTML = "";
+    MODI.forEach(([id, titel, text]) => {
+      const b = el("button", "modus" + (gewaehlt === id ? " an" : ""));
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(gewaehlt === id));
+      b.innerHTML = "<b>" + titel + "</b><span>" + esc(text) + "</span>" + (aktuell === id ? '<em>gerade aktiv</em>' : "");
+      b.onclick = () => { gewaehlt = id; zeichneModi(); };
+      modusBox.appendChild(b);
+    });
+  };
+  zeichneModi();
+
   const sch2 = el("label", "schalter");
-  sch2.style.marginTop = "14px";
+  sch2.style.marginTop = "16px";
   const c2 = input(null, null, "checkbox");
-  c2.checked = daten.status.aenderung_offen !== false;
+  c2.checked = st.aenderung_offen !== false;
   sch2.append(c2, el("span", "", "Änderungscodes aktiv"));
-  sch2.querySelector("span").appendChild(el("small", "", "Kollegen können ihr Projekt per Code ändern oder löschen."));
-  const sch3 = el("label", "schalter");
-  sch3.style.marginTop = "14px";
-  const c3 = input(null, null, "checkbox");
-  c3.checked = daten.status.plan_sichtbar === true;
-  sch3.append(c3, el("span", "", "Projektplan auf der Buchungsseite anzeigen"));
-  sch3.querySelector("span").appendChild(el("small", "", "Wirkt, sobald die Buchung geschlossen ist: Statt des Formulars erscheinen Tagesplan, Wochenübersicht und Raumbelegung."));
+  sch2.querySelector("span").appendChild(el("small", "", "Kollegen können ihr Projekt per Code ändern oder löschen (nur im Modus „Planung offen“ sinnvoll)."));
+
   const rP = el("div", "buttonreihe");
-  rP.appendChild(knopf("Speichern", "", () =>
-    aktion("pw_admin_set_phasen", { p_buchung: c1.checked, p_aenderung: c2.checked, p_plan: c3.checked, p_laeuft: c4.checked }, "Phasen gespeichert.")));
-  const zeigeHinweis = () => { hinw.hidden = !(c3.checked && c1.checked); };
-  const hinw = el("p", "hinweisbox info", "Hinweis: Der Plan erscheint erst, wenn „Buchung offen“ ausgeschaltet ist.");
-  c1.addEventListener("change", zeigeHinweis);
-  c3.addEventListener("change", zeigeHinweis);
-  zeigeHinweis();
-  const sch4 = el("label", "schalter");
-  sch4.style.marginTop = "14px";
-  const c4 = input(null, null, "checkbox");
-  c4.checked = daten.status.woche_laeuft === true;
-  sch4.append(c4, el("span", "", "Projektwoche läuft (Belegung melden)"));
-  sch4.querySelector("span").appendChild(el("small", "", "Die Buchungsseite zeigt dann nur die Projekte des aktuellen Tages. Kollegen können „Projekt ist voll“ melden; du siehst es in der Planung unter „Belegung“."));
-  kP.append(sch1, sch2, sch3, sch4, hinw, rP);
+  rP.appendChild(knopf("Speichern", "", () => {
+    const m = MODI.find((x) => x[0] === gewaehlt);
+    aktion("pw_admin_set_phasen", Object.assign({ p_aenderung: c2.checked }, m[3]), "Buchungsseite zeigt jetzt: " + m[1].replace(/^\S+\s/, ""));
+  }));
+  kP.append(modusBox, sch2, rP);
   raster.appendChild(kP);
 
   /* Zurücksetzen */
