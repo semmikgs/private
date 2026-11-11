@@ -237,6 +237,14 @@ dialog.breit { width: min(1000px, calc(100vw - 24px)); height: min(820px, calc(1
 .krankmarke { color: var(--rot); font-weight: 700; }
 .krankicon { width: 16px; height: 16px; vertical-align: -3px; flex: none; }
 .krankknopf .krankicon { width: 18px; height: 18px; }
+.aktualisieren {
+  width: 36px; height: 36px; margin-left: 4px;
+  background: #fff; border: 1.5px solid var(--linie); border-radius: 999px;
+  font-size: 19px; line-height: 1; color: var(--navy); cursor: pointer;
+}
+.aktualisieren:hover { border-color: var(--indigo); background: var(--chip); }
+.aktualisieren.dreht { animation: drehen .8s linear infinite; }
+@keyframes drehen { to { transform: rotate(360deg); } }
 .chipkopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
 .chipkopf .punkt { margin-top: 3px; }
 .modusliste { display: grid; gap: 8px; }
@@ -588,7 +596,7 @@ let abwTag = 1;
 let PW = "";
 let reiter = "planung";
 const ansicht = {
-  plan: { modus: "raster", suche: "", alleRaeume: false, tag: null },
+  plan: { modus: "raster", suche: "", alleRaeume: false, tag: null, belegFilter: "alle" },
   raeume: { suche: "", versteckte: true, zuordnung: null },
   export: { art: "liste", klasse: "alle", kosten: "alle", gruppe: "", trakt: "", tag: 0, suche: "", sort: "thema", leerAnhang: true, beschr: true }
 };
@@ -1101,6 +1109,30 @@ function belegungsliste() {
     tage.appendChild(b);
   });
   kopf.appendChild(tage);
+
+  /* Filter frei / voll + Aktualisieren */
+  const fr = el("div", "filterreihe");
+  fr.style.margin = "0";
+  fr.style.flex = "0 0 auto";
+  fr.style.alignItems = "center";
+  [["alle", "Alle"], ["frei", "Nur freie"], ["voll", "Nur volle"]].forEach(([w, txt]) => {
+    const b = el("button", "filter", txt);
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(v.belegFilter === w));
+    b.onclick = () => { v.belegFilter = w; renderAlles(); };
+    fr.appendChild(b);
+  });
+  const ak = el("button", "aktualisieren", "↻");
+  ak.type = "button";
+  ak.title = "Jetzt aktualisieren";
+  ak.setAttribute("aria-label", "Belegung jetzt aktualisieren");
+  ak.onclick = async () => {
+    ak.classList.add("dreht");
+    try { await laden(); renderAlles(); meldung("Aktualisiert " + new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) + " Uhr."); }
+    catch (e) { meldung(e.message, true); ak.classList.remove("dreht"); }
+  };
+  fr.appendChild(ak);
+  kopf.appendChild(fr);
   wrap.appendChild(kopf);
 
   const alle = daten.buchungen.filter((b) => b.tag === t);
@@ -1114,6 +1146,7 @@ function belegungsliste() {
 
   const liste = alle.map((b) => ({ b, p: projektVon(b.project_id) })).filter((x) => x.p)
     .filter(({ b, p }) => !q || projektTreffer(p, q) || b.room.toLowerCase().includes(q))
+    .filter(({ b }) => v.belegFilter === "alle" || (v.belegFilter === "frei" ? !b.voll : b.voll))
     .sort((x, y) => (y.b.voll - x.b.voll) || (istExkursion(x.b.room) - istExkursion(y.b.room)) ||
       x.b.room.localeCompare(y.b.room, "de", { numeric: true }));
   const t2 = el("table", "tabelle");
@@ -1133,7 +1166,8 @@ function belegungsliste() {
   });
   if (!liste.length) {
     const tr = el("tr");
-    const td = el("td", "leise", "Keine Projekte an diesem Tag.");
+    const td = el("td", "leise", v.belegFilter === "frei" ? "Keine freien Projekte mehr an diesem Tag." :
+      v.belegFilter === "voll" ? "Noch kein Projekt als voll gemeldet." : "Keine Projekte an diesem Tag.");
     td.colSpan = 5;
     tr.appendChild(td);
     tb.appendChild(tr);
