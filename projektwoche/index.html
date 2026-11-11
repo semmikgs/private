@@ -193,14 +193,16 @@ select.feld { padding-right: 8px; }
   border: 1.5px solid var(--linie); border-radius: 12px;
 }
 .hzeile.voll { background: #fdf3f2; border-color: #f1c9c6; }
+.hzeile.frei { background: #f1faf4; border-color: #cfe9d9; }
+.hzeile .frei-text { color: var(--gruen); font-weight: 700; font-size: 14px; white-space: nowrap; }
 .hzeile .hraum { font-size: 20px; font-weight: 700; color: var(--indigo); line-height: 1.2; }
 .hzeile .hraum small { display: block; font-size: 12.5px; font-weight: 500; color: var(--tinte-leise); }
 .hzeile .hthema { font-weight: 700; }
 .hzeile .hwer { font-size: 13.5px; color: var(--tinte-leise); }
 .hzeile .hknopf { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .hzeile .voll-text { color: var(--rot); font-weight: 700; font-size: 14px; white-space: nowrap; }
-.knopf.voll-melden { background: var(--rot); }
-.knopf.voll-melden:hover { background: #8e1e17; }
+.knopf.voll-melden { background: #fff; color: var(--rot); border: 1.5px solid #e8a9a3; padding: 8px 14px; font-size: 14px; }
+.knopf.voll-melden:hover { background: #fdf0ef; }
 .linkknopf { background: none; border: 0; padding: 0; color: var(--navy); text-decoration: underline; cursor: pointer; font-family: inherit; font-size: 13px; }
 @media (max-width: 640px) {
   .hzeile { grid-template-columns: 1fr; }
@@ -1212,7 +1214,7 @@ function renderHeute() {
   const box = $("heuteListe");
   box.innerHTML = "";
   liste.forEach(({ b, p }) => {
-    const z = el("div", "hzeile" + (b.voll ? " voll" : ""));
+    const z = el("div", "hzeile" + (b.voll ? " voll" : " frei"));
     const r = raumInfo(b.room);
     const raum = el("div", "hraum");
     raum.textContent = istExkursion(b.room) ? "Exkursion" : b.room;
@@ -1231,7 +1233,8 @@ function renderHeute() {
       zur.onclick = () => vollMelden(b, p, false);
       rechts.appendChild(zur);
     } else {
-      const k = el("button", "knopf voll-melden", "Projekt ist voll");
+      rechts.appendChild(el("span", "frei-text", "● Noch freie Plätze"));
+      const k = el("button", "knopf voll-melden", "Projekt als voll melden");
       k.type = "button";
       k.onclick = () => vollMelden(b, p, true);
       rechts.appendChild(k);
