@@ -209,6 +209,30 @@ select.feld { padding-right: 8px; }
   .hzeile .hknopf { align-items: stretch; }
 }
 
+/* ---------- Infoseite ---------- */
+.info { border-top: 6px solid var(--indigo); }
+.info-kopf { display: flex; gap: 16px; align-items: center; }
+.info-symbol {
+  display: grid; place-items: center; flex: none;
+  width: 56px; height: 56px; border-radius: 999px; background: var(--badge-bg); font-size: 28px;
+}
+.info h2 { margin: 0; font-size: 24px; color: var(--indigo); }
+.info-kopf p { margin: 4px 0 0; color: var(--tinte-leise); font-size: 15.5px; }
+.info-schritte { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 22px; }
+.info-schritte > div { display: flex; gap: 12px; padding: 14px; background: var(--chip); border-radius: 12px; font-size: 14px; color: var(--tinte-leise); }
+.info-schritte b {
+  display: grid; place-items: center; flex: none; width: 28px; height: 28px;
+  background: var(--badge-bg); color: var(--indigo); border-radius: 999px; font-size: 14px;
+}
+.info-schritte strong { display: block; color: var(--tinte); font-size: 15px; margin-bottom: 2px; }
+.info-fuss { margin: 18px 0 0; font-size: 14px; color: var(--tinte-leise); }
+@media (max-width: 640px) {
+  #titelDatum { display: block; font-size: 19px; }
+  .info-kopf { align-items: flex-start; }
+  .info-symbol { width: 44px; height: 44px; font-size: 22px; }
+  .info h2 { font-size: 21px; }
+}
+
 /* ---------- Bestätigung ---------- */
 .erfolg { border-top: 6px solid var(--gruen); }
 .erfolg-kopf { display: flex; gap: 16px; align-items: center; margin-bottom: 18px; }
@@ -454,11 +478,22 @@ dialog.breit[open] { display: flex; flex-direction: column; }
     </div>
   </section>
 
-  <div class="karte" id="geschlossen" hidden>
-    <h2 class="abschnitt">Die Buchungsphase ist beendet</h2>
-    <p class="abschnitt-hinweis" style="margin:0">Neue Projekte können nicht mehr angelegt werden.
-      Bei Fragen wende dich an die Projektwochen-Leitung.</p>
-  </div>
+  <!-- Infoseite: weder Buchung noch Belegung noch Projektplan freigeschaltet -->
+  <section class="karte info" id="geschlossen" hidden>
+    <div class="info-kopf">
+      <span class="info-symbol" aria-hidden="true">⏳</span>
+      <div>
+        <h2>Die Projektplanung startet bald</h2>
+        <p>Sobald die Projektwochen-Leitung die Planung freischaltet, könnt ihr hier eure Projekte eintragen und Räume buchen.</p>
+      </div>
+    </div>
+    <div class="info-schritte">
+      <div><b>1</b><span><strong>Projekt beschreiben</strong>Thema, Kurzbeschreibung, Kürzel, weitere Lehrkräfte und ggf. Kosten (max. 5 €).</span></div>
+      <div><b>2</b><span><strong>Tage und Räume wählen</strong>Einzelne Tage oder die ganze Woche, jeweils 2. bis 6. Stunde – pro Tag ist ein anderer Raum möglich.</span></div>
+      <div><b>3</b><span><strong>Verbindlich buchen</strong>Auf Wunsch gibt es einen Änderungscode, mit dem ihr euer Projekt während der Planungsphase noch anpassen könnt.</span></div>
+    </div>
+    <p class="info-fuss">Bei Fragen wendet euch an die Projektwochen-Leitung. Diese Seite einfach später noch einmal aufrufen.</p>
+  </section>
 
   <div class="werkbank" id="werkbank" hidden>
 
@@ -816,14 +851,16 @@ function renderKopf() {
   $("geschlossen").hidden = laeuft || gespeichert || offen || !!bearbeiten || planAn;
   $("plan").hidden = !planAn;
   $("heute").hidden = !laeuft;
-  $("zaehler").hidden = planAn || laeuft;
-  $("schrittreihe").hidden = planAn || laeuft;
+  const infoAn = !$("geschlossen").hidden;
+  $("zaehler").hidden = planAn || laeuft || infoAn;
+  $("schrittreihe").hidden = planAn || laeuft || infoAn;
+  if (infoAn) $("untertitel").textContent = "Noch nicht freigeschaltet";
   if (planAn) {
     $("untertitel").textContent = "Projektplan: alle Projekte, Räume und Lehrkräfte";
     renderPlan();
   }
   if (laeuft) renderHeute();
-  $("btnCode").hidden = laeuft || !aenderbar || !!bearbeiten;
+  $("btnCode").hidden = laeuft || infoAn || !aenderbar || !!bearbeiten;
   $("codeZeile").hidden = !aenderbar || !!bearbeiten;
   $("leiste").hidden = !bearbeiten;
   if (bearbeiten) $("leisteThema").textContent = "„" + form.thema + "“";
