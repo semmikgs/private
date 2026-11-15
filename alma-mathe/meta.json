@@ -1,6 +1,11 @@
 {
-  "title": "Almas Mathe-Training – Klasse 3",
-  "description": "Übungs-App zur 1. Lernzielkontrolle (10.11.26): Plus/Minus bis 100, Einmaleins, Vergleichen, Punkt vor Strich, Hunderter, Stellentafel, Zahlenrätsel, Hundertertafel, Zahlenstrahl. Login Alma, Elternbereich mit Statistik.",
+  "title": "Almas Lernwelt – Klasse 3",
+  "description": "Übungs-App für Alma mit Fächern: Mathe (Lernzielkontrolle 10.11.) und Musik (Die Schrift der Musik). Thema für Thema oder bunt gemischt, Elternbereich mit Statistik. Neue Fächer als eigene Datei.",
   "icon": "🦊",
-  "tags": ["Mathe", "Klasse 3", "Übungs-App"]
+  "tags": [
+    "Klasse 3",
+    "Mathe",
+    "Musik",
+    "Übungs-App"
+  ]
 }
