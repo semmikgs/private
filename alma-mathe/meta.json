@@ -1,11 +1,12 @@
 {
   "title": "Almas Lernwelt – Klasse 3",
-  "description": "Übungs-App für Alma mit Fächern: Mathe (Lernzielkontrolle 10.11.) und Musik (Die Schrift der Musik). Thema für Thema oder bunt gemischt, Elternbereich mit Statistik. Neue Fächer als eigene Datei.",
+  "description": "Übungs-App für Alma mit Fächern: Mathe (Lernzielkontrolle 10.11.), Musik (Die Schrift der Musik) und Religion (Mose). Thema für Thema oder bunt gemischt, Elternbereich mit Statistik.",
   "icon": "🦊",
   "tags": [
     "Klasse 3",
     "Mathe",
     "Musik",
+    "Religion",
     "Übungs-App"
   ]
 }
