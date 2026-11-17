@@ -1,0 +1,6 @@
+{
+  "title": "Übungsleiter-Abrechnung MTV",
+  "description": "Trainingszeiten für die Übungsleiter-Abrechnung erfassen, je Gruppe und Quartal. PDF im Original-Formular, IBAN nur beim Druck. Zugang nur auf Einladung (Supabase).",
+  "icon": "🧾",
+  "tags": ["MTV Schwarmstedt", "Abrechnung", "Verein"]
+}

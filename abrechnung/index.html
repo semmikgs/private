@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>MTV Übungsleiter-Abrechnung</title>
+<style>
+:root{--red:#c8102e;--red2:#e30613;--ink:#1a1a1a;--muted:#6b6b6b;--line:#e2e2e2;--bg:#f6f6f7;--card:#fff;--pink:#fde6e7;--ok:#1f9d55;--warn:#d97706}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:3px solid var(--red);padding:8px 14px;display:flex;align-items:center;gap:10px}
+header img{height:40px;width:auto;display:block}
+header h1{font-size:16px;margin:0;line-height:1.15;flex:1}
+header h1 small{display:block;color:var(--muted);font-weight:500;font-size:12px}
+.ib{background:none;border:1px solid var(--line);border-radius:10px;padding:7px 10px;font:inherit;font-size:13px;color:var(--ink);cursor:pointer;text-decoration:none}
+#sync{width:10px;height:10px;border-radius:50%;background:#bbb;flex:none}
+#sync.ok{background:var(--ok)}#sync.busy{background:var(--warn)}#sync.off{background:var(--red)}
+main{max-width:860px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.qnav{display:flex;align-items:center;gap:10px}
+.qnav h2{flex:1;text-align:center;margin:0;font-size:19px}
+.qnav button{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:18px;cursor:pointer}
+.meta{text-align:center;color:var(--muted);font-size:13px;margin-top:4px}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700}
+.pill.open{background:#eef6ff;color:#1d4ed8}.pill.closed{background:#e8f6ee;color:var(--ok)}.pill.due{background:var(--pink);color:var(--red)}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.sum b{display:block;font-size:22px}.sum span{font-size:12px;color:var(--muted)}
+.today{display:flex;align-items:center;gap:10px;border-left:4px solid var(--red)}
+.today .grow{flex:1}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer;color:var(--ink)}
+.btn.pri{background:var(--red);border-color:var(--red);color:#fff}
+.btn.sm{padding:7px 10px;font-size:13px}
+.btn:disabled{opacity:.45}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.months{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:760px){.months{grid-template-columns:repeat(3,1fr)}}
+.month h3{margin:0 0 6px;font-size:14px;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.grid .wd{font-size:11px;color:var(--muted);text-align:center;font-weight:700}
+.day{aspect-ratio:1;border-radius:9px;border:1px solid transparent;background:#fafafa;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;user-select:none;-webkit-user-select:none;padding:0;font-family:inherit;color:var(--ink)}
+.day.out{visibility:hidden}
+.day.frei{background:repeating-linear-gradient(135deg,#eee 0 4px,#f8f8f8 4px 8px);color:#999}
+.day.t{background:var(--red);color:#fff;font-weight:800}
+.day.t.plan{background:#fff;color:var(--red);border:2px solid var(--red)}
+.day.today{box-shadow:0 0 0 2px #111 inset}
+.day.t.today{box-shadow:0 0 0 2px #111}
+.day.ft::after{content:"";position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:#999}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+table.list{width:100%;border-collapse:collapse}
+.list td,.list th{padding:6px 4px;border-bottom:1px solid var(--line);font-size:14px;text-align:left}
+.list th{font-size:12px;color:var(--muted)}
+.list input{font:inherit;font-size:16px;border:1px solid var(--line);border-radius:8px;padding:5px 6px;background:#fff;width:100%;min-width:0}
+.list input[type=time]{width:96px}
+.list .x{border:0;background:none;color:var(--red);font-size:18px;cursor:pointer;padding:4px 8px}
+.list tr.plan td:first-child{color:var(--muted)}
+.list .an{display:block;font-size:11px;color:var(--muted)}
+@media(max-width:600px){.list .ca{display:none}.list input[type=time]{width:84px;font-size:15px;padding:5px 3px}}
+@media(min-width:601px){.list .an{display:none}}
+.lock{background:var(--pink);border:1px solid #f5b5bc;color:#7a0d1c;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
+.muted{color:var(--muted);font-size:13px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:50;font-size:14px}
+#toast.show{opacity:1}
+dialog{border:0;border-radius:16px;padding:0;max-width:440px;width:calc(100% - 24px)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog form{padding:18px}
+dialog h3{margin:0 0 12px}
+dialog label{display:block;font-size:12px;color:var(--muted);margin-bottom:10px}
+dialog input{display:block;width:100%;margin-top:3px;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:9px}
+.tage{display:flex;gap:4px;margin-top:4px}
+.tage label{margin:0;display:flex;flex-direction:column;align-items:center;font-size:12px;color:var(--ink)}
+.tage input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--red)}
+#print{display:none}
+.sec{font-weight:700;font-size:13px;margin:16px 0 6px;padding-top:10px;border-top:1px solid var(--line)}
+.gitem{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px}
+.gitem .grow{flex:1;font-size:14px}
+table.zeiten{border-collapse:collapse;margin-bottom:6px}
+table.zeiten td{padding:3px 4px}
+table.zeiten input[type=time]{margin:0;width:110px;padding:6px 8px}
+table.zeiten input:disabled{opacity:.4}
+label.chk{display:flex;align-items:center;gap:6px;margin:0;color:var(--ink);font-size:14px;width:56px}
+label.chk input{width:20px;height:20px;margin:0;accent-color:var(--red)}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px}
+.tabs button{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer}
+.tabs button.on{background:var(--red);border-color:var(--red);color:#fff}
+dialog{max-height:92vh;overflow:auto}
+
+
+/* ---------- Druck: Formular-Layout ---------- */
+@page{size:A4;margin:0}
+@media print{
+  body{background:#fff}
+  header,main,#toast,dialog{display:none!important}
+  #print{display:block}
+}
+.pg{width:210mm;height:297mm;padding:11mm 18mm 10mm;position:relative;page-break-after:always;color:#222;font-family:Helvetica,Arial,sans-serif;overflow:hidden}
+.pg:last-child{page-break-after:auto}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.6px solid var(--red2);padding-bottom:3mm}
+.ph img{height:19mm}
+.ph .t{text-align:right}.ph .t b{display:block;color:var(--red2);font-size:26pt;line-height:1}.ph .t span{color:#6b6b6b;font-size:9pt}
+.pf{display:flex;align-items:flex-end;gap:3mm;margin-top:4.5mm;font-size:9.5pt}
+.pf b{white-space:nowrap}
+.pf .v{flex:1;border-bottom:.6pt solid #b5b5b5;padding:0 1mm 1mm;min-height:5mm;font-size:10pt}
+.ptab{width:100%;border-collapse:collapse;margin-top:5mm;font-size:9.5pt}
+.ptab th{background:var(--red2);color:#fff;font-weight:700;border:.5pt solid #fff;padding:1mm}
+.ptab th.s{font-weight:400;font-size:8.5pt}
+.ptab td{border:.5pt solid #b5b5b5;height:6.1mm;padding:0 2mm;text-align:center}
+.ptab td.a{text-align:left}
+.ptab td.n{font-size:6.5pt;color:#6b6b6b;text-align:left;width:4mm;padding:0 0 0 1mm;border-right:0}
+.ptab tr:nth-child(even) td{background:#f3f3f3}
+.ptab tr.tot td{background:var(--pink)!important;font-weight:700;color:var(--red2);font-size:11pt}
+.pb{display:flex;align-items:center;gap:2mm;margin-top:6mm;font-size:10pt;font-weight:700}
+.pb .l{border-bottom:.6pt solid #b5b5b5;min-width:18mm;text-align:center;font-weight:400}
+.pb .box{margin-left:auto;background:var(--pink);border:1pt solid var(--red2);border-radius:1.5mm;min-width:40mm;padding:1.5mm 2.5mm;text-align:right;font-size:11pt}
+.ps{display:flex;justify-content:space-between;margin-top:6mm;font-size:9.5pt}
+.ps>div{width:75mm}
+.ps .d{display:flex;gap:2mm}.ps .d span{flex:1;border-bottom:.6pt solid #b5b5b5;text-align:center}
+.ps .sig{border-bottom:.7pt solid #222;height:11mm}
+.ps .r{font-size:8.5pt;color:#6b6b6b;margin-top:1mm}
+.pnote{position:absolute;bottom:5mm;left:18mm;right:18mm;font-size:7.5pt;color:#999;display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+<header>
+  <img src="lib/mtv_logo.png" alt="MTV Schwarmstedt">
+  <h1>Übungsleiter-Abrechnung<small id="who">MTV Schwarmstedt</small></h1>
+  <span id="sync" title="Speicherstatus"></span>
+  <button class="ib" id="b-set" title="Einstellungen">⚙︎</button>
+</header>
+<main id="app"></main>
+<div id="print"></div>
+<div id="toast"></div>
+
+<dialog id="dlg-set"><form method="dialog">
+  <h3>Einstellungen</h3>
+  <p class="muted" id="set-hint" hidden>Willkommen! Trage zuerst deinen Namen ein und lege mindestens eine Gruppe an.</p>
+  <label>Name, Vorname (steht auf dem Formular)<input name="name" autocomplete="name"></label>
+  <div class="sec">Meine Gruppen</div>
+  <div id="set-gruppen"></div>
+  <button class="btn sm" value="" data-a="g-new" type="button">+ Gruppe anlegen</button>
+  <div class="sec">Konto</div>
+  <div class="muted" id="set-mail"></div>
+  <div class="row" style="margin-top:8px"><button class="btn sm" type="button" data-a="pw">Passwort ändern</button><button class="btn sm" type="button" data-a="out">Abmelden</button></div>
+  <div class="row" style="justify-content:flex-end;margin-top:16px"><button class="btn" value="cancel">Abbrechen</button><button class="btn pri" value="ok">Speichern</button></div>
+</form></dialog>
+
+<dialog id="dlg-grp"><form method="dialog">
+  <h3 id="grp-title">Gruppe</h3>
+  <label>Sportangebot (z. B. Handball mJD, Kinderturnen)<input name="angebot" required></label>
+  <label>Sportstätte<input name="staette"></label>
+  <label>Anlass auf dem Formular (Standard)<input name="anlass" placeholder="wie Sportangebot"></label>
+  <label style="max-width:140px">€ pro Std.<input name="satz" inputmode="decimal"></label>
+  <label>Trainingstage und Zeiten</label>
+  <table class="zeiten" id="grp-zeiten"></table>
+  <p class="muted">Feiertage und Schulferien (Niedersachsen) werden beim Vorbelegen ausgelassen.</p>
+  <div class="row" style="justify-content:space-between;margin-top:12px">
+    <button class="btn sm" value="del" id="grp-del" formnovalidate style="color:var(--red)">Gruppe löschen</button>
+    <div class="row"><button class="btn" value="cancel" formnovalidate>Abbrechen</button><button class="btn pri" value="ok">Übernehmen</button></div>
+  </div>
+</form></dialog>
+
+<dialog id="dlg-pw"><form method="dialog">
+  <h3>Passwort ändern</h3>
+  <label>Aktuelles Passwort<input name="o" type="password" autocomplete="current-password"></label>
+  <label>Neues Passwort (mind. 8 Zeichen)<input name="n" type="password" autocomplete="new-password"></label>
+  <label>Neues Passwort wiederholen<input name="n2" type="password" autocomplete="new-password"></label>
+  <div class="muted" id="pw-err" style="color:var(--red);min-height:18px"></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn" value="cancel">Abbrechen</button><button class="btn pri" type="button" id="pw-ok">Ändern</button></div>
+</form></dialog>
+
+<dialog id="dlg-iban"><form method="dialog">
+  <h3>IBAN für den Ausdruck</h3>
+  <label>IBAN<input name="iban" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DE00 0000 0000 0000 0000 00"></label>
+  <p class="muted">Die IBAN wird nur in dieses PDF gedruckt und nirgends gespeichert.</p>
+  <div class="row" style="justify-content:flex-end"><button class="btn" value="cancel">Abbrechen</button><button class="btn" value="skip">Ohne IBAN</button><button class="btn pri" value="ok">Drucken / PDF</button></div>
+</form></dialog>
+
+<dialog id="dlg-pdf"><form method="dialog">
+  <h3>PDF ist fertig</h3>
+  <p class="muted" id="pdf-info"></p>
+  <div class="row" style="flex-direction:column;align-items:stretch;gap:8px">
+    <a class="btn pri" id="pdf-open" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">PDF öffnen (Drucken / Teilen)</a>
+    <a class="btn" id="pdf-dl" style="text-align:center;text-decoration:none">Herunterladen</a>
+    <button class="btn" value="close">Schließen</button>
+  </div>
+</form></dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="lib/kalender.js?v=20261117"></script>
+<script src="lib/cloud.js?v=20261117"></script>
+<script>
+(function(){
+'use strict';
+const DOC='abrechnung_verein',OLD_DOC='abrechnung';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>(Math.round(v*100)/100).toFixed(2).replace('.',',');
+const hrs=(a,b)=>{if(!a||!b)return 0;const [h1,m1]=a.split(':').map(Number),[h2,m2]=b.split(':').map(Number);let d=(h2+m2/60)-(h1+m1/60);if(d<0)d+=24;return d;};
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2000);}
+const WD=['Mo','Di','Mi','Do','Fr','Sa','So'],WDN=[1,2,3,4,5,6,0]; // Anzeige Mo–So, Werte = getDay()
+const uid=()=>Math.random().toString(36).slice(2,9);
+const newGroup=()=>({id:uid(),angebot:'',staette:'',anlass:'',satz:7.5,zeiten:{}});
+/* Datenmodell: {v:2, name, gruppen:[{id,angebot,staette,anlass,satz,zeiten:{"1":{von,bis}}}], aktiv, q:{[gid]:{[jahr-q]:{status,termine,exports,closedAt}}}} */
+let D=null,curQ=null,user=null;
+const G=()=>D.gruppen.find(g=>g.id===D.aktiv)||D.gruppen[0];
+const anlassOf=g=>g.anlass||g.angebot;
+
+/* ---------- Quartale ---------- */
+const qOf=s=>{const d=Kal.parse(s);return {y:d.getFullYear(),q:Math.floor(d.getMonth()/3)+1};};
+const qKey=o=>o.y+'-'+o.q;
+const qStart=o=>Kal.iso(new Date(o.y,(o.q-1)*3,1));
+const qEnd=o=>Kal.iso(new Date(o.y,o.q*3,0));
+const qDue=o=>o.q===4?o.y+'-12-03':qEnd(o);
+const qShift=(o,n)=>{let i=o.y*4+(o.q-1)+n;return {y:Math.floor(i/4),q:i%4+1};};
+function defaults(o,g){
+  const out=[],end=Kal.parse(qEnd(o));
+  for(let d=Kal.parse(qStart(o));d<=end;d.setDate(d.getDate()+1)){
+    const s=Kal.iso(d);
+    if(g.zeiten[d.getDay()]&&!Kal.frei(s))out.push(mk(s,g));
+  }
+  return out;
+}
+function mk(s,g){
+  const z=g.zeiten[Kal.parse(s).getDay()]||Object.values(g.zeiten)[0]||{von:'18:00',bis:'19:30'};
+  return {d:s,von:z.von,bis:z.bis,anlass:anlassOf(g)};
+}
+function Q(o){
+  const g=G(),k=qKey(o);
+  D.q[g.id]=D.q[g.id]||{};
+  if(!D.q[g.id][k]){D.q[g.id][k]={status:'offen',termine:defaults(o,g),exports:[]};save();}
+  return D.q[g.id][k];
+}
+const sorted=q=>q.termine.sort((a,b)=>a.d.localeCompare(b.d)||a.von.localeCompare(b.von));
+function save(){Cloud.save(DOC,D);}
+
+/* ---------- Rendern ---------- */
+function render(){
+  $('#who').textContent=D.name||(user&&user.email)||'MTV Schwarmstedt';
+  if(!D.gruppen.length){
+    $('#app').innerHTML=`<div class="card" style="text-align:center"><p><b>Noch keine Gruppe angelegt.</b></p><p class="muted">In den Einstellungen deinen Namen eintragen und deine Trainingsgruppe(n) mit Tagen und Zeiten anlegen.</p><button class="btn pri" data-a="settings">Einstellungen öffnen</button></div>`;
+    return;
+  }
+  const g=G(),o=curQ,q=Q(o),t=sorted(q),today=Kal.today(),locked=q.status==='abgeschlossen';
+  const std=t.reduce((s,x)=>s+hrs(x.von,x.bis),0),plan=t.filter(x=>x.d>today).length;
+  const due=qDue(o),dleft=Kal.days(today,due);
+  let dueTxt='fällig '+Kal.de(due);
+  if(!locked&&dleft>=0&&dleft<=14)dueTxt+=` · <span class="pill due">in ${dleft} Tag${dleft===1?'':'en'}</span>`;
+  else if(!locked&&dleft<0&&dleft>-60)dueTxt+=` · <span class="pill due">überfällig</span>`;
+  let h='';
+  if(D.gruppen.length>1)h+=`<div class="tabs">${D.gruppen.map(x=>`<button class="${x.id===g.id?'on':''}" data-g="${x.id}">${esc(x.angebot||'Gruppe')}</button>`).join('')}</div>`;
+  h+=`<div class="card"><div class="qnav"><button data-a="prev">◀</button><h2>${o.q}. Quartal ${o.y}</h2><button data-a="next">▶</button></div>
+    <div class="meta">${esc(g.angebot)}${g.staette?' · '+esc(g.staette):''}</div>
+    <div class="meta">${Kal.de(qStart(o))} – ${Kal.de(qEnd(o))} · ${dueTxt}</div>
+    <div class="meta"><span class="pill ${locked?'closed':'open'}">${locked?'abgeschlossen '+Kal.de(q.closedAt):'offen'}</span>${q.exports.length?` · PDF zuletzt ${Kal.de(q.exports[q.exports.length-1])}`:''}</div></div>`;
+  if(locked)h+=`<div class="lock">Dieses Quartal ist abgeschlossen. Zum Ändern zuerst <b>„Wieder öffnen“</b>.</div>`;
+  const isCur=qKey(qOf(today))===qKey(o);
+  if(isCur&&!locked){
+    const tt=t.find(x=>x.d===today),fr=Kal.frei(today);
+    h+=`<div class="card today"><div class="grow"><b>Heute, ${Kal.wd(today)} ${Kal.de(today)}</b><br><span class="muted">${tt?`Training ${tt.von}–${tt.bis} ist eingetragen ✓`:(fr?fr+' – kein Training geplant':'Kein Training eingetragen')}</span></div>
+      ${tt?`<button class="btn sm" data-a="del" data-i="${t.indexOf(tt)}">Fällt aus</button>`:`<button class="btn pri" data-a="addToday">Training heute</button>`}</div>`;
+  }
+  h+=`<div class="card sum"><div><b>${t.length}</b><span>Termine${plan?` (${plan} geplant)`:''}</span></div><div><b>${num(std)}</b><span>Stunden</span></div><div><b>${num(std*g.satz)} €</b><span>Betrag</span></div></div>`;
+  h+='<div class="card"><div class="months">';
+  for(let m=0;m<3;m++){
+    const first=new Date(o.y,(o.q-1)*3+m,1),days=new Date(o.y,(o.q-1)*3+m+1,0).getDate(),off=(first.getDay()+6)%7;
+    h+=`<div class="month"><h3>${first.toLocaleDateString('de-DE',{month:'long'})}</h3><div class="grid">${WD.map(w=>`<div class="wd">${w}</div>`).join('')}`;
+    for(let i=0;i<off;i++)h+='<div class="day out"></div>';
+    for(let d=1;d<=days;d++){
+      const s=Kal.iso(new Date(o.y,(o.q-1)*3+m,d)),has=t.some(x=>x.d===s),fr=Kal.frei(s),ft=Kal.feiertag(s);
+      const cls=['day',has?'t':'',has&&s>today?'plan':'',fr&&!has?'frei':'',ft?'ft':'',s===today?'today':''].join(' ');
+      h+=`<button class="${cls}" data-day="${s}" title="${esc(fr||'')}">${d}</button>`;
+    }
+    h+='</div></div>';
+  }
+  h+=`</div><div class="legend"><span><i style="background:var(--red)"></i>Training</span><span><i style="border:2px solid var(--red)"></i>geplant</span><span><i style="background:repeating-linear-gradient(135deg,#ddd 0 3px,#f8f8f8 3px 6px)"></i>Ferien/Feiertag</span></div>
+    <div class="muted" style="margin-top:6px">Tag antippen = Termin hinzufügen / entfernen.</div></div>`;
+  h+=`<div class="card"><table class="list"><tr><th>Datum</th><th>von</th><th>bis</th><th>Std.</th><th class="ca">Anlass</th><th></th></tr>`+
+    t.map((x,i)=>`<tr class="${x.d>today?'plan':''}"><td>${Kal.wd(x.d)} ${Kal.de(x.d).slice(0,6)}${x.anlass!==anlassOf(g)?`<span class="an">${esc(x.anlass)}</span>`:''}</td>
+      <td><input type="time" data-i="${i}" data-f="von" value="${x.von}"${locked?' disabled':''}></td>
+      <td><input type="time" data-i="${i}" data-f="bis" value="${x.bis}"${locked?' disabled':''}></td>
+      <td>${num(hrs(x.von,x.bis))}</td>
+      <td class="ca"><input data-i="${i}" data-f="anlass" value="${esc(x.anlass)}"${locked?' disabled':''}></td>
+      <td>${locked?'':`<button class="x" data-a="del" data-i="${i}">✕</button>`}</td></tr>`).join('')+
+    `</table>${t.length>20?`<div class="muted" style="margin-top:6px">${t.length} Termine → das PDF bekommt ${Math.ceil(t.length/20)} Seiten.</div>`:''}</div>`;
+  h+=`<div class="card row">
+    <button class="btn pri" data-a="pdf">PDF / Drucken</button>
+    ${locked?'<button class="btn" data-a="reopen">Wieder öffnen</button>':'<button class="btn" data-a="close">Abschließen &amp; PDF</button>'}
+    ${locked?'':'<button class="btn sm" data-a="fill">Standardtermine ergänzen</button>'}
+  </div>`;
+  $('#app').innerHTML=h;
+}
+
+/* ---------- Aktionen ---------- */
+$('#app').addEventListener('click',e=>{
+  const b=e.target.closest('[data-a],[data-day],[data-g]');if(!b)return;
+  if(b.dataset.a==='settings'){openSettings();return;}
+  if(b.dataset.g){D.aktiv=b.dataset.g;save();render();return;}
+  const q=Q(curQ),g=G(),locked=q.status==='abgeschlossen',a=b.dataset.a;
+  if(a==='prev'||a==='next'){curQ=qShift(curQ,a==='prev'?-1:1);render();window.scrollTo(0,0);return;}
+  if(a==='pdf'){printPdf();return;}
+  if(a==='reopen'){if(!confirm('Quartal wieder öffnen, um Termine zu ergänzen oder zu korrigieren?'))return;q.status='offen';q.reopened=Kal.today();save();render();return;}
+  if(locked){toast('Quartal ist abgeschlossen – erst wieder öffnen');return;}
+  if(b.dataset.day){
+    const s=b.dataset.day,i=q.termine.findIndex(x=>x.d===s);
+    if(i>=0){q.termine.splice(i,1);toast(Kal.de(s)+' entfernt');}
+    else{q.termine.push(mk(s,g));toast(Kal.de(s)+' eingetragen'+(Kal.frei(s)?' ('+Kal.frei(s)+')':''));}
+  }
+  else if(a==='del'){const x=sorted(q)[+b.dataset.i];q.termine.splice(q.termine.indexOf(x),1);toast(Kal.de(x.d)+' entfernt');}
+  else if(a==='addToday'){q.termine.push(mk(Kal.today(),g));toast('Heute eingetragen');}
+  else if(a==='fill'){const have=new Set(q.termine.map(x=>x.d));const add=defaults(curQ,g).filter(x=>!have.has(x.d));
+    if(!add.length){toast('Alle Standardtermine sind schon drin');return;}
+    if(!confirm(add.length+' Standardtermin(e) ergänzen? Entfernte Ausfälle kommen dabei wieder dazu.'))return;q.termine.push(...add);}
+  else if(a==='close'){if(!confirm('Quartal abschließen und PDF erzeugen?'))return;q.status='abgeschlossen';q.closedAt=Kal.today();save();render();printPdf();return;}
+  else return;
+  save();render();
+});
+window.addEventListener('afterprint',()=>{$('#print').innerHTML='';}); // IBAN nicht im Speicher lassen
+$('#app').addEventListener('change',e=>{
+  const i=e.target.dataset.i,f=e.target.dataset.f;if(i==null||!f)return;
+  const x=sorted(Q(curQ))[+i];x[f]=e.target.value;save();render();
+});
+
+/* ---------- PDF ---------- */
+function askIban(){
+  return new Promise(res=>{
+    const d=$('#dlg-iban'),inp=d.querySelector('input');inp.value='';
+    d.onclose=()=>{const v=d.returnValue;const iban=inp.value.replace(/\s+/g,'').toUpperCase();inp.value='';
+      res(v==='ok'?iban.replace(/(.{4})/g,'$1 ').trim():v==='skip'?'':null);};
+    d.returnValue='cancel';d.showModal();setTimeout(()=>inp.focus(),50);
+  });
+}
+/* Original-Formular (lib/vorlage.pdf) mit pdf-lib befüllen – Koordinaten in pt, Ursprung unten links */
+const ROW_TOP=562.7,ROW_H=(562.7-188.5)/20;
+const COL={datum:[62,124.7],von:[124.7,178.6],bis:[178.6,232.4],std:[232.4,277.8],anlass:283};
+let TPL=null;
+const fileSafe=s=>String(s||'').replace(/[^\wäöüÄÖÜß-]+/g,'_').replace(/^_|_$/g,'');
+async function pdfExport(iban){
+  const {PDFDocument,StandardFonts,rgb}=PDFLib;
+  if(!TPL)TPL=await (await fetch('lib/vorlage.pdf')).arrayBuffer();
+  const src=await PDFDocument.load(TPL),doc=await PDFDocument.create();
+  const f=await doc.embedFont(StandardFonts.Helvetica),fb=await doc.embedFont(StandardFonts.HelveticaBold);
+  const ink=rgb(.07,.07,.07);
+  const T=(pg,s,x,y,o={})=>{s=String(s==null?'':s);if(!s)return;const ft=o.bold?fb:f,sz=o.size||10,w=ft.widthOfTextAtSize(s,sz);
+    const xx=o.center?x-w/2:o.right?x-w:x;pg.drawText(s,{x:xx,y,size:sz,font:ft,color:o.color||ink});};
+  const mid=a=>(a[0]+a[1])/2;
+  const o=curQ,q=Q(o),t=sorted(q),g=G(),pages=Math.max(1,Math.ceil(t.length/20)),today=Kal.today();
+  const total=t.reduce((s,x)=>s+hrs(x.von,x.bis),0);
+  for(let p=0;p<pages;p++){
+    const [pg]=await doc.copyPages(src,[0]);doc.addPage(pg);
+    const last=p===pages-1,rows=t.slice(p*20,p*20+20);
+    T(pg,Kal.de(qStart(o)),210,694);T(pg,Kal.de(qEnd(o)),400,694);
+    T(pg,D.name,140,668.5);T(pg,g.angebot,128,643);T(pg,g.staette,375,643);T(pg,iban,89,617.5);
+    rows.forEach((x,i)=>{const y=ROW_TOP-(i+1)*ROW_H+6;
+      T(pg,Kal.de(x.d),mid(COL.datum),y,{center:true});T(pg,x.von,mid(COL.von),y,{center:true});T(pg,x.bis,mid(COL.bis),y,{center:true});
+      T(pg,num(hrs(x.von,x.bis)),mid(COL.std),y,{center:true});T(pg,x.anlass,COL.anlass,y);});
+    const sub=t.slice(0,p*20+20).reduce((s,x)=>s+hrs(x.von,x.bis),0);
+    T(pg,num(last?total:sub),mid(COL.std),174,{center:true,bold:true});
+    if(!last)T(pg,'Übertrag auf Seite '+(p+2),COL.anlass,174,{size:9,color:rgb(.4,.4,.4)});
+    if(last){
+      T(pg,num(total),189.9,138.5,{center:true});T(pg,num(g.satz),289.1,138.5,{center:true});
+      T(pg,num(total*g.satz),526,135.5,{right:true,bold:true,size:11});
+      T(pg,Kal.de(today),481.9,73.2,{center:true});
+    }
+    if(pages>1)T(pg,`Seite ${p+1} von ${pages}`,544.3,8,{right:true,size:7,color:rgb(.5,.5,.5)});
+  }
+  doc.setTitle(`MTV Abrechnung ${g.angebot} ${o.q}. Quartal ${o.y}`);doc.setAuthor(D.name||'MTV Schwarmstedt');
+  const url=URL.createObjectURL(new Blob([await doc.save()],{type:'application/pdf'}));
+  const name=`MTV_Abrechnung_${fileSafe(g.angebot)}_${o.y}_Q${o.q}.pdf`.replace('__','_'),d=$('#dlg-pdf');
+  $('#pdf-open').href=url;$('#pdf-dl').href=url;$('#pdf-dl').download=name;
+  $('#pdf-info').textContent=`${name} · ${t.length} Termine · ${num(total)} Std. · ${num(total*g.satz)} €`;
+  d.onclose=()=>{setTimeout(()=>URL.revokeObjectURL(url),60000);};
+  d.showModal();
+  q.exports.push(today);save();render();
+}
+async function printPdf(){
+  if(!D.name&&!confirm('Es ist noch kein Name eingetragen. Trotzdem fortfahren?'))return;
+  const iban=await askIban();if(iban===null)return;
+  if(window.PDFLib){try{await pdfExport(iban);return;}catch(e){console.error(e);toast('PDF-Vorlage nicht geladen – nutze Druckansicht');}}
+  const o=curQ,q=Q(o),t=sorted(q),g=G(),pages=Math.max(1,Math.ceil(t.length/20));
+  const total=t.reduce((s,x)=>s+hrs(x.von,x.bis),0),today=Kal.today();
+  q.exports.push(today);save();
+  let h='';
+  for(let p=0;p<pages;p++){
+    const rows=t.slice(p*20,p*20+20),last=p===pages-1;
+    h+=`<div class="pg"><div class="ph"><img src="lib/mtv_logo.png" alt=""><div class="t"><b>Abrechnung</b><span>Männerturnverein von 1909 e.V. Schwarmstedt</span></div></div>
+      <div class="pf"><b>Abrechnungszeitraum</b><b style="margin-left:6mm">vom:</b><span class="v">${Kal.de(qStart(o))}</span><b>bis zum:</b><span class="v">${Kal.de(qEnd(o))}</span></div>
+      <div class="pf"><b>Name, Vorname:</b><span class="v">${esc(D.name)}</span></div>
+      <div class="pf"><b>Sportangebot:</b><span class="v">${esc(g.angebot)}</span><b>Sportstätte:</b><span class="v">${esc(g.staette)}</span></div>
+      <div class="pf"><b>IBAN:</b><span class="v" style="letter-spacing:.5px">${esc(iban)}</span></div>
+      <table class="ptab"><tr><th rowspan="2" colspan="2" style="width:30mm">Datum</th><th colspan="2">Uhrzeit</th><th rowspan="2" style="width:16mm">Std.</th><th rowspan="2">Anlass</th></tr>
+      <tr><th class="s" style="width:19mm">von</th><th class="s" style="width:19mm">bis</th></tr>`;
+    for(let i=0;i<20;i++){const x=rows[i];
+      h+=`<tr><td class="n">${p*20+i+1}</td><td>${x?Kal.de(x.d):''}</td><td>${x?x.von:''}</td><td>${x?x.bis:''}</td><td>${x?num(hrs(x.von,x.bis)):''}</td><td class="a">${x?esc(x.anlass):''}</td></tr>`;}
+    h+=`<tr class="tot"><td colspan="4" style="text-align:left">${last?'Gesamt:':'Übertrag Seite '+(p+1)+':'}</td><td>${last?num(total):num(t.slice(0,p*20+20).reduce((s,x)=>s+hrs(x.von,x.bis),0))}</td><td></td></tr></table>`;
+    if(last){
+      h+=`<div class="pb">Überweisungsbetrag (<span class="l">${num(total)}</span> Std. × <span class="l">${num(g.satz)}</span> € ) =<span class="box">${num(total*g.satz)} €</span></div>
+        <div class="pb" style="margin-top:6mm">Für die Richtigkeit:</div>
+        <div class="ps"><div><div class="d">Schwarmstedt, den <span></span></div><div class="sig"></div><div class="r">Spartenleitung</div></div>
+        <div><div class="d">Schwarmstedt, den <span>${Kal.de(today)}</span></div><div class="sig"></div><div class="r">Trainer/Übungsleiter</div></div></div>`;
+    }
+    h+=`<div class="pnote"><span>${o.q}. Quartal ${o.y} · erstellt ${Kal.de(today)}</span><span>Seite ${p+1}/${pages}</span></div></div>`;
+  }
+  $('#print').innerHTML=h;
+  render();
+  const img=$('#print img');
+  let done=false;const go=()=>{if(done)return;done=true;setTimeout(()=>window.print(),150);};
+  if(img&&!img.complete){img.onload=go;img.onerror=go;}else go();
+}
+
+/* ---------- Einstellungen ---------- */
+let draft=null; // Arbeitskopie der Gruppen, wird erst bei „Speichern“ übernommen
+function drawGroups(){
+  $('#set-gruppen').innerHTML=draft.length?draft.map((g,i)=>{
+    const z=WDN.filter(d=>g.zeiten[d]).map(d=>`${WD[WDN.indexOf(d)]} ${g.zeiten[d].von}–${g.zeiten[d].bis}`).join(', ');
+    return `<div class="gitem"><div class="grow"><b>${esc(g.angebot||'(ohne Namen)')}</b><br><span class="muted">${esc(g.staette||'–')} · ${num(g.satz)} €/h<br>${z||'keine festen Trainingstage'}</span></div><button class="btn sm" type="button" data-gi="${i}">Bearbeiten</button></div>`;
+  }).join(''):'<p class="muted">Noch keine Gruppe.</p>';
+}
+function openSettings(first){
+  const f=$('#dlg-set form');
+  f.name.value=D.name||'';
+  draft=JSON.parse(JSON.stringify(D.gruppen));
+  $('#set-hint').hidden=!first;
+  $('#set-mail').textContent='Angemeldet als '+(user?user.email:'–');
+  drawGroups();
+  $('#dlg-set').showModal();
+}
+$('#b-set').addEventListener('click',()=>openSettings(false));
+$('#dlg-set').addEventListener('click',e=>{
+  const b=e.target.closest('[data-gi],[data-a]');if(!b)return;
+  if(b.dataset.gi!=null)editGroup(+b.dataset.gi);
+  else if(b.dataset.a==='g-new')editGroup(-1);
+  else if(b.dataset.a==='pw'){const d=$('#dlg-pw');d.querySelector('form').reset();$('#pw-err').textContent='';d.showModal();}
+  else if(b.dataset.a==='out'){if(confirm('Abmelden? Die Daten bleiben in der Cloud gespeichert.')){Cloud.logout();location.reload();}}
+});
+$('#dlg-set').addEventListener('close',()=>{
+  if($('#dlg-set').returnValue!=='ok')return;
+  const f=$('#dlg-set form');
+  const removed=D.gruppen.filter(g=>!draft.some(x=>x.id===g.id));
+  removed.forEach(g=>delete D.q[g.id]);
+  D.name=f.name.value.trim();D.gruppen=draft;
+  if(!D.gruppen.some(g=>g.id===D.aktiv))D.aktiv=D.gruppen[0]?D.gruppen[0].id:null;
+  save();render();toast('Gespeichert');
+});
+function editGroup(i){
+  const g=i>=0?JSON.parse(JSON.stringify(draft[i])):newGroup(),d=$('#dlg-grp'),f=d.querySelector('form');
+  $('#grp-title').textContent=i>=0?'Gruppe bearbeiten':'Neue Gruppe';
+  f.angebot.value=g.angebot;f.staette.value=g.staette;f.anlass.value=g.anlass;f.satz.value=String(g.satz).replace('.',',');
+  $('#grp-del').hidden=i<0;
+  $('#grp-zeiten').innerHTML=WD.map((w,k)=>{const n=WDN[k],z=g.zeiten[n];
+    return `<tr><td><label class="chk"><input type="checkbox" data-d="${n}"${z?' checked':''}> ${w}</label></td>
+      <td><input type="time" data-von="${n}" value="${z?z.von:'18:00'}"${z?'':' disabled'}></td><td>–</td>
+      <td><input type="time" data-bis="${n}" value="${z?z.bis:'19:30'}"${z?'':' disabled'}></td></tr>`;}).join('');
+  $('#grp-zeiten').onchange=e=>{const n=e.target.dataset.d;if(n==null)return;
+    d.querySelector(`[data-von="${n}"]`).disabled=d.querySelector(`[data-bis="${n}"]`).disabled=!e.target.checked;};
+  d.onclose=()=>{
+    const v=d.returnValue;
+    if(v==='del'){if(confirm(`Gruppe „${g.angebot}“ mit allen Terminen löschen? (Wird erst mit „Speichern“ wirksam.)`)){draft.splice(i,1);drawGroups();}return;}
+    if(v!=='ok')return;
+    g.angebot=f.angebot.value.trim();g.staette=f.staette.value.trim();g.anlass=f.anlass.value.trim();
+    g.satz=parseFloat(f.satz.value.replace(',','.'))||0;g.zeiten={};
+    d.querySelectorAll('[data-d]').forEach(c=>{if(c.checked){const n=c.dataset.d;
+      g.zeiten[n]={von:d.querySelector(`[data-von="${n}"]`).value,bis:d.querySelector(`[data-bis="${n}"]`).value};}});
+    if(i>=0)draft[i]=g;else draft.push(g);
+    drawGroups();
+  };
+  d.returnValue='cancel';d.showModal();
+}
+$('#pw-ok').addEventListener('click',async()=>{
+  const f=$('#dlg-pw form'),err=$('#pw-err');
+  if(f.n.value.length<8){err.textContent='Mindestens 8 Zeichen.';return;}
+  if(f.n.value!==f.n2.value){err.textContent='Die neuen Passwörter stimmen nicht überein.';return;}
+  err.textContent='…';
+  try{await Cloud.changePassword(f.o.value,f.n.value);$('#dlg-pw').close();toast('Passwort geändert');}
+  catch(x){err.textContent=x.message;}
+});
+
+/* ---------- Sync-Anzeige & Start ---------- */
+Cloud.on(s=>{const e=$('#sync');e.className=s==='saved'?'ok':s==='saving'?'busy':s==='offline'?'off':e.className;
+  e.title={saved:'gespeichert',saving:'speichert …',offline:'offline – wird später synchronisiert'}[s]||'';});
+function normalize(x){
+  x=x||{};x.v=2;x.name=x.name||'';x.gruppen=Array.isArray(x.gruppen)?x.gruppen:[];x.q=x.q||{};
+  x.gruppen.forEach(g=>{g.zeiten=g.zeiten||{};if(g.satz==null)g.satz=7.5;});
+  if(!x.gruppen.some(g=>g.id===x.aktiv))x.aktiv=x.gruppen[0]?x.gruppen[0].id:null;
+  return x;
+}
+/* Übernahme aus dem bisherigen Einzel-Tool (Cloud-Dokument „abrechnung“) */
+async function tryImport(){
+  const old=await Cloud.peek(OLD_DOC);
+  if(!old||!old.cfg||!confirm('Es gibt Abrechnungsdaten aus deinem bisherigen Tool. Als Gruppe „'+(old.cfg.angebot||'Training')+'“ übernehmen?\n(Das alte Tool bleibt unverändert.)'))return null;
+  const c=old.cfg,g={id:uid(),angebot:c.angebot||'',staette:c.staette||'',anlass:c.anlass&&c.anlass!==c.angebot?c.anlass:'',satz:c.satz==null?7.5:c.satz,zeiten:{}};
+  (c.tage||[]).forEach(d=>g.zeiten[d]={von:c.von||'18:00',bis:c.bis||'19:30'});
+  return {v:2,name:c.name||'',gruppen:[g],aktiv:g.id,q:{[g.id]:JSON.parse(JSON.stringify(old.q||{}))}};
+}
+async function start(u,info){
+  user=u;
+  let x=await Cloud.load(DOC,null);
+  if(!x){x=await tryImport();if(x)Cloud.save(DOC,x);}
+  D=normalize(x);
+  curQ=qOf(Kal.today());
+  render();
+  if(!D.gruppen.length||(info&&info.first&&!D.name))openSettings(true);
+}
+document.addEventListener('visibilitychange',async()=>{ // beim Zurückkehren frische Daten holen
+  if(document.visibilityState==='visible'&&D&&Cloud.user()&&!document.querySelector('dialog[open]')){const n=await Cloud.load(DOC,null);if(n){D=normalize(n);render();}}
+});
+Cloud.requireLogin(start,{title:'Übungsleiter-Abrechnung',logo:'lib/mtv_logo.png'});
+})();
+</script>
+</body>
+</html>
