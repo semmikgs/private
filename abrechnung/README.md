@@ -1,26 +1,28 @@
 # Übungsleiter-Abrechnung MTV Schwarmstedt (Vereinsversion)
 
-Seite: https://semmikgs.github.io/private/abrechnung/
+- **App:** https://semmikgs.github.io/private/abrechnung/
+- **Zugänge verwalten (Admin):** https://semmikgs.github.io/private/abrechnung/admin.html – Login mit dem Trainer-Cockpit-Konto
 
-- Jeder Nutzer: Name, beliebig viele Gruppen (Sportangebot, Sportstätte, Anlass, €/h, Trainingstage mit eigenen Zeiten)
-- Termine je Gruppe und Quartal, Ferien/Feiertage Niedersachsen werden beim Vorbelegen ausgelassen
+## So funktioniert der Zugang
+- Kein Konto, keine E-Mail: Jeder Übungsleiter bekommt einen **Code** (`MTV-XXXX-XXXX`) bzw. einen **Link mit Code**.
+- Link einmal öffnen → das Gerät merkt sich den Zugang. Weiteres Gerät: gleicher Link oder Code eingeben.
+- Code verloren → Admin-Seite → „Neuer Code“. Der alte Code ist sofort ungültig, die Daten bleiben.
+- In der Datenbank liegt nur eine Prüfsumme (SHA-256) des Codes, nie der Code selbst.
+
+## Inhalt
+- Je Nutzer: Name, beliebig viele Gruppen (Sportangebot, Sportstätte, Anlass, €/h, Trainingstage mit eigenen Zeiten)
+- Termine je Gruppe und Quartal; Ferien/Feiertage Niedersachsen werden beim Vorbelegen ausgelassen
 - PDF füllt `lib/vorlage.pdf` (Original-Formular); **IBAN wird nur beim Druck abgefragt und nie gespeichert**
-- Daten: Supabase-Projekt „Handball“, Tabelle `user_docs`, Schlüssel `abrechnung_verein` (RLS: jeder sieht nur seine Daten)
-- Beim ersten Start wird angeboten, die Daten aus dem Trainer-Cockpit (`abrechnung`) als Gruppe zu übernehmen – das Cockpit bleibt unverändert
+- Admin kann die eigene Cockpit-Abrechnung (`user_docs` / `abrechnung`) in einen Zugang kopieren
 
-## Einmalige Einrichtung in Supabase
+## Einrichtung (einmalig)
+`setup.sql` im Supabase-Projekt „Handball“ → SQL Editor ausführen – vorher im Abschnitt **ADMIN** die eigene Login-Mail eintragen.
 
-1. **Registrierung sperren:** Authentication → Sign In / Providers → „Allow new users to sign up“ **aus**.
-2. **URL erlauben:** Authentication → URL Configuration → Redirect URLs: `https://semmikgs.github.io/private/abrechnung/` hinzufügen.
-3. **Mail-Vorlagen** (Authentication → Emails), damit die Links direkt auf die Abrechnung zeigen:
-   - *Invite user*: Link ersetzen durch
-     `https://semmikgs.github.io/private/abrechnung/?token_hash={{ .TokenHash }}&type=invite`
-   - *Reset password*: Link ersetzen durch
-     `https://semmikgs.github.io/private/abrechnung/?token_hash={{ .TokenHash }}&type=recovery`
-4. **Mailversand:** Der eingebaute Supabase-Mailer schickt nur an Mitglieder des Supabase-Teams und nur wenige Mails pro Stunde. Für Einladungen an Vereinsmitglieder unter Project Settings → Authentication → SMTP einen eigenen Mail-Server eintragen.
-
-## Nutzer anlegen
-
-- **Mit SMTP:** Authentication → Users → „Invite user“ → E-Mail eintragen. Der Nutzer klickt den Link und legt sein Passwort fest.
-- **Ohne SMTP:** Authentication → Users → „Create new user“ → E-Mail + Startpasswort, „Auto Confirm User“ an. Startpasswort weitergeben; der Nutzer ändert es unter ⚙︎ → Passwort ändern.
-- **Entfernen:** Nutzer in Authentication → Users löschen – seine Daten werden automatisch mitgelöscht.
+| Datei | Zweck |
+|---|---|
+| `index.html` | App für Übungsleiter |
+| `admin.html` | Zugänge anlegen, neuer Code, umbenennen, löschen |
+| `lib/store.js` | Speicher per Code (Funktionen `ul_get`, `ul_save`) mit Offline-Kopie |
+| `lib/cloud.js` | Admin-Login + `ul_admin_*`-Funktionen |
+| `lib/kalender.js` | Ferien & Feiertage Niedersachsen (bis Sommer 2028) |
+| `setup.sql` | Tabellen `ul_users`, `ul_admins` und Funktionen |

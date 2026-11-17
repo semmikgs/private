@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>MTV Abrechnung – Zugänge verwalten</title>
+<style>
+:root{--red:#c8102e;--ink:#1a1a1a;--muted:#6b6b6b;--line:#e2e2e2;--bg:#f6f6f7;--ok:#1f9d55;--pink:#fde6e7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif}
+header{background:#fff;border-bottom:3px solid var(--red);padding:8px 14px;display:flex;align-items:center;gap:10px}
+header img{height:40px}header h1{font-size:16px;margin:0;flex:1}header h1 small{display:block;color:var(--muted);font-weight:500;font-size:12px}
+main{max-width:720px;margin:0 auto;padding:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input{font:inherit;font-size:16px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;flex:1;min-width:0}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 13px;font:inherit;font-weight:600;cursor:pointer;color:var(--ink);text-decoration:none}
+.btn.pri{background:var(--red);border-color:var(--red);color:#fff}.btn.sm{padding:6px 10px;font-size:13px}
+.btn.del{color:var(--red)}
+.u{border-top:1px solid var(--line);padding:10px 0}.u:first-child{border-top:0}
+.u b{font-size:16px}.muted{color:var(--muted);font-size:13px}
+.code{background:var(--pink);border:1px solid #f5b5bc;border-radius:12px;padding:12px;margin-bottom:12px}
+.code .c{font:700 24px/1.2 ui-monospace,Menlo,monospace;letter-spacing:2px;color:var(--red);margin:6px 0}
+.code textarea{width:100%;font:inherit;font-size:14px;border:1px solid var(--line);border-radius:8px;padding:8px;min-height:84px;margin:6px 0}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;font-size:14px}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header><img src="lib/mtv_logo.png" alt=""><h1>Zugänge verwalten<small id="who">Übungsleiter-Abrechnung</small></h1>
+<a class="btn sm" href="./">Zur Abrechnung</a><button class="btn sm" id="out">Abmelden</button></header>
+<main>
+  <div id="codebox"></div>
+  <div class="card"><b>Neuen Übungsleiter anlegen</b>
+    <form class="row" id="f-new" style="margin-top:8px"><input name="n" placeholder="Name, z. B. Max Muster" required><button class="btn pri">Anlegen</button></form>
+    <p class="muted" style="margin:8px 0 0">Der Code wird nur einmal angezeigt (gespeichert ist nur eine verschlüsselte Prüfsumme). Geht er verloren: „Neuer Code“ – die Daten bleiben erhalten.</p>
+  </div>
+  <div class="card" id="list"><span class="muted">lädt …</span></div>
+</main>
+<div id="toast"></div>
+<script src="lib/cloud.js?v=20261117b"></script>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const de=t=>t?new Date(t).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'2-digit'}):'–';
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2200);}
+const appUrl=new URL('./',location.href).href;
+let users=[];
+
+async function load(){
+  try{users=await Cloud.rpc('ul_admin_list');}
+  catch(e){$('#list').innerHTML=`<p style="color:var(--red)">${esc(/kein Admin/.test(e.message)?'Dieses Konto ist nicht als Admin eingetragen (setup.sql, Abschnitt ADMIN).':e.message)}</p>`;return;}
+  $('#list').innerHTML=users.length?users.map((u,i)=>`<div class="u"><b>${esc(u.name)}</b>
+    <div class="muted">angelegt ${de(u.created_at)} · zuletzt aktiv ${de(u.last_seen)} · Daten gespeichert ${de(u.updated_at)}</div>
+    <div class="row" style="margin-top:6px"><button class="btn sm" data-a="code" data-i="${i}">Neuer Code</button><button class="btn sm" data-a="ren" data-i="${i}">Umbenennen</button><button class="btn sm" data-a="imp" data-i="${i}">Cockpit-Daten übernehmen</button><button class="btn sm del" data-a="del" data-i="${i}">Löschen</button></div></div>`).join('')
+    :'<span class="muted">Noch keine Übungsleiter angelegt.</span>';
+}
+function showCode(name,code){
+  const link=appUrl+'?c='+code;
+  const msg=`Hallo ${name.split(' ')[0]},\nhier ist dein Zugang zur MTV Übungsleiter-Abrechnung:\n${link}\n\nLink einmal öffnen – dein Gerät merkt sich den Zugang. Falls nach dem Code gefragt wird: ${code}`;
+  $('#codebox').innerHTML=`<div class="code"><b>Zugang für ${esc(name)}</b><div class="c">${code}</div>
+    <textarea readonly>${esc(msg)}</textarea>
+    <div class="row"><button class="btn pri sm" data-a="share">Teilen</button><button class="btn sm" data-a="copy">Nachricht kopieren</button><button class="btn sm" data-a="close">Schließen</button></div></div>`;
+  $('#codebox').dataset.msg=msg;window.scrollTo(0,0);
+}
+$('#codebox').addEventListener('click',e=>{
+  const a=e.target.dataset.a,msg=$('#codebox').dataset.msg;if(!a)return;
+  if(a==='close')$('#codebox').innerHTML='';
+  if(a==='copy')navigator.clipboard.writeText(msg).then(()=>toast('Kopiert'),()=>{$('#codebox textarea').select();});
+  if(a==='share'){if(navigator.share)navigator.share({text:msg}).catch(()=>{});else navigator.clipboard.writeText(msg).then(()=>toast('Kopiert – Teilen nicht verfügbar'));}
+});
+$('#f-new').addEventListener('submit',async e=>{
+  e.preventDefault();const n=e.target.n.value.trim();if(!n)return;
+  try{const c=await Cloud.rpc('ul_admin_create',{p_name:n});e.target.reset();showCode(n,c);load();}catch(x){toast(x.message);}
+});
+/* Cockpit-Abrechnung (Dokument „abrechnung“) ins Vereinsformat umwandeln */
+function convert(old){
+  const c=old.cfg||{},id=Math.random().toString(36).slice(2,9);
+  const g={id,angebot:c.angebot||'',staette:c.staette||'',anlass:c.anlass&&c.anlass!==c.angebot?c.anlass:'',satz:c.satz==null?7.5:c.satz,zeiten:{}};
+  (c.tage||[]).forEach(d=>g.zeiten[d]={von:c.von||'18:00',bis:c.bis||'19:30'});
+  return {v:2,name:c.name||'',gruppen:[g],aktiv:id,q:{[id]:old.q||{}}};
+}
+$('#list').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;const u=users[+b.dataset.i];
+  try{
+    if(b.dataset.a==='code'){if(!confirm(`Neuen Code für ${u.name} erzeugen? Der alte Code funktioniert danach nicht mehr – auch nicht auf seinen Geräten.`))return;
+      showCode(u.name,await Cloud.rpc('ul_admin_newcode',{p_id:u.id}));}
+    if(b.dataset.a==='ren'){const n=prompt('Neuer Name:',u.name);if(!n||!n.trim())return;await Cloud.rpc('ul_admin_rename',{p_id:u.id,p_name:n});toast('Umbenannt');}
+    if(b.dataset.a==='del'){if(!confirm(`${u.name} mit allen Abrechnungsdaten endgültig löschen?`))return;await Cloud.rpc('ul_admin_delete',{p_id:u.id});toast('Gelöscht');}
+    if(b.dataset.a==='imp'){const old=await Cloud.doc('abrechnung');
+      if(!old||!old.cfg){toast('Keine Cockpit-Abrechnung gefunden');return;}
+      if(!confirm(`Deine Abrechnung aus dem Trainer-Cockpit zu „${u.name}“ kopieren? Vorhandene Daten dieses Zugangs werden ersetzt. Das Cockpit bleibt unverändert.`))return;
+      await Cloud.rpc('ul_admin_setdata',{p_id:u.id,p_data:convert(old)});toast('Übernommen');}
+    load();
+  }catch(x){toast(x.message);}
+});
+$('#out').addEventListener('click',()=>{Cloud.logout();location.reload();});
+Cloud.requireLogin(u=>{$('#who').textContent=u.email;load();},{title:'Zugänge verwalten'});
+})();
+</script>
+</body>
+</html>
