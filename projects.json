@@ -1,10 +1,10 @@
 {
-  "generated": "2026-11-17T08:32:26+00:00",
+  "generated": "2026-11-17T12:06:45+00:00",
   "projects": [
     {
       "folder": "abrechnung",
       "title": "Übungsleiter-Abrechnung MTV",
-      "description": "Trainingszeiten für die Übungsleiter-Abrechnung erfassen, je Gruppe und Quartal. PDF im Original-Formular, IBAN nur beim Druck. Zugang nur auf Einladung (Supabase).",
+      "description": "Trainingszeiten für die Übungsleiter-Abrechnung erfassen, je Gruppe und Quartal. PDF im Original-Formular, IBAN nur beim Druck. Zugang per persönlichem Code oder Link, Verwaltung über admin.html.",
       "icon": "🧾",
       "tags": [
         "MTV Schwarmstedt",
@@ -12,8 +12,10 @@
         "Verein"
       ],
       "hasIndex": true,
-      "files": [],
-      "updated": "2026-11-17T09:32:16+01:00"
+      "files": [
+        "admin.html"
+      ],
+      "updated": "2026-11-17T13:06:43+01:00"
     },
     {
       "folder": "alma-mathe",
@@ -44,7 +46,7 @@
       ],
       "hasIndex": true,
       "files": [],
-      "updated": "2026-10-07T10:34:10+02:00"
+      "updated": "2026-11-01T20:28:08+00:00"
     },
     {
       "folder": "hanse-handel",
@@ -58,7 +60,7 @@
       ],
       "hasIndex": true,
       "files": [],
-      "updated": "2026-10-15T17:03:04+03:00"
+      "updated": "2026-11-01T20:28:08+00:00"
     },
     {
       "folder": "projektwoche",
@@ -88,7 +90,7 @@
       ],
       "hasIndex": true,
       "files": [],
-      "updated": "2026-10-24T07:44:34+02:00"
+      "updated": "2026-11-01T20:28:08+00:00"
     },
     {
       "folder": "wasser-klasse3",
@@ -104,7 +106,7 @@
       "files": [
         "Wasser_Arbeitsblaetter_Kl3.pdf"
       ],
-      "updated": "2026-10-07T10:22:03+02:00"
+      "updated": "2026-11-01T20:28:08+00:00"
     }
   ]
 }
