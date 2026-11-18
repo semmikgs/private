@@ -136,6 +136,8 @@ dialog{max-height:92vh;overflow:auto}
   <h3>Einstellungen</h3>
   <p class="muted" id="set-hint" hidden>Willkommen! Trage zuerst deinen Namen ein und lege mindestens eine Gruppe an.</p>
   <label>Name, Vorname (steht auf dem Formular)<input name="name" autocomplete="name"></label>
+  <label>IBAN<input name="iban_info" disabled placeholder="wird beim Ausdrucken abgefragt"></label>
+  <p class="muted" style="margin:-4px 0 10px">Die IBAN wird aus Sicherheitsgründen nicht gespeichert. Sie wird beim Ausdrucken abgefragt und mit auf das Formular gedruckt.</p>
   <div class="sec">Meine Gruppen</div>
   <div id="set-gruppen"></div>
   <button class="btn sm" value="" data-a="g-new" type="button">+ Gruppe anlegen</button>
@@ -149,7 +151,7 @@ dialog{max-height:92vh;overflow:auto}
   <h3 id="grp-title">Gruppe</h3>
   <label>Sportangebot (z. B. Handball mJD, Kinderturnen)<input name="angebot" required></label>
   <label>Sportstätte<input name="staette"></label>
-  <label>Anlass auf dem Formular (Standard)<input name="anlass" placeholder="wie Sportangebot"></label>
+  <label>Anlass auf dem Formular (Standard)<input name="anlass" placeholder="z. B. Training mJC"></label>
   <label style="max-width:140px">€ pro Std.<input name="satz" inputmode="decimal"></label>
   <label>Trainingstage und Zeiten</label>
   <table class="zeiten" id="grp-zeiten"></table>
