@@ -123,6 +123,8 @@ const FIELDS = [
   {key:"rolle",   label:"Rolle / Liste",  pats:[/^rolle$/,/^role$/,/^liste$/,/^typ$/,/^gerätetyp$/,/rolle|role|liste|kategorie/]},
   {key:"klasse",  label:"Klasse / Gruppe",pats:[/^klasse$/,/^class$/,/^gruppe$/,/klasse|class/,/gruppe|group/]},
   {key:"status",  label:"Status",         pats:[/^status$/,/status|zustand/]},
+  {key:"uebergabe",label:"Übergabe",      pats:[/^übergabe$/,/^uebergabe$/,/übergabe|uebergabe/]},
+  {key:"konto",   label:"IServ-Konto",    pats:[/^assigntouser$/]},
 ];
 const norm = s => String(s||"").toLowerCase().replace(/[\s\-\.]/g,"").replace(/[„“"]/g,"");
 
@@ -287,7 +289,9 @@ function show(raw){
     addHist(k,"nicht gefunden"); beep(false); return;
   }
   const r = rows[rows.length-1];
-  const name = [cell(r,"vorname"), cell(r,"name")].filter(Boolean).join(" ") || "(kein Name eingetragen)";
+  let nm = cell(r,"name");
+  const mm = nm.match(/^([^,]+),\s*(.+)$/); if (mm) nm = mm[2]+" "+mm[1]; // „Nachname, Vorname“ → „Vorname Nachname“
+  const name = [cell(r,"vorname"), nm].filter(Boolean).join(" ") || "(kein Name eingetragen)";
   const rolle = cell(r,"rolle"), klasse = cell(r,"klasse"), status = cell(r,"status");
   const ri = rolle ? roleInfo(rolle) : null;
   let h = `<div class="sn">SN ${esc(k)}</div><div class="rName">${esc(name)}</div><div class="badges">`;
@@ -295,6 +299,8 @@ function show(raw){
   if (klasse) h += `<span class="badge klasse">${esc(klasse)}</span>`;
   if (status) h += `<span class="badge" style="background:#f3f4f6;color:#374151">${esc(status)}</span>`;
   h += `</div>`;
+  const ue = cell(r,"uebergabe"), ko = cell(r,"konto");
+  if (ue || ko) h += `<div class="mute" style="font-size:18px">${ue?`Übergabe: <b>${esc(ue)}</b>`:"Noch nicht übergeben"}${ko?` · IServ: ${esc(ko)}`:""}</div>`;
   if (rows.length>1) h += `<div class="mute">Hinweis: ${rows.length} Zeilen mit dieser Seriennummer – angezeigt wird die letzte.</div>`;
   h += `<details><summary>Alle Angaben</summary><table>` + table.headers.map((hd,i)=>`<tr><th>${esc(hd)}</th><td>${esc(r[i]??"")}</td></tr>`).join("") + `</table></details>`;
   box.innerHTML = h;
