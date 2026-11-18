@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>iPad-Scanner – Gerätezuordnung</title>
+<style>
+  :root{--bg:#f3f4f6;--card:#fff;--ink:#111827;--mute:#6b7280;--acc:#b91c3c;--ok:#15803d;--warn:#b45309;--bad:#b91c1c;--line:#e5e7eb}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--acc);color:#fff}
+  header h1{font-size:20px;margin:0;flex:1}
+  header button{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:10px;padding:8px 14px;font-size:16px}
+  main{max-width:1100px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:16px}
+  .btn{display:inline-block;border:0;border-radius:12px;padding:14px 22px;font-size:18px;font-weight:600;background:var(--acc);color:#fff;cursor:pointer}
+  .btn.sec{background:#e5e7eb;color:var(--ink)}
+  .btn.small{padding:8px 14px;font-size:15px}
+  .mute{color:var(--mute)}
+  .hidden{display:none!important}
+  #scanArea{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media (max-width:820px), (orientation:portrait){#scanArea{grid-template-columns:1fr}}
+  #camWrap{position:relative;background:#000;border-radius:16px;overflow:hidden;aspect-ratio:16/9}
+  #video{width:100%;height:100%;object-fit:contain;display:block}
+  #guide{position:absolute;left:6%;right:6%;top:28%;bottom:28%;border:3px solid rgba(255,255,255,.85);border-radius:12px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)}
+  #guide::after{content:"";position:absolute;left:4%;right:4%;top:50%;height:2px;background:#ef4444;animation:pulse 1.2s infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  #camMsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;padding:20px;font-size:18px}
+  #result{min-height:260px}
+  #result.empty{display:flex;align-items:center;justify-content:center;text-align:center;color:var(--mute);font-size:20px}
+  .rName{font-size:44px;font-weight:800;line-height:1.1;margin:6px 0 14px;word-break:break-word}
+  .badges{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+  .badge{font-size:24px;font-weight:700;padding:8px 16px;border-radius:12px;background:#eef2ff;color:#3730a3}
+  .badge.rS{background:#dcfce7;color:#166534}.badge.rL{background:#dbeafe;color:#1e40af}
+  .badge.rR{background:#fef3c7;color:#92400e}.badge.rD{background:#fee2e2;color:#991b1b}
+  .badge.klasse{background:#f3e8ff;color:#6b21a8}
+  .sn{font-family:ui-monospace,Menlo,monospace;font-size:20px;color:var(--mute)}
+  .notFound .rName{color:var(--bad)}
+  .flash{animation:flash .5s}
+  @keyframes flash{from{background:#fef9c3}to{background:var(--card)}}
+  details{margin-top:14px}summary{cursor:pointer;color:var(--mute);font-size:16px}
+  table{border-collapse:collapse;width:100%;font-size:15px;margin-top:8px}
+  td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  th{color:var(--mute);font-weight:600;width:40%}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  input[type=text]{font-size:20px;padding:12px;border-radius:12px;border:1px solid #d1d5db;flex:1;min-width:180px;text-transform:uppercase;font-family:ui-monospace,Menlo,monospace}
+  select{font-size:17px;padding:8px;border-radius:10px;border:1px solid #d1d5db;width:100%}
+  .map{display:grid;grid-template-columns:200px 1fr;gap:10px 14px;align-items:center;margin:14px 0}
+  .hist{font-size:15px;margin:0;padding-left:18px}.hist li{margin:3px 0}
+  .note{font-size:14px;color:var(--mute);margin-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>📷 iPad-Scanner</h1>
+  <button id="btnSettings" class="hidden">Einstellungen</button>
+</header>
+<main>
+
+  <!-- Start: CSV laden -->
+  <section id="viewLoad" class="card">
+    <h2 style="margin-top:0">Bestandsdaten laden</h2>
+    <p>CSV-Export aus der <b>iPad-Bestandsverwaltung</b> auswählen. Die Daten bleiben nur auf diesem Gerät gespeichert und werden nirgendwohin gesendet.</p>
+    <label class="btn">CSV-Datei wählen<input id="fileIn" type="file" accept=".csv,text/csv,text/plain" class="hidden"></label>
+    <p id="loadInfo" class="mute"></p>
+  </section>
+
+  <!-- Einstellungen: Spaltenzuordnung -->
+  <section id="viewSettings" class="card hidden">
+    <h2 style="margin-top:0">Einstellungen</h2>
+    <p id="dataInfo" class="mute"></p>
+    <h3>Spaltenzuordnung</h3>
+    <p class="mute" style="margin:0">Die Spalten werden automatisch erkannt. Bei Bedarf hier anpassen.</p>
+    <div class="map" id="mapGrid"></div>
+    <div class="row">
+      <button class="btn" id="btnSaveMap">Übernehmen &amp; scannen</button>
+      <label class="btn sec">Andere CSV laden<input id="fileIn2" type="file" accept=".csv,text/csv,text/plain" class="hidden"></label>
+      <button class="btn sec" id="btnClear">Daten von diesem Gerät löschen</button>
+    </div>
+  </section>
+
+  <!-- Scanner -->
+  <section id="viewScan" class="hidden">
+    <div id="scanArea">
+      <div>
+        <div id="camWrap">
+          <video id="video" playsinline muted autoplay></video>
+          <div id="guide"></div>
+          <div id="camMsg">Kamera wird gestartet …</div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="row">
+            <input id="manual" type="text" placeholder="Seriennummer eintippen" autocomplete="off" autocapitalize="characters" spellcheck="false">
+            <button class="btn small" id="btnManual">Suchen</button>
+          </div>
+          <div class="note">Barcode waagerecht in den Rahmen halten, ca. 10–20 cm Abstand. Spiegelungen vermeiden.</div>
+        </div>
+      </div>
+      <div>
+        <div id="result" class="card empty">Barcode eines iPads vor die Kamera halten</div>
+        <div class="card">
+          <b>Zuletzt gescannt</b>
+          <ol id="hist" class="hist mute"><li>–</li></ol>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<canvas id="cv" class="hidden"></canvas>
+<script src="zxing.min.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const LS = "ipadScanner.v1";
+
+// ---------- Felder & automatische Erkennung ----------
+const FIELDS = [
+  {key:"sn",      label:"Seriennummer *", pats:[/^seriennummer$/,/^serialnumber$/,/^serial[_ ]?number$/,/^sn$/,/^serien/,/serial/]},
+  {key:"name",    label:"Name *",         pats:[/^name$/,/^nachname$/,/^nutzer$/,/^benutzer$/,/^assigntouser$/,/^anzeigename$/,/^lehrkraft$/,/^schüler$/,/name/,/nutzer|user|assign/]},
+  {key:"vorname", label:"Vorname",        pats:[/^vorname$/,/^first[_ ]?name$/,/vorname/]},
+  {key:"rolle",   label:"Rolle / Liste",  pats:[/^rolle$/,/^role$/,/^liste$/,/^typ$/,/^gerätetyp$/,/rolle|role|liste|kategorie/]},
+  {key:"klasse",  label:"Klasse / Gruppe",pats:[/^klasse$/,/^class$/,/^gruppe$/,/klasse|class/,/gruppe|group/]},
+  {key:"status",  label:"Status",         pats:[/^status$/,/status|zustand/]},
+];
+const norm = s => String(s||"").toLowerCase().replace(/[\s\-\.]/g,"").replace(/[„“"]/g,"");
+
+function guessMapping(headers){
+  const used = new Set(), map = {};
+  const nh = headers.map(norm);
+  for (const f of FIELDS){
+    map[f.key] = -1;
+    outer: for (const p of f.pats){
+      for (let i=0;i<nh.length;i++){
+        if (used.has(i)) continue;
+        if (f.key==="name" && /vorname|schulname|dateiname|gerätename|devicename|modell/.test(nh[i])) continue;
+        if (p.test(nh[i])){ map[f.key]=i; used.add(i); break outer; }
+      }
+    }
+  }
+  return map;
+}
+
+// ---------- CSV ----------
+function parseCSV(text){
+  text = text.replace(/^﻿/,"");
+  const first = text.split(/\r?\n/,1)[0];
+  const cnt = c => first.split(c).length-1;
+  const d = [";",",","\t"].sort((a,b)=>cnt(b)-cnt(a))[0];
+  const rows=[]; let row=[], cell="", q=false;
+  for (let i=0;i<text.length;i++){
+    const ch=text[i];
+    if (q){
+      if (ch==='"'){ if (text[i+1]==='"'){cell+='"';i++;} else q=false; }
+      else cell+=ch;
+    } else if (ch==='"') q=true;
+    else if (ch===d){ row.push(cell); cell=""; }
+    else if (ch==="\n"||ch==="\r"){
+      if (ch==="\r"&&text[i+1]==="\n") i++;
+      row.push(cell); cell="";
+      if (row.some(c=>c.trim()!=="")) rows.push(row);
+      row=[];
+    } else cell+=ch;
+  }
+  row.push(cell); if (row.some(c=>c.trim()!=="")) rows.push(row);
+  return rows;
+}
+
+function readFile(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      const t=r.result;
+      if (t.includes("�")){ // vermutlich kein UTF-8 → Windows-1252
+        const r2=new FileReader(); r2.onload=()=>res(r2.result); r2.onerror=rej; r2.readAsText(file,"windows-1252");
+      } else res(t);
+    };
+    r.onerror=rej; r.readAsText(file,"utf-8");
+  });
+}
+
+// ---------- Zustand ----------
+let state = null;      // {name, date, text, map}
+let table = null;      // {headers, rows}
+let index = new Map(); // SN → [rows]
+
+const keySN = s => String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+
+function save(){ try{ localStorage.setItem(LS, JSON.stringify(state)); }catch(e){ alert("Speichern auf dem Gerät nicht möglich: "+e.message); } }
+function load(){ try{ return JSON.parse(localStorage.getItem(LS)||"null"); }catch(e){ return null; } }
+
+function buildIndex(){
+  const rows = parseCSV(state.text);
+  table = {headers: rows[0]||[], rows: rows.slice(1)};
+  if (!state.map) state.map = guessMapping(table.headers);
+  index = new Map();
+  const c = state.map.sn;
+  if (c<0) return;
+  for (const r of table.rows){
+    const k = keySN(r[c]); if (!k) continue;
+    if (!index.has(k)) index.set(k,[]);
+    index.get(k).push(r);
+  }
+}
+
+async function onFile(ev){
+  const f = ev.target.files[0]; if (!f) return;
+  try{
+    const text = await readFile(f);
+    const rows = parseCSV(text);
+    if (rows.length<2) throw new Error("Die Datei enthält keine Datenzeilen.");
+    state = {name:f.name, date:new Date().toISOString(), text, map:null};
+    buildIndex(); save();
+    if (state.map.sn<0 || state.map.name<0) showSettings();
+    else showScan();
+  }catch(e){ $("loadInfo").textContent = "Fehler: "+e.message; }
+  ev.target.value="";
+}
+$("fileIn").onchange = onFile;
+$("fileIn2").onchange = onFile;
+
+// ---------- Ansichten ----------
+function hideAll(){ ["viewLoad","viewSettings","viewScan"].forEach(v=>$(v).classList.add("hidden")); }
+
+function showLoad(){ stopCam(); hideAll(); $("viewLoad").classList.remove("hidden"); $("btnSettings").classList.add("hidden"); }
+
+function showSettings(){
+  stopCam(); hideAll(); $("viewSettings").classList.remove("hidden"); $("btnSettings").classList.add("hidden");
+  const d = new Date(state.date);
+  $("dataInfo").textContent = `Datei: ${state.name} · geladen am ${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})} · ${table.rows.length} Zeilen · ${index.size} Seriennummern`;
+  const g = $("mapGrid"); g.innerHTML="";
+  for (const f of FIELDS){
+    const l=document.createElement("label"); l.textContent=f.label;
+    const s=document.createElement("select"); s.dataset.key=f.key;
+    s.innerHTML = `<option value="-1">– keine –</option>` + table.headers.map((h,i)=>{
+      const ex = (table.rows[0]||[])[i]; return `<option value="${i}">${esc(h)}${ex?` (z. B. ${esc(String(ex).slice(0,30))})`:""}</option>`;}).join("");
+    s.value = String(state.map[f.key]);
+    g.append(l,s);
+  }
+}
+$("btnSaveMap").onclick = ()=>{
+  document.querySelectorAll("#mapGrid select").forEach(s=>state.map[s.dataset.key]=+s.value);
+  if (state.map.sn<0){ alert("Bitte die Spalte für die Seriennummer auswählen."); return; }
+  if (state.map.name<0){ alert("Bitte die Spalte für den Namen auswählen."); return; }
+  buildIndex(); save(); showScan();
+};
+$("btnClear").onclick = ()=>{
+  if (!confirm("Bestandsdaten von diesem Gerät löschen?")) return;
+  localStorage.removeItem(LS); state=null; table=null; index=new Map();
+  $("hist").innerHTML="<li>–</li>"; showLoad();
+};
+$("btnSettings").onclick = showSettings;
+
+function showScan(){
+  hideAll(); $("viewScan").classList.remove("hidden"); $("btnSettings").classList.remove("hidden");
+  startCam();
+}
+
+// ---------- Anzeige ----------
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const cell = (r,k) => { const i=state.map[k]; return i>=0 ? String(r[i]??"").trim() : ""; };
+
+function roleInfo(v){
+  const t = v.trim(); const u = t.toUpperCase();
+  const m = u.match(/(?:LAND[-_ ]?)?([SLRD])$/);
+  if (/SCHÜLER|SCHUELER/.test(u) || (m&&m[1]==="S")) return {txt: t.length<=7?"Schüler/in":t, cls:"rS"};
+  if (/LEHR|REFERENDAR/.test(u) || (m&&m[1]==="L")) return {txt: t.length<=7?"Lehrkraft":t, cls:"rL"};
+  if (/RESERVE/.test(u) || (m&&m[1]==="R")) return {txt: t.length<=7?"Reserve":t, cls:"rR"};
+  if (/DEFEKT/.test(u) || (m&&m[1]==="D")) return {txt: t.length<=7?"Defekt":t, cls:"rD"};
+  return {txt:t, cls:""};
+}
+
+function lookup(raw){
+  let k = keySN(raw);
+  if (!index.has(k) && /^S[A-Z0-9]{10,12}$/.test(k) && index.has(k.slice(1))) k = k.slice(1); // Apple-Präfix „S“
+  return {k, rows: index.get(k)||null};
+}
+
+function show(raw){
+  const {k, rows} = lookup(raw);
+  const box = $("result"); box.className="card flash";
+  void box.offsetWidth;
+  if (!rows){
+    box.classList.add("notFound");
+    box.innerHTML = `<div class="sn">SN ${esc(k)}</div><div class="rName">Nicht im Bestand</div><div class="mute">Diese Seriennummer steht nicht in der geladenen CSV.</div>`;
+    addHist(k,"nicht gefunden"); beep(false); return;
+  }
+  const r = rows[rows.length-1];
+  const name = [cell(r,"vorname"), cell(r,"name")].filter(Boolean).join(" ") || "(kein Name eingetragen)";
+  const rolle = cell(r,"rolle"), klasse = cell(r,"klasse"), status = cell(r,"status");
+  const ri = rolle ? roleInfo(rolle) : null;
+  let h = `<div class="sn">SN ${esc(k)}</div><div class="rName">${esc(name)}</div><div class="badges">`;
+  if (ri) h += `<span class="badge ${ri.cls}">${esc(ri.txt)}</span>`;
+  if (klasse) h += `<span class="badge klasse">${esc(klasse)}</span>`;
+  if (status) h += `<span class="badge" style="background:#f3f4f6;color:#374151">${esc(status)}</span>`;
+  h += `</div>`;
+  if (rows.length>1) h += `<div class="mute">Hinweis: ${rows.length} Zeilen mit dieser Seriennummer – angezeigt wird die letzte.</div>`;
+  h += `<details><summary>Alle Angaben</summary><table>` + table.headers.map((hd,i)=>`<tr><th>${esc(hd)}</th><td>${esc(r[i]??"")}</td></tr>`).join("") + `</table></details>`;
+  box.innerHTML = h;
+  addHist(k, name + (klasse?` · ${klasse}`:""));
+  beep(true);
+}
+
+const histList=[];
+function addHist(k,t){
+  histList.unshift(`<b>${esc(k)}</b> – ${esc(t)}`);
+  histList.length = Math.min(histList.length,8);
+  $("hist").innerHTML = histList.map(x=>`<li>${x}</li>`).join("");
+}
+
+let actx=null;
+function beep(ok){
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.frequency.value = ok?1200:300; g.gain.value=.08;
+    o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+(ok?.12:.35));
+  }catch(e){}
+}
+
+$("btnManual").onclick = ()=>{ const v=$("manual").value.trim(); if(v){ show(v); $("manual").value=""; } };
+$("manual").addEventListener("keydown",e=>{ if(e.key==="Enter") $("btnManual").click(); });
+
+// ---------- Kamera & Dekodierung ----------
+let flip=false, stream=null, timer=null, busy=false, lastCode="", lastTime=0;
+const reader = new ZXing.MultiFormatReader();
+(function(){
+  const h=new Map();
+  h.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.CODE_39,ZXing.BarcodeFormat.CODE_93,ZXing.BarcodeFormat.QR_CODE,ZXing.BarcodeFormat.DATA_MATRIX]);
+  h.set(ZXing.DecodeHintType.TRY_HARDER,true);
+  reader.setHints(h);
+})();
+
+async function startCam(){
+  const msg=$("camMsg"); msg.classList.remove("hidden"); msg.textContent="Kamera wird gestartet …";
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    msg.textContent = location.protocol==="file:"
+      ? "Die Kamera funktioniert nur über die Internetadresse (https). Seriennummer unten eintippen geht trotzdem."
+      : "Dieser Browser erlaubt keinen Kamerazugriff. Seriennummer unten eintippen.";
+    return;
+  }
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080}}});
+    const v=$("video"); v.srcObject=stream; await v.play();
+    msg.classList.add("hidden");
+    timer = setInterval(tick, 180);
+  }catch(e){
+    msg.textContent = "Kein Kamerazugriff ("+e.name+"). In den Einstellungen den Zugriff für Safari/Chrome erlauben und Seite neu laden.";
+  }
+}
+function stopCam(){
+  clearInterval(timer); timer=null;
+  if (stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+}
+
+const cv=$("cv"), ctx=cv.getContext("2d",{willReadFrequently:true});
+function tick(){
+  const v=$("video");
+  if (busy || !v.videoWidth) return;
+  busy=true;
+  try{
+    // abwechselnd: mittlerer Streifen (wie Rahmen) und ganzes Bild
+    const vw=v.videoWidth, vh=v.videoHeight;
+    flip=!flip;
+    let sx=0, sy=0, sw=vw, sh=vh;
+    if (flip){ sy=vh*.22; sh=vh*.56; }
+    const scale=Math.min(1, 1400/sw);
+    cv.width=Math.round(sw*scale); cv.height=Math.round(sh*scale);
+    ctx.drawImage(v,sx,sy,sw,sh,0,0,cv.width,cv.height);
+    const code = decode(cv);
+    if (code){
+      const now=Date.now();
+      if (code!==lastCode || now-lastTime>4000){ show(code); }
+      lastCode=code; lastTime=now;
+    }
+  }finally{ busy=false; }
+}
+
+function decode(c){
+  const w=c.width,h=c.height, d=ctx.getImageData(0,0,w,h).data;
+  const lum=new Uint8ClampedArray(w*h);
+  for (let i=0,j=0;i<lum.length;i++,j+=4) lum[i]=(d[j]*77+d[j+1]*150+d[j+2]*29)>>8;
+  const src=new ZXing.RGBLuminanceSource(lum,w,h);
+  for (const Bin of [ZXing.HybridBinarizer, ZXing.GlobalHistogramBinarizer]){
+    try{ return reader.decode(new ZXing.BinaryBitmap(new Bin(src))).getText(); }
+    catch(e){ reader.reset(); }
+  }
+  return null;
+}
+
+document.addEventListener("visibilitychange",()=>{
+  if (document.hidden) stopCam();
+  else if (!$("viewScan").classList.contains("hidden")) startCam();
+});
+
+// ---------- Start ----------
+state = load();
+if (state){ buildIndex(); (state.map.sn<0||state.map.name<0) ? showSettings() : showScan(); }
+else showLoad();
+
+if ("serviceWorker" in navigator && location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
