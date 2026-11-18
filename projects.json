@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-18T06:55:26+00:00",
+  "generated": "2026-11-18T11:52:57+00:00",
   "projects": [
     {
       "folder": "abrechnung",
@@ -61,6 +61,20 @@
       "hasIndex": true,
       "files": [],
       "updated": "2026-10-15T17:03:04+03:00"
+    },
+    {
+      "folder": "ipad-scanner",
+      "title": "iPad-Scanner – Gerätezuordnung",
+      "description": "Barcode eines Schul-iPads mit der Kamera scannen und sofort Name, Rolle und Klasse sehen. Läuft nach dem ersten Aufruf offline; die CSV aus der iPad-Bestandsverwaltung bleibt nur auf dem Gerät.",
+      "icon": "📷",
+      "tags": [
+        "FB Digitalisierung",
+        "iPad",
+        "Bestand"
+      ],
+      "hasIndex": true,
+      "files": [],
+      "updated": "2026-11-18T12:52:48+01:00"
     },
     {
       "folder": "projektwoche",
