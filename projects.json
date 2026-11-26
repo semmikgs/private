@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-18T13:10:03+00:00",
+  "generated": "2026-11-26T11:02:44+00:00",
   "projects": [
     {
       "folder": "abrechnung",
@@ -32,21 +32,6 @@
       "hasIndex": true,
       "files": [],
       "updated": "2026-11-15T18:51:42+01:00"
-    },
-    {
-      "folder": "calliope-bloecke",
-      "title": "Calliope-Blöcke – Editor und Simulator",
-      "description": "Scratch-ähnliche Blockumgebung für den Calliope mini 3: läuft offline als einzelne HTML-Datei, simuliert das Board mit LED-Matrix, RGB-LEDs, Klang, Sensoren, Lage, Kompass und Funk und überträgt das Programm per USB oder als .hex-Datei.",
-      "icon": "🧩",
-      "tags": [
-        "Informatik",
-        "Klasse 10",
-        "Calliope",
-        "Blockprogrammierung"
-      ],
-      "hasIndex": true,
-      "files": [],
-      "updated": "2026-10-07T10:34:10+02:00"
     },
     {
       "folder": "hanse-handel",
